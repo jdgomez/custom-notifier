@@ -1,0 +1,54 @@
+# --- Gradle / Android build output ---
+.gradle/
+build/
+*/build/
+local.properties
+captures/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+output.json
+.kotlin/
+
+# --- Signing material (never commit) ---
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+google-services.json
+play-service-account*.json
+
+# --- Test / tooling reports ---
+*.hprof
+lint-results*.html
+lint-results*.xml
+reports/
+test-results/
+build-reports/
+
+# --- Roborazzi screenshot diffs (references are committed, diffs are not) ---
+**/build/outputs/roborazzi/
+**/roborazzi/*_compare.png
+**/roborazzi/*_actual.png
+
+# --- Agent tooling (local state only; shared config is committed) ---
+.claude/settings.local.json
+.claude/*.local.json
+.claude/projects/
+.claude/todos/
+.claude/shell-snapshots/
+.claude/statsig/
+.no-mistakes/
+.herdr/
+
+# --- Editor swap files ---
+*~
+*.swp
+
+# --- Local environment ---
+.env
+.env.*
+!.env.example
