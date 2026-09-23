@@ -151,10 +151,10 @@ All commands succeed. The installed list contains `platform-tools`, `emulator`, 
 ### Licenses accepted
 
 ```bash
-bash -lc 'sdkmanager --licenses'
+bash -lc 'sdkmanager --licenses </dev/null'
 ```
 
-Reports that all SDK package licenses are accepted, with no prompt. This only reads state.
+Reports that all SDK package licenses are accepted, with no prompt. This only reads state; stdin is closed so a missing license fails instead of waiting for an answer.
 
 ### Acceleration check
 
@@ -173,9 +173,10 @@ bash -lc '
 start=$(date +%s)
 nohup emulator -avd cn-api37 -no-window -no-audio -no-boot-anim -no-snapshot-save \
   -gpu swiftshader_indirect >"${TMPDIR:-/tmp}/emulator-cn-api37.log" 2>&1 &
-adb wait-for-device
+pid=$!
+timeout 180 adb wait-for-device || { echo "boot timed out"; kill "$pid" 2>/dev/null; exit 1; }
 until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do
-  [ $(( $(date +%s) - start )) -gt 180 ] && { echo "boot timed out"; break; }
+  [ $(( $(date +%s) - start )) -gt 180 ] && { echo "boot timed out"; kill "$pid" 2>/dev/null; exit 1; }
   sleep 2
 done
 echo "boot took $(( $(date +%s) - start ))s"
@@ -234,9 +235,10 @@ For the final environment cleanup. Removes everything this setup installed. Run 
 5. **Owner step:** remove the JDK:
 
    ```bash
-   sudo apt remove --purge openjdk-17-jdk-headless
-   sudo apt autoremove --purge
+   sudo apt remove --purge openjdk-17-jdk-headless openjdk-17-jre-headless ca-certificates-java java-common
    ```
+
+   These are the JDK and the dependencies its installation pulled in. The command names them explicitly instead of using `apt autoremove`, which would also remove unrelated orphaned packages.
 
 6. **Owner step:** remove the user from the `kvm` group, then log out and log in again:
 
