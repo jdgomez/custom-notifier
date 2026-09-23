@@ -5,6 +5,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 ## Read first
 - `docs/SESSION0.md` - what we are building: problem, scope, glossary, phases. **The glossary is the ubiquitous language: its terms are the type names.**
 - `docs/WAYOFWORKING.md` - how we build it: roles, change lifecycle, definition of done, testing strategy, conventions. Changing it requires owner approval.
+- `docs/development-setup.md` - the local toolchain (JDK 17, Android SDK, emulators): versions, how to verify or reinstall it, how to remove it.
 
 ## Non-negotiables
 - Every piece of work is an OpenSpec change: 1 change = 1 branch `change/<name>` = 1 PR = 1 squash commit on `main`, about 400 lines of production code at most.
@@ -15,7 +16,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 - All artifacts in English. No personal references; always "the user".
 
 ## Project state
-Phase 0 (foundation) has not started: no Gradle project, no JDK or Android SDK on the machine yet, no CI. Planned stack in `README.md`.
+Phase 0 (foundation) is in progress: the local toolchain (JDK 17, Android SDK, AVDs `cn-api37` and `cn-api26`) is installed; there is no Gradle project and no CI yet. Planned stack in `README.md`.
 
 ## GitHub
 Milestones per phase; issues per change (labels `change`, `spike`, `adr`, `parallelizable`, `blocked`, `needs-human`); public board at https://github.com/users/jdgomez/projects/1. PRs close their issue with `Closes #N`.

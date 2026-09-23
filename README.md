@@ -12,6 +12,7 @@ This project is built with agent engineering: the owner does not write the code.
 
 - [`docs/SESSION0.md`](docs/SESSION0.md) - what is being built: problem, users, scope, glossary and phases.
 - [`docs/WAYOFWORKING.md`](docs/WAYOFWORKING.md) - how it is built: roles, lifecycle of a change, definition of done, testing strategy and conventions.
+- [`docs/development-setup.md`](docs/development-setup.md) - the local toolchain: JDK, Android SDK and emulators, with exact versions and how to install, verify and remove them.
 - `openspec/` - specs and changes; the source of truth for behavior.
 - GitHub issues, milestones and the project board track every change from proposal to merge.
 

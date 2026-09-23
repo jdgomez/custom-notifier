@@ -184,7 +184,7 @@ At the end of each phase, a brief retrospective reviews what worked in the proce
 - Agent pipeline: Brain / Planner / Executor / Reviewer, each in its own Herdr pane; one flow to start.
 - no-mistakes is already initialized in this repository.
 - The repository is public on GitHub, so GitHub Actions minutes (including Linux runners with emulator support) are free.
-- Development machine: no JDK or Android SDK preinstalled; KVM available for hardware-accelerated emulation; 16 cores, 31 GB RAM.
+- Development machine: JDK 17 and Android SDK installed in Phase 0 (see `docs/development-setup.md`); KVM available for hardware-accelerated emulation; 16 cores, 31 GB RAM.
 - Signing: Play App Signing. Google holds the app signing key; the owner holds the upload key, stored only as a GitHub Actions secret. Agents never see keys.
 - No personal references in any project artifact.
 - All project artifacts in English.
