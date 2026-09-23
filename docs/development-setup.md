@@ -151,10 +151,18 @@ All commands succeed. The installed list contains `platform-tools`, `emulator`, 
 ### Licenses accepted
 
 ```bash
-bash -lc 'sdkmanager --licenses </dev/null'
+bash -lc 'set -o pipefail; sdkmanager --licenses </dev/null 2>&1 | tr "\r" "\n" | grep -Fx "All SDK package licenses accepted."'
 ```
 
-Reports that all SDK package licenses are accepted, with no prompt. This only reads state; stdin is closed so a missing license fails instead of waiting for an answer.
+Prints `All SDK package licenses accepted.` and exits 0 when every license is accepted. Exits non-zero otherwise.
+
+`sdkmanager` alone is not a check: it exits 0 even when licenses are pending, and then prints `N of M SDK package licenses not accepted.` instead. The `grep` on the exact success line is what makes the command fail. `tr` splits the progress bar, which uses carriage returns, from that line, and `pipefail` also fails the command if `sdkmanager` itself fails. Closed stdin (`</dev/null`) only stops `sdkmanager` from waiting for an answer to its review prompt; it never accepts anything.
+
+To see the check fail without touching the real SDK, point it at an empty SDK root (all licenses count as pending there):
+
+```bash
+bash -lc 'set -o pipefail; d=$(mktemp -d); sdkmanager --sdk_root="$d" --licenses </dev/null 2>&1 | tr "\r" "\n" | grep -Fx "All SDK package licenses accepted."; echo "exit=$?"; rm -rf "$d"'
+```
 
 ### Acceleration check
 
