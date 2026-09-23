@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  custom-notifier: native Android app that alerts the user before a household
+  consumable runs out. Single user, no backend, local SQLite storage only.
+  What is built: docs/SESSION0.md (its glossary is the ubiquitous language -
+  glossary terms are the type names). How it is built: docs/WAYOFWORKING.md.
+  Stack: Kotlin, Jetpack Compose, Gradle with version catalog, minimum API 26.
+  Pure Kotlin domain module with no Android dependencies (ports and adapters).
+  Built with agent engineering: Brain proposes changes, a Planner/Executor/
+  Reviewer flow implements them, the no-mistakes gate validates them, and the
+  owner approves proposals and merges pull requests.
+  1 change = 1 branch change/<name> = 1 PR = 1 squash commit on main,
+  about 400 lines of production code at most (tests excluded).
+  Conventional Commits everywhere. All artifacts in English.
+  No personal references in any artifact; always say "the user" or "the owner".
+  Owner-only: new dependencies, UX approval, secrets, signing keys, store,
+  payments and legal steps. Agents never see keys.
+
+rules:
+  proposal:
+    - Declare "Depends on:" and "Touches:" (areas of the repo or machine) so parallelizability can be judged.
+    - List every new dependency (library, plugin, tool, GitHub Action) explicitly; approving the proposal is the owner's approval of those dependencies.
+    - Include a Non-goals section.
+  specs:
+    - Write scenarios as Given / When / Then so the owner can validate behavior without reading code.
+  tasks:
+    - Mark owner-only steps explicitly with "(owner)" so agents stop and escalate instead of improvising.
+    - Keep each change within about 400 lines of production code, excluding tests.
