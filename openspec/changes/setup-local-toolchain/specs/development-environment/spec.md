@@ -18,7 +18,7 @@ The development machine SHALL provide an Android SDK in the user's home director
 #### Scenario: SDK tools reachable
 - **GIVEN** a new login shell on the development machine
 - **WHEN** the user runs `sdkmanager --list_installed`, `adb version` and `emulator -version`
-- **THEN** each command succeeds, and the installed list contains platform-tools, build-tools, one Android platform, the emulator and one x86_64 system image
+- **THEN** each command succeeds, and the installed list contains platform-tools, build-tools, one Android platform, the emulator, and x86_64 system images for the latest stable API level and API 26
 
 #### Scenario: Licenses accepted
 - **GIVEN** the SDK is installed
@@ -26,7 +26,7 @@ The development machine SHALL provide an Android SDK in the user's home director
 - **THEN** it does not stop on an unaccepted license prompt
 
 ### Requirement: Hardware-accelerated emulator
-The development machine SHALL provide at least one Android Virtual Device that boots with KVM hardware acceleration and can run headless.
+The development machine SHALL provide Android Virtual Devices at the latest stable API level and at the minimum supported API level (26), each booting with KVM hardware acceleration and able to run headless.
 
 #### Scenario: Acceleration check
 - **GIVEN** the emulator is installed
@@ -34,7 +34,7 @@ The development machine SHALL provide at least one Android Virtual Device that b
 - **THEN** it reports that KVM is installed and usable
 
 #### Scenario: Headless boot
-- **GIVEN** the documented AVD exists
+- **GIVEN** a documented AVD exists
 - **WHEN** the user starts it headless (no window) and waits for boot
 - **THEN** `adb shell getprop sys.boot_completed` returns `1` within 3 minutes
 

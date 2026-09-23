@@ -23,7 +23,7 @@
 
 - [ ] 4.1 `./gradlew assembleDebug` succeeds from a clean checkout
 - [ ] 4.2 Install on the local emulator and confirm the placeholder screen shows; take a screenshot for the PR
-- [ ] 4.3 Install on an API 26 emulator image (temporary; installing it is an owner-approved download) or record why this is deferred to the E2E setup in `add-test-infrastructure`
+- [ ] 4.3 Install and launch on the `cn-api26` AVD from `setup-local-toolchain`; confirm the placeholder screen shows without crashing and take a screenshot for the PR (mandatory: the change is not done without it)
 
 ## 5. Docs and gate
 

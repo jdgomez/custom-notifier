@@ -26,6 +26,7 @@ Use `kotlin { jvmToolchain(17) }` in both modules, matching the installed JDK an
 
 ### SDK levels
 `minSdk = 26` (from `SESSION0.md`). `compileSdk` and `targetSdk` are set to the platform installed by `setup-local-toolchain` (the latest stable API level).
+This change verifies the minimum version itself: the debug APK is installed and launched on both the `cn-api<N>` and the `cn-api26` AVDs from `setup-local-toolchain`. The API 26 run is not deferred to a later change, because CI runs a single API level (see `add-ci-workflows`).
 
 ### Warnings as errors
 Set `allWarningsAsErrors = true` in the Kotlin compiler options of both modules. Android Lint's own warnings are handled in `add-lint-setup`.

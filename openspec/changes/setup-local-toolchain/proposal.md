@@ -8,8 +8,8 @@ The development machine has no JDK, no Android SDK and no emulator, so no agent 
 ## What Changes
 
 - Install JDK 17 on the development machine through the distribution package manager.
-- Install the Android SDK in the user's home directory from the official command-line tools: platform-tools, emulator, one Android platform, build tools and one x86_64 emulator system image.
-- Create one Android Virtual Device (AVD) using hardware acceleration (KVM).
+- Install the Android SDK in the user's home directory from the official command-line tools: platform-tools, emulator, one Android platform, build tools and two x86_64 emulator system images (the latest stable API level and the minimum supported API 26).
+- Create two Android Virtual Devices (AVDs) using hardware acceleration (KVM): one at the latest stable API level and one at API 26.
 - Add a `docs/development-setup.md` guide describing the exact versions installed, how to reproduce the setup, how to verify it, and how to uninstall it (for the final environment cleanup phase).
 
 ## Capabilities
@@ -30,10 +30,10 @@ The development machine has no JDK, no Android SDK and no emulator, so no agent 
 ## New dependencies (owner approval)
 
 - OpenJDK 17 (`openjdk-17-jdk-headless`, distribution package).
-- Android SDK command-line tools, platform-tools, emulator, build-tools, one platform and one `google_apis` x86_64 system image (official Google downloads, SDK license acceptance required).
+- Android SDK command-line tools, platform-tools, emulator, build-tools, one platform and two `google_apis` x86_64 system images (official Google downloads, SDK license acceptance required).
 
 ## Impact
 
-- Machine: about 10 GB of disk in the user's home directory (SDK + system image + AVD); 108 GB free at the time of writing.
+- Machine: about 13 GB of disk in the user's home directory (SDK + two system images + two AVDs); 108 GB free at the time of writing.
 - Some steps need `sudo` (package install, and possibly `kvm` group membership), so they are owner steps.
 - Repository: one new documentation file only.

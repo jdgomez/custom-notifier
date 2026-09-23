@@ -17,6 +17,8 @@ The significant technical decisions made in `SESSION0.md` and `WAYOFWORKING.md` 
   - deterministic alert scheduling with the OS, no background polling
   - calendar through the Android Calendar Provider (no OAuth)
   - English as the development language, Spanish as a translation
+  - minimal resource footprint (APK size, RAM and battery), measured rather than assumed
+  - distribution for testing through the Google Play internal testing track
   - development practices: SDD with OpenSpec, BDD as vocabulary only, tactical DDD with glossary terms as type names, ports and adapters with a pure Kotlin domain
   - agent engineering workflow: Brain/Planner/Executor/Reviewer flows, the no-mistakes gate, owner-only checkpoints
   - Play App Signing with the upload key only as a GitHub Actions secret

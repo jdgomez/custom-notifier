@@ -21,5 +21,5 @@
 
 ## 5. Proof after the owner applies protection
 
-- [ ] 5.1 Confirm a direct push to `main` is rejected (dry attempt from a scratch commit that is never meant to land)
-- [ ] 5.2 Confirm the settings via `gh api` (ruleset active, squash only, delete branch on merge) and record the output in the change's handoff note
+- [ ] 5.1 Confirm via `gh api repos/{owner}/{repo}/rules/branches/main` that the `main-protection` ruleset applies with enforcement `active` (not `evaluate` or `disabled`) and every expected rule (`pull_request`, `required_status_checks` with `verify` and `e2e`, `non_fast_forward`, `deletion`, `required_linear_history`); confirm the merge settings via `gh api repos/{owner}/{repo}` (squash only, delete branch on merge); record the output in the change's handoff note. If anything is missing or not active, stop and escalate to the owner: do not run 5.2
+- [ ] 5.2 Only after 5.1 passes: confirm a direct push to `main` is rejected (attempt from a scratch commit that is never meant to land)

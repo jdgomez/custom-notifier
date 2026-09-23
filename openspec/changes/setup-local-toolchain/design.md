@@ -25,6 +25,7 @@ Download the official `commandlinetools-linux-*.zip`, verify its SHA-256 against
 - `platform-tools`, `emulator`
 - `platforms;android-<N>` and `build-tools;<N>.x.y`, where N is the latest stable API level at install time
 - `system-images;android-<N>;google_apis;x86_64`
+- `system-images;android-26;google_apis;x86_64`, so the minimum supported version (`SESSION0.md`) can be verified locally. Only the system image is needed: apps compile against platform N.
 
 `~/Android/Sdk` is the standard location, and most tools find it without extra configuration. No `sudo` is needed, and removal is `rm -rf`.
 - Alternative: install Android Studio just to get the SDK. Rejected: it is a heavy IDE that agents do not use.
@@ -36,7 +37,7 @@ Calendar and notification E2E tests need the on-device Calendar Provider, which 
 Set `ANDROID_HOME` and add `cmdline-tools/latest/bin`, `platform-tools` and `emulator` to the `PATH` in `~/.profile`, so login shells and Herdr panes all see them. `JAVA_HOME` is only set if Gradle cannot resolve Java from the `PATH`.
 
 ### AVD definition
-Create one AVD named `cn-api<N>` on a common phone profile (for example `pixel_6`) from the installed system image. Record the exact `avdmanager` command in the guide.
+Create two AVDs on a common phone profile (for example `pixel_6`), one per installed system image: `cn-api<N>` (the default for development and E2E) and `cn-api26` (the minimum supported version). Record the exact `avdmanager` commands in the guide.
 
 ### KVM access through the `kvm` group
 The current access comes from a login-session ACL. That ACL may not apply to processes outside the graphical seat session, and it goes away when the user logs out. Adding the user to the `kvm` group gives permanent access (owner step, `sudo usermod -aG kvm $USER`, then log in again).
@@ -45,7 +46,7 @@ The current access comes from a login-session ACL. That ACL may not apply to pro
 
 - [SDK license prompts block unattended agents] → Accept all licenses once during setup with `yes | sdkmanager --licenses`, as an owner-supervised step.
 - [The latest API level has a known emulator issue] → Fall back to the previous stable API level and record the reason in the guide.
-- [Disk use grows with more system images] → Install only one image now. Add more only when a change needs them.
+- [Disk use grows with more system images] → Install only the two images above now. Add more only when a change needs them.
 - [The emulator competes with running agents for CPU/RAM (a known concern on this machine)] → Use headless boot with a bounded AVD RAM (2 GB) and shut the emulator down after verification.
 
 ## Migration Plan

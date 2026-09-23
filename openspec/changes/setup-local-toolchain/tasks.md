@@ -8,15 +8,15 @@
 - [ ] 2.1 Download the official command-line tools zip, verify its SHA-256 against the published value, and unpack it to `~/Android/Sdk/cmdline-tools/latest`
 - [ ] 2.2 Add `ANDROID_HOME` and the SDK tool directories to `~/.profile`; verify in a new login shell
 - [ ] 2.3 (owner) Accept the SDK licenses (`yes | sdkmanager --licenses`) after reviewing them
-- [ ] 2.4 Install platform-tools, emulator, the latest stable platform, the matching build-tools and the `google_apis` x86_64 system image
+- [ ] 2.4 Install platform-tools, emulator, the latest stable platform, the matching build-tools, and the `google_apis` x86_64 system images for the latest stable API level and API 26
 - [ ] 2.5 Verify `sdkmanager --list_installed`, `adb version` and `emulator -version`
 
 ## 3. Emulator
 
 - [ ] 3.1 (owner) Add the user to the `kvm` group (`sudo usermod -aG kvm $USER`) and log in again
 - [ ] 3.2 Verify `emulator -accel-check` reports KVM usable
-- [ ] 3.3 Create the AVD `cn-api<N>` with 2 GB RAM
-- [ ] 3.4 Boot it headless, confirm `sys.boot_completed` is `1` within 3 minutes, then shut it down
+- [ ] 3.3 Create the AVDs `cn-api<N>` and `cn-api26`, each with 2 GB RAM
+- [ ] 3.4 Boot each AVD headless, confirm `sys.boot_completed` is `1` within 3 minutes, then shut it down
 
 ## 4. Documentation
 

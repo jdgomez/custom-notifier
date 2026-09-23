@@ -30,7 +30,7 @@ The jobs run in parallel, so total time is the slower job, not the sum of both. 
 Steps: checkout → setup-java (Temurin 17) → setup-gradle (with wrapper validation) → `./gradlew assembleDebug lintAll test`. Always upload `**/build/reports/`, `**/build/test-results/` and `**/build/outputs/roborazzi/`.
 
 ### `e2e` job
-Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local AVD, with `script: ./scripts/e2e.sh`. Always upload `build/e2e/`. Enable the AVD snapshot cache to reduce boot time.
+Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local `cn-api<N>` AVD, with `script: ./scripts/e2e.sh`. Always upload `build/e2e/`. Enable the AVD snapshot cache to reduce boot time.
 
 ### Triggers and concurrency
 `on: pull_request` (branches `main`) and `push` (branches `main`). `concurrency: group: ci-${{ github.ref }}`, with `cancel-in-progress: true` only for pull requests.
