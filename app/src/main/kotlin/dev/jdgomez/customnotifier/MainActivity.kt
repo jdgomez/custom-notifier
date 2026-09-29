@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Transparent scrims: the library default paints a translucent white
         // navigation bar below API 29, which clashes with the app surface.
+        // Light styles (dark icons) even in system dark mode: the surface is always light.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
