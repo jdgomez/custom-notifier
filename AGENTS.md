@@ -15,8 +15,12 @@ Android app that alerts the user before a household consumable runs out. Built w
 - Owner-only: new dependencies, UX approval, secrets, signing keys, store and legal steps.
 - All artifacts in English. No personal references; always "the user".
 
+## Build and run
+- Build: `./gradlew assembleDebug` (APK at `app/build/outputs/apk/debug/app-debug.apk`). Modules: `:domain` (pure Kotlin/JVM, no Android) and `:app` (Compose). Versions live only in `gradle/libs.versions.toml`. Kotlin warnings fail the build.
+- Install and launch on a running emulator: `adb install -r app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n dev.jdgomez.customnotifier/.MainActivity`. Boot AVDs per `docs/development-setup.md`; run one at a time and shut it down when done.
+
 ## Project state
-Phase 0 (foundation) is in progress: the local toolchain (JDK 17, Android SDK, AVDs `cn-api37` and `cn-api26`) is installed; there is no Gradle project and no CI yet. Planned stack in `README.md`.
+Phase 0 (foundation) is in progress: the local toolchain is installed and the Gradle project exists (`add-android-project-skeleton`: placeholder screen, verified on `cn-api37` and `cn-api26`). There is no CI, lint or test setup yet. Planned stack in `README.md`.
 
 ## GitHub
 Milestones per phase; issues per change (labels `change`, `spike`, `adr`, `parallelizable`, `blocked`, `needs-human`); public board at https://github.com/users/jdgomez/projects/1. PRs close their issue with `Closes #N`.
