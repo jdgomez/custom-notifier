@@ -5,8 +5,12 @@
       "Bash(gh pr list *)",
       "Bash(gh pr edit *)",
       "Bash(no-mistakes axi *)",
-      "Bash(./gradlew *)"
+      "Bash(./gradlew *)",
+      "Edit(//tmp/**)",
+      "Read(~/.cache/agent-flow/**)"
     ],
-    "additionalDirectories": ["/tmp"]
+    "additionalDirectories": [
+      "/tmp"
+    ]
   }
 }
