@@ -7,9 +7,9 @@ context: |
   glossary terms are the type names). How it is built: docs/WAYOFWORKING.md.
   Stack: Kotlin, Jetpack Compose, Gradle with version catalog, minimum API 26.
   Pure Kotlin domain module with no Android dependencies (ports and adapters).
-  Built with agent engineering: Brain proposes changes, a Planner/Executor/
-  Reviewer flow implements them, the no-mistakes gate validates them, and the
-  owner approves proposals and merges pull requests.
+  Built with agent engineering: Brain plans each change with the owner, an
+  Executor/Reviewer flow implements and validates it (the no-mistakes gate),
+  and the owner approves proposals and merges pull requests.
   1 change = 1 branch change/<name> = 1 PR = 1 squash commit on main,
   about 400 lines of production code at most (tests excluded).
   Conventional Commits everywhere. All artifacts in English.

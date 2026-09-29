@@ -16,7 +16,7 @@
 - [ ] 2.9 Resource footprint: minimal APK size, RAM and battery, measured rather than assumed
 - [ ] 2.10 Distribution for testing through the Google Play internal testing track
 - [ ] 2.11 Development practices: SDD, BDD vocabulary, tactical DDD, ports and adapters
-- [ ] 2.12 Agent engineering workflow and the no-mistakes gate
+- [ ] 2.12 Agent engineering workflow and the no-mistakes gate (dated 2026-09-29; describes the Brain / Executor / Reviewer pipeline; its Context states that the original design included a Planner and why it was retired, quoting `WAYOFWORKING.md`)
 - [ ] 2.13 Play App Signing; upload key only as a GitHub Actions secret
 - [ ] 2.14 Cross-check: every decision in the source sections has an ADR, and the index lists all of them
 
