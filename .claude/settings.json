@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr edit *)",
+      "Bash(no-mistakes axi *)",
+      "Bash(./gradlew *)"
+    ],
+    "additionalDirectories": ["/tmp"]
+  }
+}
