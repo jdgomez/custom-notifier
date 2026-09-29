@@ -21,4 +21,4 @@
 - [x] 4.1 Search the repository for "planner" (case-insensitive), excluding `.git/`, `openspec/changes/archive/` and this change's folder; the only hits are the history note in `WAYOFWORKING.md` and the ADR plan in `add-agent-docs-and-adrs`
 - [x] 4.2 Run `openspec validate update-agent-pipeline-docs` and `openspec validate add-agent-docs-and-adrs`
 - [x] 4.3 Commit on `change/update-agent-pipeline-docs` with Conventional Commits (`docs:`)
-- [ ] 4.4 Run the no-mistakes gate with `--skip ci` (`add-ci-workflows` is not merged yet); the PR body is in English and contains `Closes #N`
+- [x] 4.4 Run the no-mistakes gate with `--skip ci` (`add-ci-workflows` is not merged yet); the PR body is in English and contains `Closes #N` (done in PR #12)
