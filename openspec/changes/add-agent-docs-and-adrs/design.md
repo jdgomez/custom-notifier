@@ -15,6 +15,9 @@
 ### Plain Nygard ADRs with a date line
 Each file uses the title `# NNNN. Title`, then `Date:` and `Status:` lines, then Context / Decision / Consequences. Retroactive ADRs use the date of the source decision (2026-09-22) and add one sentence stating that they are retroactive, with links to the source section.
 
+### The workflow ADR describes the current pipeline
+The agent engineering workflow ADR is dated 2026-09-29, not 2026-09-22, because it records the current Brain / Executor / Reviewer pipeline. Its Context states that the original design included a Planner and why it was retired, quoting the history note in `WAYOFWORKING.md` (Constraints and technical decisions). It is not split into a retroactive ADR plus a superseding one.
+
 ### One decision per ADR
 Bundling unrelated decisions would make superseding one of them awkward. The one exception is the development practices ADR: `WAYOFWORKING.md` asks for these to be recorded as a single ADR, because they form one coherent approach. If one practice changes later, a new ADR supersedes the bundle and restates the practices that remain.
 

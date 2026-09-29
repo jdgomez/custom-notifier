@@ -1,5 +1,5 @@
 # WAYOFWORKING - custom-notifier
-_Date: 2026-09-22_
+_Date: 2026-09-29_
 
 This is a living document. It defines **how** custom-notifier is built, while `SESSION0.md` defines **what** is built. It is the reference for orchestrating and prioritizing work. Changes follow the process in [Evolving this document](#evolving-this-document).
 
@@ -14,10 +14,9 @@ The app is built with agent engineering: the owner does not write the code. The 
 | Actor | Role |
 |------|------|
 | Owner | The human. Approves proposals, UX, new dependencies and merges. Handles anything involving credentials, signing keys, payments and legal steps. |
-| Brain | Orchestrator. Defines changes with OpenSpec, manages the GitHub project, launches and tracks flows, escalates to the owner. Does not plan, implement or review code. |
-| Planner | Breaks an approved change into steps and drives its paired executor and reviewer. |
+| Brain | Orchestrator. Plans each change with the owner and writes the plan into the OpenSpec artifacts, manages the GitHub project, creates and tracks flows, escalates to the owner. The only agent that dispatches work. Does not implement or review code. |
 | Executor | Implements the change on its branch and commits. |
-| Reviewer | Validates the committed change through the no-mistakes gate, which ends with a pull request and green CI. Runs in its own pane, separate from the executor. |
+| Reviewer | Validates the committed change through the no-mistakes gate, which ends with a pull request and green CI. Runs in its own pane, separate from the executor. Started on demand when the executor first reports its work done, and kept alive through the review rounds of the same change. |
 
 ## Vision
 The owner starts a work session, tells Brain whether parallel work is allowed, approves the next change proposal, and then reviews a ready pull request with tests, green CI, screenshots and video, and merges it. Every step is traceable on GitHub from issue to spec to PR to merge. Nothing reaches `main` without passing the gate and the owner's review.
@@ -26,7 +25,7 @@ The owner starts a work session, tells Brain whether parallel work is allowed, a
 
 ### In
 - OpenSpec as the source of truth for behavior; every piece of work is a change.
-- Flows (planner, executor, reviewer) launched and tracked by Brain through Herdr.
+- Flows (executor and reviewer, one per change) created and tracked by Brain through Herdr.
 - no-mistakes as the mandatory gate for every change.
 - GitHub Actions CI running on every pull request.
 - GitHub as the public project manager: milestones, issues, labels, project board.
@@ -48,7 +47,7 @@ The owner starts a work session, tells Brain whether parallel work is allowed, a
 ## Glossary
 | Term | Agreed definition |
 |------|-------------------|
-| Flow | A workspace with a paired planner, executor and reviewer working on one change. |
+| Flow | A workspace backed by its own git worktree and branch, with an executor and a reviewer, working on exactly one change. |
 | Gate | The no-mistakes validation (review, tests, lint, docs, push, PR, CI) every change must pass before reaching `main`. |
 | Change | Unit of work defined in OpenSpec (proposal, specs, design, tasks). 1 change = 1 branch = 1 PR = 1 squash commit on `main`. |
 | Spike | A short exploratory change that answers a technical question. Its output is documented knowledge (and usually an ADR), not production code. |
@@ -61,12 +60,12 @@ The owner starts a work session, tells Brain whether parallel work is allowed, a
 ## Work unit and lifecycle
 1. **Propose.** Brain writes an OpenSpec change (`openspec-propose`), declaring `depends on:` and `touches:`, and creates the matching GitHub issue in the phase milestone.
 2. **Approve (human checkpoint).** The owner reviews and approves the proposal. The issue moves to Ready.
-3. **Delegate.** Brain hands the change to a flow. The issue moves to In progress.
+3. **Delegate.** Brain creates a flow for the change and hands it over. The issue moves to In progress.
 4. **Implement.** The executor works on branch `change/<change-name>`, committing with Conventional Commits.
 5. **Gate.** The reviewer runs no-mistakes. It ends with a pull request (title in Conventional Commits format, body with `Closes #N`) and green CI. The issue moves to In review.
 6. **Review and merge (human checkpoint).** The owner reviews, including UX from screenshots and video, and squash-merges. GitHub closes the issue and moves it to Done.
 7. **Archive.** The OpenSpec change is archived and the main specs are updated.
-8. **Reset.** Brain clears the flow's conversation history so it is clean for the next change.
+8. **Close.** Once the pull request is merged or the change is abandoned, Brain closes the flow: its worktree, workspace and status files are removed. Flows are never reused.
 
 While a pull request waits for the owner, a sequential flow waits too (no stacking). When parallel work is enabled, other flows may continue with independent changes only.
 
@@ -120,7 +119,7 @@ Agents never improvise answers to these situations.
 
 ## Pause protocol
 Work sessions use the owner's normal account limits. When usage reaches **85% of the account token limit** (currently detected by the owner watching the screen, who tells Brain "pause"):
-1. Brain notifies the planner, executor and reviewer of every active flow.
+1. Brain notifies the executor and reviewer of every active flow.
 2. Each agent finishes its current step at a consistent point.
 3. They update the task checkboxes in the change's `tasks.md` and write a handoff note in the change folder.
 4. They commit on the change branch.
@@ -181,7 +180,8 @@ Once a stable version is released (not just the MVP): uninstall the local toolch
 At the end of each phase, a brief retrospective reviews what worked in the process and proposes updates to this document.
 
 ## Constraints and technical decisions
-- Agent pipeline: Brain / Planner / Executor / Reviewer, each in its own Herdr pane; one flow to start.
+- Agent pipeline: Brain / Executor / Reviewer. Each change gets its own flow, backed by its own git worktree, with the executor and reviewer in separate Herdr panes. Whether flows may run in parallel is still decided by the owner per work session.
+- History: a Planner agent existed in the original design, until 2026-09-29. It did not work as needed: planning decisions (scope, task breakdown, acceptance criteria) belong in the conversation between Brain and the owner and must be written into the OpenSpec artifacts before implementation, so the workers can act on them without anyone relaying context. A separate Planner between Brain and the workers added a relay hop and a second place where the plan could drift, without adding anything Brain and the owner do not already do. It was retired; see the agent engineering workflow ADR.
 - no-mistakes is already initialized in this repository.
 - The repository is public on GitHub, so GitHub Actions minutes (including Linux runners with emulator support) are free.
 - Development machine: JDK 17 and Android SDK installed in Phase 0 (see `docs/development-setup.md`); KVM available for hardware-accelerated emulation; 16 cores, 31 GB RAM.
