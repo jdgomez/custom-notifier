@@ -25,5 +25,5 @@
 
 ## 5. Gate
 
-- [ ] 5.1 Commit on `change/setup-local-toolchain` with Conventional Commits
-- [ ] 5.2 Run the no-mistakes gate with `--skip ci`: no CI workflow exists on `main` until `add-ci-workflows` is merged, and without the skip the CI step waits forever
+- [x] 5.1 Commit on `change/setup-local-toolchain` with Conventional Commits (done in PR #10)
+- [x] 5.2 Run the no-mistakes gate with `--skip ci`: no CI workflow exists on `main` until `add-ci-workflows` is merged, and without the skip the CI step waits forever (done in PR #10)
