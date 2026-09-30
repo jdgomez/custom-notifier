@@ -29,4 +29,4 @@
 
 - [x] 5.1 Add build and install commands to `AGENTS.md`; update the "Project state" section
 - [x] 5.2 Commit on `change/add-android-project-skeleton` with Conventional Commits
-- [ ] 5.3 Run the no-mistakes gate with `--skip ci` (no CI on `main` yet)
+- [x] 5.3 Run the no-mistakes gate with `--skip ci` (no CI on `main` yet)
