@@ -13,6 +13,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 - Nothing reaches `main` without the no-mistakes gate and green CI. The owner merges; agents never do.
 - Stop and escalate (do not improvise) when blocked, when the gate fails 3 times on the same change, or when a decision is not covered by the specs.
 - Owner-only: new dependencies, UX approval, secrets, signing keys, store and legal steps.
+- Shared agent permissions live in `.claude/settings.json` (changes need owner approval); personal ones go in the gitignored `.claude/settings.local.json`.
 - All artifacts in English. No personal references; always "the user".
 
 ## Build and run
