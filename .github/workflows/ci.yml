@@ -71,6 +71,8 @@ jobs:
           arch: x86_64
           profile: pixel_6
           ram-size: 2048M
+          # Same data partition as the local AVDs; the default is too small to install the APKs.
+          disk-size: 10G
           emulator-boot-timeout: 600
           script: ./scripts/e2e.sh
       - name: Upload E2E video and reports
