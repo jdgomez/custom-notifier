@@ -62,6 +62,7 @@ Instrumented E2E tests SHALL run through one documented entry point against a ru
 - **GIVEN** a booted emulator and a run in which no instrumented test is executed, for any reason
 - **WHEN** the E2E entry point finishes
 - **THEN** it exits with a non-zero status and a message saying no tests were executed, and the video and whatever reports exist are still written
+
 ### Requirement: Tests are isolated
 Each instrumented test SHALL start from a clean app state, so the outcome of one test does not depend on the tests that ran before it.
 

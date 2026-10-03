@@ -17,6 +17,7 @@ The development machine SHALL provide JDK 21 as the default `java` and `javac` o
 - **GIVEN** the owner has completed the documented JDK 17 removal step
 - **WHEN** the user lists the installed Java alternatives
 - **THEN** only the JDK 21 installation is listed
+
 ### Requirement: Android SDK available
 The development machine SHALL provide an Android SDK in the user's home directory, exposed through the `ANDROID_HOME` environment variable, with `sdkmanager`, `adb` and `emulator` reachable on the `PATH`.
 
