@@ -44,6 +44,15 @@ android {
     }
 }
 
+// Screenshot tests read the committed references at run time; declaring them as an input
+// makes a changed reference re-run verification instead of reusing an up-to-date or cached pass.
+tasks.withType<Test>().configureEach {
+    inputs
+        .dir("src/test/screenshots")
+        .withPropertyName("screenshotReferences")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 dependencies {
     implementation(project(":domain"))
 

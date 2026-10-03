@@ -3,6 +3,7 @@ package dev.jdgomez.customnotifier
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.dropbox.differ.SimpleImageComparator
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -22,7 +23,13 @@ class PlaceholderScreenScreenshotTest {
             filePath = "src/test/screenshots/placeholder_screen.png",
             roborazziOptions =
                 RoborazziOptions(
-                    compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
+                    // The default comparator tolerates small per-pixel color distances; maxDistance = 0
+                    // makes any color change on any pixel a failure.
+                    compareOptions =
+                        RoborazziOptions.CompareOptions(
+                            changeThreshold = 0f,
+                            imageComparator = SimpleImageComparator(maxDistance = 0f),
+                        ),
                 ),
         )
     }
