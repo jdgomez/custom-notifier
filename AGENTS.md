@@ -24,7 +24,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 ## Tests
 - JVM (unit, Robolectric Compose UI, Roborazzi screenshot verification; no emulator): `./gradlew test`. Reports in `app/build/reports/tests/`, screenshot diffs in `app/build/outputs/roborazzi/` (`*_compare.png`).
 - Screenshot references are committed in `app/src/test/screenshots/` and verified pixel-exact. Re-record deliberately with `./gradlew recordRoborazziDebug` and review the PNGs in the diff.
-- E2E (instrumented, Orchestrator with clean app state per test): boot one emulator, then `scripts/e2e.sh`. Writes `build/e2e/e2e-run.webm` (whole-run video) and `build/e2e/reports-*`, also on failure; exits non-zero on failure or unless exactly one emulator (and no other device) is connected. Shut the emulator down afterwards.
+- E2E (instrumented, Orchestrator with clean app state per test): boot one emulator, then `scripts/e2e.sh`. Writes `build/e2e/e2e-run.webm` (whole-run video) and `build/e2e/reports-*`, also on failure; waits for the emulator to finish booting; exits non-zero on failure, when no instrumented test was executed, or unless exactly one emulator (and no other device) is connected. Shut the emulator down afterwards.
 
 ## Development practices and ADRs
 - SDD with OpenSpec: behavior is specified before code ([0012](docs/adr/0012-development-practices.md)). Spec scenarios use Given / When / Then; no Gherkin tooling.
