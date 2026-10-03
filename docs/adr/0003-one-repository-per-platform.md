@@ -5,7 +5,7 @@ Status: Accepted
 
 ## Context
 
-Native apps per platform ([0002](0002-native-apps-per-platform.md)) release independently. This ADR is retroactive: it records a decision taken in [SESSION0.md](../SESSION0.md#constraints-and-technical-decisions) (2026-09-22) and does not revisit it.
+The product has a native app per platform ([0002](0002-native-apps-per-platform.md)). This ADR is retroactive: it records a decision taken in [SESSION0.md](../SESSION0.md#constraints-and-technical-decisions) (2026-09-22) and does not revisit it.
 
 ## Decision
 
@@ -13,5 +13,5 @@ Two repositories, one per platform. This repository is the Android app. The iOS 
 
 ## Consequences
 
-- Each platform has its own history, CI and releases.
-- Shared knowledge (glossary, way of working) is carried by documents, not by shared code.
+- This repository contains only the Android app.
+- The iOS app (Phase 3) is built in a separate repository following this same way of working.
