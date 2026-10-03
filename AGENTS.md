@@ -21,6 +21,13 @@ Android app that alerts the user before a household consumable runs out. Built w
 - Lint: `./gradlew lintAll` runs Android Lint, ktlint and detekt (also part of `check`); `./gradlew ktlintFormat` auto-fixes formatting. Zero warnings, no baselines. Fix findings at the source; a suppression needs the narrowest scope (one declaration or line) plus a comment saying why, and a global rule deactivation lives only in `.editorconfig`, `config/detekt/detekt.yml` or `lint.xml` with a comment.
 - Install and launch on a running emulator: `adb install -r app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n dev.jdgomez.customnotifier/.MainActivity`. Boot AVDs per `docs/development-setup.md`; run one at a time and shut it down when done.
 
+## Development practices and ADRs
+- SDD with OpenSpec: behavior is specified before code ([0012](docs/adr/0012-development-practices.md)). Spec scenarios use Given / When / Then; no Gherkin tooling.
+- Tactical DDD: glossary terms in `docs/SESSION0.md` are the type names; domain concepts are dedicated types, not bare primitives; depletion logic lives in the domain, never in a ViewModel.
+- Ports and adapters: `:domain` is pure Kotlin with no Android dependencies; persistence, notifications and calendar are adapters.
+- Tests must exercise real behavior; a bug fix needs a test that fails before the fix.
+- Decisions are recorded in `docs/adr/` (index: [`docs/adr/README.md`](docs/adr/README.md)). A significant technical decision (new architectural pattern, new module, new dependency with lasting impact, or reversal of an existing ADR) needs an ADR in the same change. Accepted ADRs are never rewritten: add a new ADR that supersedes the old one, set the old status to `Superseded by NNNN`, and update the index.
+
 ## Project state
 Phase 0 (foundation) is in progress: the local toolchain is installed and the Gradle project exists (`add-android-project-skeleton`: placeholder screen, verified on `cn-api37` and `cn-api26`). Lint is set up (`add-lint-setup`); there is no CI or test setup yet. Planned stack in `README.md`.
 
