@@ -19,4 +19,4 @@
 
 - [x] 4.1 Update `AGENTS.md` where it says when `scripts/e2e.sh` exits non-zero
 - [x] 4.2 Commit on `change/fix-e2e-false-green` with Conventional Commits; put the reproduction and before/after evidence in the PR
-- [ ] 4.3 Run the no-mistakes gate with `--skip ci` (no CI on `main` yet)
+- [x] 4.3 Run the no-mistakes gate with `--skip ci` (no CI on `main` yet)

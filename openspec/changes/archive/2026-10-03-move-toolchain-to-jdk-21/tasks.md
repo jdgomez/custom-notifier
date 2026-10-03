@@ -23,9 +23,9 @@
 ## 5. Commit and gate
 
 - [x] 5.1 Commit on `change/move-toolchain-to-jdk-21` with Conventional Commits
-- [ ] 5.2 Run the no-mistakes gate with `--skip ci`
+- [x] 5.2 Run the no-mistakes gate with `--skip ci`
 
 ## 6. After merge
 
-- [ ] 6.1 Remove JDK 17 with the documented command (owner)
-- [ ] 6.2 Re-run the Java version check and `./gradlew check` on `main` to confirm JDK 21 is the only JDK and the build passes
+- [x] 6.1 Remove JDK 17 with the documented command (owner)
+- [x] 6.2 Re-run the Java version check and `./gradlew check` on `main` to confirm JDK 21 is the only JDK and the build passes
