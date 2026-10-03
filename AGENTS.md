@@ -29,7 +29,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 ## CI
 - `.github/workflows/ci.yml` runs on every pull request to `main` and every push to `main`, with two parallel jobs that call the local commands unchanged: `verify` (`./gradlew assembleDebug lintAll test`) and `e2e` (API 37 `google_apis` x86_64 emulator, `scripts/e2e.sh`).
 - Artifacts (14-day retention, uploaded also on failure): `verify-reports` (reports, test results, Roborazzi diffs) and `e2e-evidence` (`build/e2e/`: video and reports).
-- The job names `verify` and `e2e` are the required status check names: never rename them without updating branch protection in the same change.
+- The job names `verify` and `e2e` are the required status check names in the `main` ruleset (see Gate and `main` protection).
 - Actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the permission is `contents: read` and no secrets are used. A new action is a new dependency (owner approval).
 
 ## Gate and `main` protection
@@ -50,7 +50,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 - Decisions are recorded in `docs/adr/` (index: [`docs/adr/README.md`](docs/adr/README.md)). A significant technical decision (new architectural pattern, new module, new dependency with lasting impact, or reversal of an existing ADR) needs an ADR in the same change. Accepted ADRs are never rewritten: add a new ADR that supersedes the old one, set the old status to `Superseded by NNNN`, and update the index.
 
 ## Project state
-Phase 0 (foundation) is in progress: the local toolchain is installed and the Gradle project exists (`add-android-project-skeleton`: placeholder screen, verified on `cn-api37` and `cn-api26`). Lint is set up (`add-lint-setup`); test setup exists (`add-test-infrastructure`); CI is defined in `.github/workflows/ci.yml` (`add-ci-workflows`). Planned stack in `README.md`.
+Phase 0 (foundation) is in progress: the local toolchain is installed and the Gradle project exists (`add-android-project-skeleton`: placeholder screen, verified on `cn-api37` and `cn-api26`). Lint is set up (`add-lint-setup`); test setup exists (`add-test-infrastructure`); CI is defined in `.github/workflows/ci.yml` (`add-ci-workflows`); the gate config and the `main` ruleset definition exist (`add-gate-and-repo-protection`, ruleset applied by the owner after merge). Planned stack in `README.md`.
 
 ## GitHub
 Milestones per phase; issues per change (labels `change`, `spike`, `adr`, `parallelizable`, `blocked`, `needs-human`); public board at https://github.com/users/jdgomez/projects/1. PRs close their issue with `Closes #N`.
