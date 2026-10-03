@@ -28,7 +28,13 @@ The bypass list is empty.
 The ruleset JSON is committed as `.github/rulesets/main-protection.json`, so the protection itself is reviewable and reproducible.
 
 ### Applied by the owner after merge
-Repository settings take effect immediately, not on merge. Applying them from the change branch would change `main`'s rules while the pull request that defines them is still under review. The owner runs the two documented `gh api` commands (ruleset and merge settings) after merging, and the executor prepares them in `AGENTS.md`. This is also the step that removes the agents' own ability to push to `main`, so a human should perform it.
+Repository settings take effect immediately, not on merge. Applying them from the change branch would change `main`'s rules while the pull request that defines them is still under review. The owner runs the documented `gh api` commands (ruleset, merge settings, verification, removal of the old ruleset) after merging, and the executor prepares them in `AGENTS.md`. This is also the step that removes the agents' own ability to push to `main`, so a human should perform it.
+
+### Replacing the existing ruleset
+The repository already has a ruleset `block delete and force push` (id 23779501, active) whose `ref_name` include list is empty, so it protects no branch: `main` is currently unprotected. The owner deletes it (`gh api -X DELETE .../rulesets/23779501`) as the last apply step, after `main-protection` is created and verified active, so there is never a window with less protection than today.
+
+### Merge settings
+`delete_branch_on_merge` is on. It removes only the remote head branch; local branches and worktrees are untouched and the branch can be restored from the PR.
 
 ### `.no-mistakes.yaml` content
 It declares the project's lint command (`./gradlew lintAll`) and test command (`./gradlew test`). It does not declare the E2E script: an emulator in the gate's disposable worktree would duplicate CI's `e2e` job and load the machine. E2E evidence comes from CI. The exact key names are confirmed against the installed no-mistakes version (`no-mistakes --help`, its docs or source) during implementation, not guessed. `ci.no_ci` is not set, so the CI step waits on real checks.
@@ -42,7 +48,7 @@ It declares the project's lint command (`./gradlew lintAll`) and test command (`
 - Screenshots / video (user-visible changes; link to the CI `e2e` artifact)
 - Checklist mirroring the Definition of Done
 
-The no-mistakes PR step uses the template when it opens pull requests. Confirm this during the proof run.
+The no-mistakes PR step does not look for `.github/pull_request_template.md` on its own (v1.79 has only the explicit `pr.template` key). `.no-mistakes.yaml` therefore sets `pr.template: .github/pull_request_template.md`, which the gate reads from `main` and which must start with a top-level `# ` heading. Whether the generated body keeps `Closes #N` is confirmed in the proof run.
 
 ## Risks / Trade-offs
 

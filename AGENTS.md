@@ -32,6 +32,16 @@ Android app that alerts the user before a household consumable runs out. Built w
 - The job names `verify` and `e2e` are the required status check names: never rename them without updating branch protection in the same change.
 - Actions are pinned to full commit SHAs with a `# vX.Y.Z` comment; the permission is `contents: read` and no secrets are used. A new action is a new dependency (owner approval).
 
+## Gate and `main` protection
+- The gate always waits on CI: never use `--skip ci`. `.no-mistakes.yaml` (read by the gate only from `main`) declares `./gradlew lintAll` and `./gradlew test`, has no `ci.no_ci`, and points the gate's PR step at `.github/pull_request_template.md` through `pr.template`. E2E is not run by the gate; CI's `e2e` job provides it.
+- The `main` ruleset is defined in `.github/rulesets/main-protection.json`: pull request required (0 approvals, the owner's merge is the review), `verify` and `e2e` required and up to date, no force push, no deletion, linear history, empty bypass list (also for administrators, because agents act through the owner's account). Changing a job name in `ci.yml` means changing this JSON in the same pull request.
+- Applying it is an owner-only step, done after the change that defines it is merged (agents never run these write commands):
+  1. Create the ruleset: `gh api -X POST repos/jdgomez/custom-notifier/rulesets --input .github/rulesets/main-protection.json`
+  2. Merge settings: `gh api -X PATCH repos/jdgomez/custom-notifier -F allow_squash_merge=true -F allow_merge_commit=false -F allow_rebase_merge=false -F allow_auto_merge=false -F delete_branch_on_merge=true -f squash_merge_commit_title=PR_TITLE -f squash_merge_commit_message=PR_BODY`. `delete_branch_on_merge` deletes only the remote head branch after merge; local branches and worktrees are untouched and the remote branch can be restored from the PR.
+  3. Verify the new ruleset is active (`gh api repos/jdgomez/custom-notifier/rules/branches/main`, then `gh api repos/jdgomez/custom-notifier/rulesets/<id>`: `enforcement` is `active`, `bypass_actors` is empty).
+  4. Delete the old ruleset `block delete and force push` (id 23779501), which has an empty `ref_name` include list and so protects no branch: `gh api -X DELETE repos/jdgomez/custom-notifier/rulesets/23779501`
+- Emergency: the owner can temporarily set the ruleset enforcement to `disabled` in the GitHub UI (Settings, Rules), make the fix, and re-enable it right away. Emergency changes otherwise also go through a pull request. Agents never disable the ruleset.
+
 ## Development practices and ADRs
 - SDD with OpenSpec: behavior is specified before code ([0012](docs/adr/0012-development-practices.md)). Spec scenarios use Given / When / Then; no Gherkin tooling.
 - Tactical DDD: glossary terms in `docs/SESSION0.md` are the type names; domain concepts are dedicated types, not bare primitives; depletion logic lives in the domain, never in a ViewModel.
