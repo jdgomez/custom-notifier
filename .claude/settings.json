@@ -6,6 +6,9 @@
       "Bash(gh pr edit *)",
       "Bash(no-mistakes axi *)",
       "Bash(./gradlew *)",
+      "Bash(openspec validate *)",
+      "Bash(openspec show *)",
+      "Bash(openspec list *)",
       "Edit(//tmp/**)",
       "Read(~/.cache/agent-flow/**)"
     ],
