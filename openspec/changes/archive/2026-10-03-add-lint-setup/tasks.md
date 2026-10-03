@@ -24,4 +24,4 @@
 
 - [x] 5.1 Add `./gradlew lintAll` and `./gradlew ktlintFormat` plus the suppression rule to `AGENTS.md`
 - [x] 5.2 Commit on `change/add-lint-setup` with Conventional Commits
-- [ ] 5.3 Run the no-mistakes gate with `--skip ci` (no CI on `main` yet)
+- [x] 5.3 Run the no-mistakes gate with `--skip ci` (no CI on `main` yet)
