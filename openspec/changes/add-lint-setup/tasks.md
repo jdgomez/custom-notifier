@@ -12,7 +12,7 @@
 ## 3. detekt
 
 - [x] 3.1 Add the detekt Gradle plugin and the Compose rules to the catalog, compatible with the project's Kotlin version
-- [x] 3.2 Add `config/detekt/detekt.yml` (overrides only, commented), `maxIssues: 0`, warnings as errors, no baseline
+- [x] 3.2 Add `config/detekt/detekt.yml` (overrides only, commented), fail on any finding (`failOnSeverity = Warning` in 2.x), warnings as errors, no baseline
 - [x] 3.3 Run `detekt`; the result is clean
 
 ## 4. Wiring and proof
