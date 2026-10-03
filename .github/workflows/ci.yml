@@ -66,6 +66,18 @@ jobs:
       # (scripts/e2e.sh then only installs and runs).
       - name: Build debug and test APKs
         run: ./gradlew assembleDebug assembleDebugAndroidTest
+      # The runner image ships cmdline-tools 12.0, whose avdmanager writes target=android-0
+      # for android-37.0 AVDs; the emulator then crash-loops system_server
+      # (ReactiveCircus/android-emulator-runner issue #482). The action only installs its own
+      # tools when $ANDROID_HOME/cmdline-tools is missing, so update them here.
+      - name: Update Android command-line tools
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null || true
+          "$sdkmanager" --install "cmdline-tools;22.0"
+          rm -rf "$ANDROID_HOME/cmdline-tools/latest"
+          cp -r "$ANDROID_HOME/cmdline-tools/22.0" "$ANDROID_HOME/cmdline-tools/latest"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --version
       # Same API level and image as the local cn-api37 AVD (docs/development-setup.md).
       - name: Run E2E on an emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
@@ -78,6 +90,10 @@ jobs:
           # Same data partition as the local AVDs; the default is too small to install the APKs.
           disk-size: 10G
           emulator-boot-timeout: 600
+          # Fail early if avdmanager wrote a wrong target (see the cmdline-tools step above).
+          pre-emulator-launch-script: |
+            grep -H target $HOME/.android/avd/test.ini $HOME/.android/avd/test.avd/config.ini || true
+            grep -x target=android-37.0 $HOME/.android/avd/test.ini
           script: ./scripts/e2e.sh
       - name: Upload E2E video and reports
         if: ${{ !cancelled() }}
