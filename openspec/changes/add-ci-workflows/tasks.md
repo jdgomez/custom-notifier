@@ -9,7 +9,7 @@
 
 - [ ] 2.1 Open the pull request through the gate (without `--skip ci`) and confirm both checks run and pass
 - [ ] 2.2 Confirm the video artifact downloads and plays; link it in the PR description
-- [ ] 2.3 Prove failure paths on a throwaway branch (not merged): a lint finding fails `verify`, a broken E2E assertion fails `e2e` and still uploads the video; link the runs in the PR description, then delete the branch
+- [x] 2.3 Prove failure paths on a throwaway branch `scratch/ci-failure-proof` (owner-approved one-off exception to "only the gate pushes"; draft PR closed unmerged, branch kept for the owner to delete): a lint finding fails `verify` and a broken `LaunchTest` assertion fails `e2e`, and both still upload their artifacts; link the runs in the PR description
 
 ## 3. Docs and gate
 
