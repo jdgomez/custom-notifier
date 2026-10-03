@@ -30,7 +30,7 @@ The jobs run in parallel, so total time is the slower job, not the sum of both. 
 Steps: checkout → setup-java (Temurin 21) → setup-gradle (with wrapper validation) → `./gradlew assembleDebug lintAll test`. Always upload `**/build/reports/`, `**/build/test-results/` and `**/build/outputs/roborazzi/`.
 
 ### `e2e` job
-Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local `cn-api<N>` AVD, with `script: ./scripts/e2e.sh`. Always upload `build/e2e/`. Enable the AVD snapshot cache to reduce boot time.
+Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local `cn-api<N>` AVD, with `script: ./scripts/e2e.sh`. The AVD gets the same data partition size as the local AVDs (`disk-size: 10G`): the runner's default is too small and the APK install fails with "not enough space" before any test runs. The APKs are built in a separate step before the emulator boots (`./gradlew assembleDebug assembleDebugAndroidTest`), so `connectedDebugAndroidTest` inside `scripts/e2e.sh` only installs and runs. Reason: a proof run compiled for about 5 minutes with the emulator already booted on a 4-vCPU runner (2 cores to the emulator), then the install failed with "Cannot access system provider 'settings' before system providers are installed", consistent with `system_server` restarting under CPU starvation (unconfirmed, no logcat). `ram-size` stays at 2048M like the local AVD. Always upload `build/e2e/`. The emulator cold-boots on every run: no AVD snapshot cache, because that needs `actions/cache` (not an approved action) and a cold boot is deterministic, at the cost of a longer boot (about 30 s locally, longer on hosted runners).
 
 ### Triggers and concurrency
 `on: pull_request` (branches `main`) and `push` (branches `main`). `concurrency: group: ci-${{ github.ref }}`, with `cancel-in-progress: true` only for pull requests.
@@ -43,6 +43,6 @@ The local JDK is the distribution's OpenJDK 21. Temurin 21 in CI is the same maj
 
 ## Risks / Trade-offs
 
-- [Emulator boots on hosted runners are flaky or slow] → Use the snapshot cache, a boot timeout, and emulator options from the action's documentation (`-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim`). Flakiness is a defect to fix, not to retry around: a retry needs an issue explaining it.
+- [Emulator boots on hosted runners are flaky or slow] → Cold boot every run (no snapshot cache; deterministic, but slower), a boot timeout, and emulator options from the action's documentation (`-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim`). Flakiness is a defect to fix, not to retry around: a retry needs an issue explaining it.
 - [Screenshot references recorded locally differ from CI rendering] → Covered in `add-test-infrastructure`. If a difference appears, CI is the source of truth and the re-record procedure is documented.
 - [Artifact retention fills storage] → Set `retention-days: 14` on uploads. PR evidence is only needed until merge.

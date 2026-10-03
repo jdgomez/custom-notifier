@@ -33,7 +33,7 @@ class LaunchTest {
         context.startActivity(launchIntent)
         assertNotNull(device.wait(Until.findObject(By.pkg(context.packageName)), LAUNCH_TIMEOUT_MS))
 
-        composeRule.onNodeWithText(context.getString(R.string.app_name)).assertIsDisplayed()
+        composeRule.onNodeWithText("CI failure proof: this text does not exist").assertIsDisplayed()
     }
 
     private companion object {
