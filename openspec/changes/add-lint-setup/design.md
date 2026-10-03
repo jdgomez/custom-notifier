@@ -23,7 +23,7 @@ It applies to every Kotlin module and provides `ktlintCheck` / `ktlintFormat`. T
 - Alternative: running ktlint through detekt's formatting plugin. Rejected: one tool per concern, and the ktlint integration there lags behind ktlint releases.
 
 ### detekt with the Compose rule set
-Apply the plugin to every Kotlin module with `buildUponDefaultConfig = true` and a committed `config/detekt/detekt.yml` that contains only overrides. Add the Compose rules through `detektPlugins`. Set `maxIssues: 0` and `warningsAsErrors: true`. No baseline.
+Apply the plugin to every Kotlin module with `buildUponDefaultConfig = true` and a committed `config/detekt/detekt.yml` that contains only overrides. Add the Compose rules through `detektPlugins`. Set `warningsAsErrors: true` in the config and `failOnSeverity = Warning` in the Gradle extension (detekt 2.x has no `maxIssues`), so any finding fails the build. No baseline.
 - Compatibility: detekt must support the project's Kotlin version. If the stable 1.x line does not support it, use the detekt 2.x line and record the reason in the catalog comment. Downgrading Kotlin to suit detekt is not an option.
 
 ### Aggregate task

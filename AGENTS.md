@@ -18,10 +18,11 @@ Android app that alerts the user before a household consumable runs out. Built w
 
 ## Build and run
 - Build: `./gradlew assembleDebug` (APK at `app/build/outputs/apk/debug/app-debug.apk`). Modules: `:domain` (pure Kotlin/JVM, no Android) and `:app` (Compose). Versions live only in `gradle/libs.versions.toml`. Kotlin warnings fail the build.
+- Lint: `./gradlew lintAll` runs Android Lint, ktlint and detekt (also part of `check`); `./gradlew ktlintFormat` auto-fixes formatting. Zero warnings, no baselines. Fix findings at the source; a suppression needs the narrowest scope (one declaration or line) plus a comment saying why, and a global rule deactivation lives only in `.editorconfig`, `config/detekt/detekt.yml` or `lint.xml` with a comment.
 - Install and launch on a running emulator: `adb install -r app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n dev.jdgomez.customnotifier/.MainActivity`. Boot AVDs per `docs/development-setup.md`; run one at a time and shut it down when done.
 
 ## Project state
-Phase 0 (foundation) is in progress: the local toolchain is installed and the Gradle project exists (`add-android-project-skeleton`: placeholder screen, verified on `cn-api37` and `cn-api26`). There is no CI, lint or test setup yet. Planned stack in `README.md`.
+Phase 0 (foundation) is in progress: the local toolchain is installed and the Gradle project exists (`add-android-project-skeleton`: placeholder screen, verified on `cn-api37` and `cn-api26`). Lint is set up (`add-lint-setup`); there is no CI or test setup yet. Planned stack in `README.md`.
 
 ## GitHub
 Milestones per phase; issues per change (labels `change`, `spike`, `adr`, `parallelizable`, `blocked`, `needs-human`); public board at https://github.com/users/jdgomez/projects/1. PRs close their issue with `Closes #N`.

@@ -5,6 +5,11 @@ composeBom = "2026.09.00"
 coreKtx = "1.19.1"
 activityCompose = "1.13.0"
 lifecycle = "2.11.0"
+ktlintPlugin = "14.2.0"
+# detekt 1.x embeds the Kotlin 2.0.x compiler and does not support Kotlin 2.4.x; 2.x is the line design.md mandates (alpha, owner approved).
+detekt = "2.0.0-alpha.6"
+# Compose rules 0.6.x is built for detekt 2.x (0.4.x targets detekt 1.x).
+composeRules = "0.6.7"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -14,8 +19,11 @@ androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = 
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }

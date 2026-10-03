@@ -1,0 +1,57 @@
+# Overrides only; everything else comes from the detekt defaults (buildUponDefaultConfig).
+config:
+  validation: true
+  warningsAsErrors: true
+
+style:
+  # Disabled: ktlint owns formatting and import/style rules.
+  MaxLineLength:
+    active: false
+
+naming:
+  FunctionNaming:
+    # Compose convention: @Composable functions are PascalCase.
+    ignoreAnnotated: ['Composable']
+
+# Compose rule set (io.nlopez.compose.rules:detekt); inactive until enabled here.
+Compose:
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+  ComposableParamOrder:
+    active: true
+  ContentEmitterReturningValues:
+    active: true
+  ModifierMissing:
+    active: true
+  ModifierNaming:
+    active: true
+  ModifierNotUsedAtRoot:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewPublic:
+    active: true
+  RememberMissing:
+    active: true
+  RememberContentMissing:
+    active: true
+  UnstableCollections:
+    active: true
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    active: true
