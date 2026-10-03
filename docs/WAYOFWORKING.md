@@ -184,7 +184,7 @@ At the end of each phase, a brief retrospective reviews what worked in the proce
 - History: a Planner agent existed in the original design, until 2026-09-29. It did not work as needed: planning decisions (scope, task breakdown, acceptance criteria) belong in the conversation between Brain and the owner and must be written into the OpenSpec artifacts before implementation, so the workers can act on them without anyone relaying context. A separate Planner between Brain and the workers added a relay hop and a second place where the plan could drift, without adding anything Brain and the owner do not already do. It was retired; see the agent engineering workflow ADR.
 - no-mistakes is already initialized in this repository.
 - The repository is public on GitHub, so GitHub Actions minutes (including Linux runners with emulator support) are free.
-- Development machine: JDK 17 and Android SDK installed in Phase 0 (see `docs/development-setup.md`); KVM available for hardware-accelerated emulation; 16 cores, 31 GB RAM.
+- Development machine: JDK 21 and Android SDK installed in Phase 0 (see `docs/development-setup.md`); KVM available for hardware-accelerated emulation; 16 cores, 31 GB RAM.
 - Signing: Play App Signing. Google holds the app signing key; the owner holds the upload key, stored only as a GitHub Actions secret. Agents never see keys.
 - No personal references in any project artifact.
 - All project artifacts in English.
