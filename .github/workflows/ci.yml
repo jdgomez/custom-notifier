@@ -62,6 +62,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           validate-wrappers: true
+      # Compile before the emulator boots so it is not starved of CPU by Gradle
+      # (scripts/e2e.sh then only installs and runs).
+      - name: Build debug and test APKs
+        run: ./gradlew assembleDebug assembleDebugAndroidTest
       # Same API level and image as the local cn-api37 AVD (docs/development-setup.md).
       - name: Run E2E on an emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
