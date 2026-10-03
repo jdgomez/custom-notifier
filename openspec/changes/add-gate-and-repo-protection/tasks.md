@@ -1,11 +1,11 @@
 ## 1. Gate configuration
 
-- [ ] 1.1 Confirm the `.no-mistakes.yaml` schema for the installed version (commands, CI behavior) from its help, docs or source
-- [ ] 1.2 Add `.no-mistakes.yaml` with the lint and JVM test commands; do not set `ci.no_ci`
+- [x] 1.1 Confirm the `.no-mistakes.yaml` schema for the installed version (commands, CI behavior) from its help, docs or source
+- [x] 1.2 Add `.no-mistakes.yaml` with the lint and JVM test commands; do not set `ci.no_ci`
 
 ## 2. Pull request template
 
-- [ ] 2.1 Add `.github/pull_request_template.md` with the sections from design.md
+- [x] 2.1 Add `.github/pull_request_template.md` with the sections from design.md
 
 ## 3. Repository protection (prepared by the agent, applied by the owner)
 
