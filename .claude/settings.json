@@ -9,10 +9,6 @@
       "Bash(openspec validate *)",
       "Bash(openspec show *)",
       "Bash(openspec list *)",
-      "Bash(git show *)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(diff *)",
       "Edit(//tmp/**)",
       "Read(~/.cache/agent-flow/**)"
     ],
