@@ -11,12 +11,14 @@ video="$out/e2e-run.webm"
 # Upper bound for emulator-level recording, in seconds.
 time_limit=1800
 
-if [ -z "$(adb devices | awk 'NR>1 && $2=="device"')" ]; then
-  echo "No emulator or device connected: boot an emulator first (see docs/development-setup.md)." >&2
+# Screen recording uses `adb emu`, so exactly one emulator and no other device.
+devices=$(adb devices | awk 'NR>1 && $2=="device" {print $1}')
+if ! [[ "$devices" =~ ^emulator-[0-9]+$ ]]; then
+  echo "Exactly one running emulator required: boot one emulator (see docs/development-setup.md)." >&2
   exit 1
 fi
 
-rm -rf "$out"
+rm -rf "$out" app/build/reports/androidTests app/build/outputs/androidTest-results
 mkdir -p "$out"
 
 # Runs on every exit path, so the video and reports survive a failing run.
@@ -30,7 +32,10 @@ finish() {
   echo "E2E video: $video"
   echo "E2E reports: $out/reports-*"
 }
-trap finish EXIT
 
-adb emu screenrecord start --time-limit "$time_limit" "$PWD/$video" >/dev/null
+if ! adb emu screenrecord start --time-limit "$time_limit" "$PWD/$video" >/dev/null; then
+  echo "Could not start the emulator screen recording." >&2
+  exit 1
+fi
+trap finish EXIT
 ./gradlew connectedDebugAndroidTest
