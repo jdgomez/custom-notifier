@@ -75,9 +75,12 @@ jobs:
           sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$sdkmanager" --licenses > /dev/null || true
           "$sdkmanager" --install "cmdline-tools;22.0"
+          # Keep 22.0 in its own expected location and drop the 12.0 copy. The runner action
+          # only installs its own tools when cmdline-tools is missing, and its PATH entry for
+          # latest/bin then points nowhere, so these tools are the ones it finds.
           rm -rf "$ANDROID_HOME/cmdline-tools/latest"
-          cp -r "$ANDROID_HOME/cmdline-tools/22.0" "$ANDROID_HOME/cmdline-tools/latest"
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --version
+          echo "$ANDROID_HOME/cmdline-tools/22.0/bin" >> "$GITHUB_PATH"
+          "$ANDROID_HOME/cmdline-tools/22.0/bin/sdkmanager" --version
       # Same API level and image as the local cn-api37 AVD (docs/development-setup.md).
       - name: Run E2E on an emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
