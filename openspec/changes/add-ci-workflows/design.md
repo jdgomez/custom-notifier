@@ -30,7 +30,7 @@ The jobs run in parallel, so total time is the slower job, not the sum of both. 
 Steps: checkout → setup-java (Temurin 21) → setup-gradle (with wrapper validation) → `./gradlew assembleDebug lintAll test`. Always upload `**/build/reports/`, `**/build/test-results/` and `**/build/outputs/roborazzi/`.
 
 ### `e2e` job
-Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local `cn-api<N>` AVD, with `script: ./scripts/e2e.sh`. Always upload `build/e2e/`. The emulator cold-boots on every run: no AVD snapshot cache, because that needs `actions/cache` (not an approved action) and a cold boot is deterministic, at the cost of a longer boot (about 30 s locally, longer on hosted runners).
+Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local `cn-api<N>` AVD, with `script: ./scripts/e2e.sh`. The AVD gets the same data partition size as the local AVDs (`disk-size: 10G`): the runner's default is too small and the APK install fails with "not enough space" before any test runs. Always upload `build/e2e/`. The emulator cold-boots on every run: no AVD snapshot cache, because that needs `actions/cache` (not an approved action) and a cold boot is deterministic, at the cost of a longer boot (about 30 s locally, longer on hosted runners).
 
 ### Triggers and concurrency
 `on: pull_request` (branches `main`) and `push` (branches `main`). `concurrency: group: ci-${{ github.ref }}`, with `cancel-in-progress: true` only for pull requests.
