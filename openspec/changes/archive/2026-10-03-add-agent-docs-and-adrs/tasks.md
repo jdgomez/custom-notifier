@@ -28,4 +28,4 @@
 ## 4. Gate
 
 - [x] 4.1 Commit on `change/add-agent-docs-and-adrs` with Conventional Commits
-- [ ] 4.2 Run the no-mistakes gate with `--skip ci` if `add-ci-workflows` is not yet merged, otherwise normally
+- [x] 4.2 Run the no-mistakes gate with `--skip ci` if `add-ci-workflows` is not yet merged, otherwise normally
