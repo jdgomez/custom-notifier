@@ -27,7 +27,7 @@ The jobs run in parallel, so total time is the slower job, not the sum of both. 
 - Alternative: have e2e wait for verify (`needs: verify`) to save minutes when lint fails. Rejected: minutes are free, and faster feedback matters more.
 
 ### `verify` job
-Steps: checkout → setup-java (Temurin 17) → setup-gradle (with wrapper validation) → `./gradlew assembleDebug lintAll test`. Always upload `**/build/reports/`, `**/build/test-results/` and `**/build/outputs/roborazzi/`.
+Steps: checkout → setup-java (Temurin 21) → setup-gradle (with wrapper validation) → `./gradlew assembleDebug lintAll test`. Always upload `**/build/reports/`, `**/build/test-results/` and `**/build/outputs/roborazzi/`.
 
 ### `e2e` job
 Steps: enable KVM with the documented udev rule → checkout → setup-java → setup-gradle → `reactivecircus/android-emulator-runner`, using the same API level and `google_apis` x86_64 image as the local `cn-api<N>` AVD, with `script: ./scripts/e2e.sh`. Always upload `build/e2e/`. Enable the AVD snapshot cache to reduce boot time.
@@ -38,8 +38,8 @@ Steps: enable KVM with the documented udev rule → checkout → setup-java → 
 ### Security
 Top-level `permissions: contents: read`. Actions are pinned by SHA, with `# vX.Y.Z` comments so updates stay readable. No secrets. Pull requests from forks get the same read-only token by default.
 
-### Java distribution in CI: Temurin 17
-The local JDK is the distribution's OpenJDK 17. Temurin 17 in CI is the same major version from a well-maintained build. A difference in patch versions is acceptable.
+### Java distribution in CI: Temurin 21
+The local JDK is the distribution's OpenJDK 21. Temurin 21 in CI is the same major version from a well-maintained build. A difference in patch versions is acceptable.
 
 ## Risks / Trade-offs
 

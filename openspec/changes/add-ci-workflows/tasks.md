@@ -2,7 +2,7 @@
 
 - [ ] 1.1 Resolve the current release commit SHA of each approved action; do not use any action outside the approved list without escalating
 - [ ] 1.2 Create `.github/workflows/ci.yml` with triggers, concurrency and `contents: read` permissions
-- [ ] 1.3 Add the `verify` job (Java 17, Gradle setup with wrapper validation, build + lint + JVM tests, always upload reports and screenshot diffs, 14-day retention)
+- [ ] 1.3 Add the `verify` job (Java 21, Gradle setup with wrapper validation, build + lint + JVM tests, always upload reports and screenshot diffs, 14-day retention)
 - [ ] 1.4 Add the `e2e` job (KVM enable, emulator runner with the same API level and image as the local `cn-api<N>` AVD, snapshot cache, `scripts/e2e.sh`, always upload `build/e2e/`, 14-day retention)
 
 ## 2. Proof on GitHub

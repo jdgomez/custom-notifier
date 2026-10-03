@@ -5,7 +5,7 @@ Android app that alerts the user before a household consumable runs out. Built w
 ## Read first
 - `docs/SESSION0.md` - what we are building: problem, scope, glossary, phases. **The glossary is the ubiquitous language: its terms are the type names.**
 - `docs/WAYOFWORKING.md` - how we build it: roles, change lifecycle, definition of done, testing strategy, conventions. Changing it requires owner approval.
-- `docs/development-setup.md` - the local toolchain (JDK 17, Android SDK, emulators): versions, how to verify or reinstall it, how to remove it.
+- `docs/development-setup.md` - the local toolchain (JDK 21, Android SDK, emulators): versions, how to verify or reinstall it, how to remove it.
 
 ## Non-negotiables
 - Every piece of work is an OpenSpec change: 1 change = 1 branch `change/<name>` = 1 PR = 1 squash commit on `main`, about 400 lines of production code at most.
@@ -24,7 +24,6 @@ Android app that alerts the user before a household consumable runs out. Built w
 ## Tests
 - JVM (unit, Robolectric Compose UI, Roborazzi screenshot verification; no emulator): `./gradlew test`. Reports in `app/build/reports/tests/`, screenshot diffs in `app/build/outputs/roborazzi/` (`*_compare.png`).
 - Screenshot references are committed in `app/src/test/screenshots/` and verified pixel-exact. Re-record deliberately with `./gradlew recordRoborazziDebug` and review the PNGs in the diff.
-- Robolectric runs on SDK 35 (`app/src/test/resources/robolectric.properties`): SDK 36+ needs JDK 21, the toolchain is JDK 17.
 - E2E (instrumented, Orchestrator with clean app state per test): boot one emulator, then `scripts/e2e.sh`. Writes `build/e2e/e2e-run.webm` (whole-run video) and `build/e2e/reports-*`, also on failure; exits non-zero on failure or unless exactly one emulator (and no other device) is connected. Shut the emulator down afterwards.
 
 ## Development practices and ADRs

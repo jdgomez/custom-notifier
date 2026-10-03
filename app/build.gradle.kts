@@ -5,7 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
     compilerOptions {
         allWarningsAsErrors = true
     }
@@ -51,6 +51,8 @@ tasks.withType<Test>().configureEach {
         .dir("src/test/screenshots")
         .withPropertyName("screenshotReferences")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // Robolectric's FileDescriptor shadow reaches into a JDK-internal package that JDK 17+ encapsulates.
+    jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
 }
 
 dependencies {
@@ -65,6 +67,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    testImplementation(libs.androidx.test.espresso.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.test.junit)

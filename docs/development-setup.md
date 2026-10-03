@@ -1,6 +1,6 @@
 # Development setup
 
-How the local toolchain is installed, verified and removed. It gives agents and the owner what they need to build, lint and test the app from the command line: JDK 17, the Android SDK, and two hardware-accelerated emulators. Android Studio is not required.
+How the local toolchain is installed, verified and removed. It gives agents and the owner what they need to build, lint and test the app from the command line: JDK 21, the Android SDK, and two hardware-accelerated emulators. Android Studio is not required.
 
 Steps marked **Owner step** need `sudo` or a license decision. Agents never run them; they prepare the command and wait for the owner.
 
@@ -17,7 +17,7 @@ Recorded on 2026-09-23. The latest stable API level at that date is **37** (Andr
 
 | Component | Package / file | Version |
 |---|---|---|
-| JDK | apt `openjdk-17-jdk-headless` | 17.0.20.1+1-1~24.04 |
+| JDK | apt `openjdk-21-jdk-headless` | 21.0.12.1+1-1~24.04.4 |
 | Command-line tools | `commandlinetools-linux-15859902_latest.zip` | 22.0 (build 15859902) |
 | Platform-tools | `platform-tools` | 37.0.1 |
 | Emulator | `emulator` | 37.1.11 |
@@ -41,13 +41,15 @@ Choices behind the table:
 
 ## Install
 
-### 1. JDK 17
+### 1. JDK 21
 
 **Owner step:**
 
 ```bash
-sudo apt install openjdk-17-jdk-headless
+sudo apt install openjdk-21-jdk-headless
 ```
+
+JDK 21 is the only JDK the project needs: Gradle, the Kotlin and Java toolchain, Robolectric and the SDK tools all run on it. Robolectric runs the app's target SDK (API 37) only on JDK 21 or newer.
 
 `JAVA_HOME` is not set: Gradle and the SDK tools resolve Java from the `PATH`. Set it only if that stops working.
 
@@ -138,7 +140,7 @@ Run everything in a **new login shell** (`bash -lc '...'`), which is what agent 
 bash -lc 'java -version; javac -version'
 ```
 
-Both report 17 (`17.0.20.1` when recorded).
+Both report 21 (`21.0.12.1` when recorded).
 
 ### SDK tools reachable
 
@@ -202,6 +204,16 @@ After `adb emu kill`, confirm nothing is left running:
 ps -eo pid,comm | grep -Ei 'qemu|emulator' || echo "no emulator processes"
 ```
 
+## Migrating from JDK 17
+
+**Owner step**, once, for a machine that still has JDK 17 from the earlier setup. Do it after the change that moves the toolchain to JDK 21 is merged, because until then `main` still builds on JDK 17. Install JDK 21 first (see Install), then remove only the JDK 17 packages:
+
+```bash
+sudo apt remove --purge openjdk-17-jdk-headless openjdk-17-jre-headless
+```
+
+`ca-certificates-java` and `java-common` stay: JDK 21 needs them. Afterwards run the Java version check (see Verify) and `./gradlew check`. `update-alternatives --list java` must list only the JDK 21 installation.
+
 ## Uninstall
 
 For the final environment cleanup. Removes everything this setup installed. Run the steps in this order.
@@ -243,7 +255,7 @@ For the final environment cleanup. Removes everything this setup installed. Run 
 5. **Owner step:** remove the JDK:
 
    ```bash
-   sudo apt remove --purge openjdk-17-jdk-headless openjdk-17-jre-headless ca-certificates-java java-common
+   sudo apt remove --purge openjdk-21-jdk-headless openjdk-21-jre-headless ca-certificates-java java-common
    ```
 
    These are the JDK and the dependencies its installation pulled in. The command names them explicitly instead of using `apt autoremove`, which would also remove unrelated orphaned packages.
