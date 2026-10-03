@@ -67,6 +67,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // Forces Espresso 3.7.0 onto the JVM test classpath: the 3.5.0 pulled in by Compose UI test calls
+    // InputManager.getInstance, removed on API 37, which breaks Robolectric on the target SDK.
     testImplementation(libs.androidx.test.espresso.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)

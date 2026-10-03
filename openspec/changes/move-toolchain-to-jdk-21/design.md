@@ -28,6 +28,9 @@ Run the screenshot verification first. Re-record only if it fails because render
 ### CI planning follows the toolchain
 Update `add-ci-workflows` (`design.md` "Java distribution in CI" and task 1.3) to Temurin 21, so the change implemented later already matches.
 
+### Espresso 3.7.0 on the JVM test classpath
+`app/build.gradle.kts` declares `testImplementation(libs.androidx.test.espresso.core)` (3.7.0). Compose UI test pulls Espresso 3.5.0 transitively, and it calls `InputManager.getInstance`, which was removed on API 37. Now that Robolectric runs on SDK 37, the JVM tests need the newer Espresso, so it is forced explicitly. Remove the declaration only when the transitive version is 3.7.0 or later.
+
 ### JDK 17 removal is the last, owner-only step
 JDK 17 stays installed until this change is merged, because `main` needs it until then. After merge, the owner runs the documented `apt remove` for the JDK 17 packages only. `ca-certificates-java` and `java-common` are shared with JDK 21 and must stay. The guide's removal section changes to the JDK 21 package names.
 
