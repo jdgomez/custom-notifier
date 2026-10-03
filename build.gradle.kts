@@ -10,8 +10,10 @@ subprojects {
     apply(plugin = rootProject.libs.plugins.ktlint.get().pluginId)
     apply(plugin = rootProject.libs.plugins.detekt.get().pluginId)
 
-    extensions.configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+    extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig = true
+        // detekt 2.x has no maxIssues: failing on Warning severity makes any finding fail the build.
+        failOnSeverity = dev.detekt.gradle.extensions.FailOnSeverity.Warning
         config.setFrom(rootProject.file("config/detekt/detekt.yml"))
     }
 

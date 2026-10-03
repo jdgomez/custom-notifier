@@ -1,7 +1,4 @@
 # Overrides only; everything else comes from the detekt defaults (buildUponDefaultConfig).
-build:
-  maxIssues: 0
-
 config:
   validation: true
   warningsAsErrors: true
