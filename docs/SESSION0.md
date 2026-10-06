@@ -64,7 +64,7 @@ When the user opens the app, they see the estimated stock of each product, compa
 | Term | Agreed definition |
 |------|-------------------|
 | Product | A consumable that must be restocked (vitamins, diapers, detergent...). |
-| Unit | What is actually counted and consumed (pill, diaper, ml). Stock is always tracked in units. |
+| Unit | What is actually counted and consumed (pill, diaper, ml). Stock is always tracked in units. The type is named `UnitLabel`, because `Unit` is Kotlin's built-in type. |
 | Package size | Number of units in one package of a product (e.g. 90 pills per bottle). Fixed per product, editable at any time. |
 | Stock | Units of a product remaining. |
 | Estimated stock | Units the app computes should remain today, based on the last adjustment and the consumption rate. Shown to the user so they can compare it with reality. |
