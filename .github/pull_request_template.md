@@ -1,7 +1,3 @@
-# <type>(<scope>): <summary>
-
-<!-- The title above is the squash commit on main: use a Conventional Commits title. -->
-
 ## Summary
 
 <!-- What changes and why, in a few lines. -->

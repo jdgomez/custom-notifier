@@ -48,7 +48,7 @@ It declares the project's lint command (`./gradlew lintAll`) and test command (`
 - Screenshots / video (user-visible changes; link to the CI `e2e` artifact)
 - Checklist mirroring the Definition of Done
 
-The no-mistakes PR step does not look for `.github/pull_request_template.md` on its own (v1.79 has only the explicit `pr.template` key). `.no-mistakes.yaml` therefore sets `pr.template: .github/pull_request_template.md`, which the gate reads from `main` and which must start with a top-level `# ` heading. Whether the generated body keeps `Closes #N` is confirmed in the proof run.
+The no-mistakes PR step does not look for `.github/pull_request_template.md` on its own (v1.79 has only the explicit `pr.template` key). `.no-mistakes.yaml` therefore sets `pr.template: .github/pull_request_template.md`, which the gate reads from `main`. The template must have no top-level `# ` heading: the gate requires each one verbatim and in order in the generated body, so a title placeholder blocks publication (the PR title is its own field). Whether the generated body keeps `Closes #N` is confirmed in the proof run.
 
 ## Risks / Trade-offs
 
