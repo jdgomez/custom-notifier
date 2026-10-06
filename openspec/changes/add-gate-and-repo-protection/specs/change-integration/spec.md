@@ -47,7 +47,7 @@ The no-mistakes gate SHALL run the project's documented lint and JVM test comman
 - **THEN** the gate's CI step finishes only after `verify` and `e2e` report their results
 
 ### Requirement: Pull requests follow one template
-Every pull request SHALL be created from the repository template, which asks for a Conventional Commits title, a `Closes #N` line, a link to the OpenSpec change, test evidence, and, for user-visible changes, screenshots and a link to the E2E video.
+Every pull request SHALL be created from the repository template, which asks for a `Closes #N` line, a link to the OpenSpec change, test evidence, and, for user-visible changes, screenshots and a link to the E2E video.
 
 #### Scenario: New pull request body
 - **GIVEN** the template is committed on `main`
