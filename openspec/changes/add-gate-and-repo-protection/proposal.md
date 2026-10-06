@@ -8,7 +8,7 @@ With CI in place, the last missing parts of the lifecycle are enforcement and co
 ## What Changes
 
 - `.no-mistakes.yaml` committed with the project's lint and test commands, so the gate runs the same checks as CI, with its CI step waiting on the real `verify` and `e2e` checks.
-- A pull request template: Conventional Commits title reminder, `Closes #N`, OpenSpec change link, test evidence, and a screenshots/video section for user-visible changes.
+- A pull request template: `Closes #N`, OpenSpec change link, test evidence, and a screenshots/video section for user-visible changes. Pull request titles stay Conventional Commits (they become the squash commit on `main`), but the title is its own field, not part of the template.
 - Repository settings: squash merge only (the squash commit takes the PR title), head branches deleted after merge, auto-merge disabled.
 - A `main` ruleset: pull request required, `verify` and `e2e` required and up to date, no force pushes, no deletion, linear history, with no bypass, not even for administrators, because agents act through the owner's account.
 - The removal of the `--skip ci` bootstrap exception for the gate, documented in `AGENTS.md`.
