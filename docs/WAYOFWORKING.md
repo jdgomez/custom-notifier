@@ -62,10 +62,12 @@ The owner starts a work session, tells Brain whether parallel work is allowed, a
 2. **Approve (human checkpoint).** The owner reviews and approves the proposal. The issue moves to Ready.
 3. **Delegate.** Brain creates a flow for the change and hands it over. The issue moves to In progress.
 4. **Implement.** The executor works on branch `change/<change-name>`, committing with Conventional Commits.
-5. **Gate.** The reviewer runs no-mistakes. It ends with a pull request (title in Conventional Commits format, body with `Closes #N`) and green CI. The issue moves to In review.
+5. **Gate.** The reviewer runs no-mistakes. It ends with a pull request (title in Conventional Commits format, body with `Closes #N`) and green CI. The issue moves to In review. For now (temporary, until the gate is reliable), Brain checks the gate's own commits (e.g. document step edits) and the PR title and body (`Closes`/`Refs`, template sections) before handing the PR to the owner.
 6. **Review and merge (human checkpoint).** The owner reviews, including UX from screenshots and video, and squash-merges. GitHub closes the issue and moves it to Done.
 7. **Archive.** The OpenSpec change is archived and the main specs are updated.
 8. **Close.** Once the pull request is merged or the change is abandoned, Brain closes the flow: its worktree, workspace and status files are removed. Flows are never reused.
+
+A spike is investigation only. It ends with its findings posted as a comment on its issue, the issue closed, and follow-up issues created for any work it uncovers (blocked ones labelled `blocked`).
 
 While a pull request waits for the owner, a sequential flow waits too (no stacking). When parallel work is enabled, other flows may continue with independent changes only.
 
@@ -177,7 +179,7 @@ As defined in `SESSION0.md`, in a separate repository following this same way of
 Once a stable version is released (not just the MVP): uninstall the local toolchain installed in Phase 0 (JDK, Android SDK, emulator images).
 
 ### Retrospectives
-At the end of each phase, a brief retrospective reviews what worked in the process and proposes updates to this document.
+At the end of each phase, a brief retrospective reviews what worked in the process and proposes updates to this document. Records live in `docs/retrospectives/phase-N.md`.
 
 ## Constraints and technical decisions
 - Agent pipeline: Brain / Executor / Reviewer. Each change gets its own flow, backed by its own git worktree, with the executor and reviewer in separate Herdr panes. Whether flows may run in parallel is still decided by the owner per work session.
