@@ -85,4 +85,25 @@ class ProductTest {
         assertEquals("capsule", edited.unitLabel.value)
         assertEquals(Quantity.of(30), edited.estimatedStockAt(t0).exact)
     }
+
+    @Test
+    fun `re-anchoring at an earlier moment never moves the anchor back`() {
+        val adjusted = product(10).adjust(-3, days(-2))
+        assertEquals(t0, adjusted.stock.recordedAt)
+        assertEquals(Quantity.of(7), adjusted.estimatedStockAt(t0).exact)
+        assertEquals(Quantity.of(6), adjusted.estimatedStockAt(days(1)).exact)
+    }
+
+    @Test
+    fun `extreme adjustments and restocks stay exact`() {
+        val restocked = product(0, packageSize = Int.MAX_VALUE).restock(Int.MAX_VALUE, t0)
+        assertEquals(Quantity.of(Int.MAX_VALUE.toLong() * Int.MAX_VALUE), restocked.estimatedStockAt(t0).exact)
+        assertEquals(Quantity.of(Int.MAX_VALUE.toLong() + 30), product(30).adjust(Int.MAX_VALUE, t0).estimatedStockAt(t0).exact)
+        assertEquals(Quantity.ZERO, product(30).adjust(Int.MIN_VALUE, t0).estimatedStockAt(t0).exact)
+    }
+
+    @Test
+    fun `a product cannot be copied into a negative stock`() {
+        assertFailsWith<IllegalArgumentException> { product().copy(stock = Stock(Quantity.of(-1), t0)) }
+    }
 }

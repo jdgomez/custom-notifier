@@ -47,7 +47,7 @@ data class Product(
         change: (Quantity) -> Quantity,
     ): Product {
         val updated = change(estimatedStockAt(now).exact).coerceAtLeast(Quantity.ZERO)
-        return copy(stock = Stock(updated, now))
+        return copy(stock = Stock(updated, maxOf(now, stock.recordedAt)))
     }
 
     companion object {

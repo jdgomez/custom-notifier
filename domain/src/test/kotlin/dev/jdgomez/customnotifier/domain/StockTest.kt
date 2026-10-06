@@ -1,9 +1,11 @@
 package dev.jdgomez.customnotifier.domain
 
+import java.math.BigInteger
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -39,14 +41,40 @@ class StockTest {
     @Test
     fun `fractional estimate is floored and marked rounded`() {
         val estimate = EstimatedStock(Quantity.of(17) / 2)
-        assertEquals(8, estimate.wholeUnits)
+        assertEquals(BigInteger.valueOf(8), estimate.wholeUnits)
         assertTrue(estimate.rounded)
     }
 
     @Test
     fun `whole estimate is not marked rounded`() {
         val estimate = EstimatedStock(Quantity.of(8))
-        assertEquals(8, estimate.wholeUnits)
+        assertEquals(BigInteger.valueOf(8), estimate.wholeUnits)
         assertFalse(estimate.rounded)
+    }
+
+    @Test
+    fun `consumption does not overflow for large rates over long periods`() {
+        val rate = ConsumptionRate(Int.MAX_VALUE, 1)
+        val estimate = Stock(Quantity.of(Long.MAX_VALUE), t0).estimateAt(t0 + Duration.ofDays(100), rate)
+        assertEquals(Quantity.of(Long.MAX_VALUE) - Quantity.of(Int.MAX_VALUE.toLong() * 100), estimate.exact)
+    }
+
+    @Test
+    fun `extreme instants do not throw`() {
+        val rate = ConsumptionRate(1, 1)
+        assertEquals(Quantity.ZERO, Stock(Quantity.of(5), Instant.MIN).estimateAt(Instant.MAX, rate).exact)
+        assertEquals(Quantity.of(5), Stock(Quantity.of(5), Instant.MAX).estimateAt(Instant.MIN, rate).exact)
+    }
+
+    @Test
+    fun `whole units are safe above the Long range`() {
+        val huge = Quantity.of(Long.MAX_VALUE) * Long.MAX_VALUE
+        assertEquals(huge.floor(), EstimatedStock(huge).wholeUnits)
+    }
+
+    @Test
+    fun `stock can never be negative`() {
+        assertFailsWith<IllegalArgumentException> { Stock(Quantity.of(-1), t0) }
+        assertFailsWith<IllegalArgumentException> { stock(1).copy(units = Quantity.of(-1)) }
     }
 }

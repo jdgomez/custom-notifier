@@ -2,7 +2,7 @@ package dev.jdgomez.customnotifier.domain
 
 import java.math.BigInteger
 
-/** An exact, non-negative or signed amount of units, kept as a reduced fraction of [BigInteger]s. */
+/** An exact signed amount of units, kept as a reduced fraction of [BigInteger]s. */
 class Quantity private constructor(
     private val numerator: BigInteger,
     private val denominator: BigInteger,
@@ -20,7 +20,11 @@ class Quantity private constructor(
 
     operator fun minus(other: Quantity) = of(numerator * other.denominator - other.numerator * denominator, denominator * other.denominator)
 
-    operator fun times(factor: Long) = of(numerator * BigInteger.valueOf(factor), denominator)
+    operator fun times(factor: BigInteger) = of(numerator * factor, denominator)
+
+    operator fun times(factor: Long) = times(BigInteger.valueOf(factor))
+
+    val isNegative: Boolean get() = numerator.signum() < 0
 
     operator fun div(divisor: Long): Quantity {
         require(divisor > 0) { "divisor must be positive" }

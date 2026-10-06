@@ -75,6 +75,19 @@ An adjustment SHALL change the stock by a non-zero whole number of units, positi
 - **WHEN** an adjustment of 0 units is requested
 - **THEN** it is rejected with an error and the product does not change
 
+### Requirement: Recording moment never moves back
+Any operation that records a new stock (adjustment, restock, rate change) at a moment earlier than the last recording SHALL treat that moment as no elapsed time and SHALL keep the last recording moment as the new one. The stock SHALL never be negative in any state.
+
+#### Scenario: Adjustment at an earlier moment
+- **GIVEN** a product with a stock of 10 units recorded at T and a consumption rate of 1 unit every 1 day
+- **WHEN** the user adjusts it by -3 units at a moment before T
+- **THEN** the stock recorded at T is exactly 7 units, and the estimated stock at T + 1 day is exactly 6 units
+
+#### Scenario: Negative stock is unrepresentable
+- **GIVEN** a stock quantity below zero
+- **WHEN** a stock or a product holding it is built or copied
+- **THEN** it is rejected with an error naming the stock
+
 ### Requirement: Restock
 A restock SHALL add k packages to the stock, k being a whole number of at least 1, that is k times the package size in units, applied to the estimated stock at the moment of the restock. The result SHALL become the recorded stock as of that moment.
 
