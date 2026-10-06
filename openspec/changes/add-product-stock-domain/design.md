@@ -22,7 +22,7 @@ Package `dev.jdgomez.customnotifier.domain` (or a `product` subpackage if the ex
 - `ConsumptionRate`: `units` and `days`, both positive `Int`.
 - `Stock`: the recorded stock, an exact quantity of units plus the `Instant` it was recorded at.
 - `EstimatedStock`: the exact estimate at a moment, plus its whole-unit view (floored) and whether it was rounded.
-- `Adjustment` (non-zero `Int` units) and `Restock` (packages, `Int` >= 1) may be value types or operation parameters; the executor chooses, as long as invalid values cannot be applied.
+- `Adjustment` (non-zero `Int` units) and `Restock` (packages, `Int` >= 1) are operation parameters of `Product.adjust` and `Product.restock`, which reject invalid values before anything changes.
 
 Alternative considered: bare `Int`/`String` fields with validation in `Product`. Rejected: ADR 0012 asks for dedicated types, and later changes (UI, persistence) get validation for free.
 
@@ -38,7 +38,7 @@ Alternative considered: storing an event log and replaying it. Rejected: more st
 Domain operations take `now: Instant` as a parameter. The app injects a `java.time.Clock` and passes `clock.instant()`. This keeps the domain deterministic and tests free of fakes. Elapsed time is measured in whole milliseconds; a negative elapsed time (clock moved backwards) counts as zero. A day is exactly 86,400,000 ms.
 
 ### Exact arithmetic with a rational of `BigInteger`
-The exact quantity of units is a reduced fraction of `BigInteger` numerator and denominator (internal type, e.g. `Quantity`). Consumption over `e` ms is `units * e / (days * 86_400_000)`, which is exact; repeated re-anchoring with different rates keeps it exact and cannot overflow. Alternatives considered: `Double` (rejected: spec forbids floating-point rounding); `BigDecimal` (rejected: 1/3 has no finite decimal, so a scale and rounding mode would be needed); `Long` fractions (rejected: denominators grow with re-anchoring and could overflow). Whole units view = floor of the fraction; "rounded" = denominator is not 1 after reduction.
+The exact quantity of units is a reduced fraction of `BigInteger` numerator and denominator (public type `Quantity`, because `EstimatedStock` exposes it). Consumption over `e` ms is `units * e / (days * 86_400_000)`, which is exact; repeated re-anchoring with different rates keeps it exact and cannot overflow. Alternatives considered: `Double` (rejected: spec forbids floating-point rounding); `BigDecimal` (rejected: 1/3 has no finite decimal, so a scale and rounding mode would be needed); `Long` fractions (rejected: denominators grow with re-anchoring and could overflow). Whole units view = floor of the fraction; "rounded" = denominator is not 1 after reduction.
 
 The required test of the exactness: 3 units every 2 days after exactly 1 day consumes exactly 3/2 units.
 
