@@ -154,7 +154,7 @@ Ordered changes (dependencies in parentheses):
 3. **Lint setup** - Android Lint, ktlint, detekt, zero warnings. (2)
 4. **Test infrastructure** - unit, Robolectric UI, Roborazzi screenshots, emulator E2E with video recording. (2)
 5. **CI workflows** - GitHub Actions running build, lint and all test levels on every PR, uploading screenshots and video as artifacts. (3, 4)
-6. **Gate and repo protection** - no-mistakes configured to wait on CI, `main` branch protection, PR template (`Closes #N`, screenshots/video section). (5)
+6. **Gate and repo protection** - no-mistakes configured to wait on CI, `main` branch protection, PR template (`Closes #N`, screenshots/video section) and Conventional Commits PR titles. (5)
 7. **Agent docs and ADRs** - repo `AGENTS.md`, `docs/adr/` with retroactive ADRs from `SESSION0.md`. (2; parallelizable with 3 and 4 since it touches docs only)
 
 Changes 3 and 4 both touch the Gradle build, so they are not parallelizable with each other. Before change 5 exists, the gate's CI step has nothing to wait on; branch protection is enabled in change 6, once CI exists.
