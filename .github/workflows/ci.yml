@@ -1,5 +1,6 @@
 # Continuous integration. Job names (`verify`, `e2e`) are the required status
-# check names for branch protection: do not rename them without updating it.
+# check names in .github/rulesets/main-protection.json: do not rename them
+# without updating it in the same change.
 name: CI
 
 on:

@@ -1,0 +1,13 @@
+# Repository config for the no-mistakes gate.
+# no-mistakes reads this file only from the default branch (main).
+# The gate runs the same commands as the CI `verify` job. E2E is not run here:
+# the CI `e2e` job provides it, and the gate's CI step waits on both checks.
+# Do not set `ci.no_ci`: the CI step must wait on the real checks.
+
+commands:
+  lint: ./gradlew lintAll
+  test: ./gradlew test
+
+pr:
+  # Used by the gate's PR step when it opens pull requests.
+  template: .github/pull_request_template.md
