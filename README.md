@@ -4,7 +4,7 @@ An Android app that tells you when a household consumable is about to run out, e
 
 You track things you use up: vitamins, diapers, detergent. You tell the app how much you have, how fast you go through it, and how many days of warning you want. The app estimates what is left day by day and alerts you before it runs out, as a notification and, optionally, as an event in your calendar. Buying is up to you; the app just makes sure you are never caught short.
 
-> Status: early stage. Nothing is implemented yet. The foundation (project skeleton, CI, quality gates) is complete; product work comes next.
+> Status: early stage. No user-facing feature exists yet; the pure-Kotlin product and stock model is in `:domain`. The foundation (project skeleton, CI, quality gates) is complete; product work comes next.
 
 ## How this project is built
 
