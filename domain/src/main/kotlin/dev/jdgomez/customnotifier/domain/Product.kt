@@ -4,11 +4,13 @@ import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.UUID
 
 private val ALERT_TIME = LocalTime.of(9, 0)
 
 /** A consumable the user must restock. Immutable: every operation returns a new [Product]. */
 data class Product(
+    val id: ProductId,
     val name: ProductName,
     val unitLabel: UnitLabel,
     val packageSize: PackageSize,
@@ -87,7 +89,15 @@ data class Product(
             now: Instant,
         ): Product {
             require(initialUnits >= 0) { "stock must not be negative" }
-            return Product(name, unitLabel, packageSize, consumptionRate, Stock(Quantity.of(initialUnits.toLong()), now), rule)
+            return Product(
+                ProductId(UUID.randomUUID()),
+                name,
+                unitLabel,
+                packageSize,
+                consumptionRate,
+                Stock(Quantity.of(initialUnits.toLong()), now),
+                rule,
+            )
         }
     }
 }
