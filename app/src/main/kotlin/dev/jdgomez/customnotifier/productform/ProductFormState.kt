@@ -24,9 +24,21 @@ data class ProductFormState(
     val errors: Set<ProductFormField> = emptySet(),
     /** The depletion date and next alert of the product the fields describe, or null while any field is invalid. */
     val preview: RowStatus? = null,
+    /** The texts the form opened with: a new product's defaults, or the stored product's values. */
+    val initialTexts: Map<ProductFormField, String> = INITIAL_TEXTS,
+    val mode: ProductFormMode = ProductFormMode.New,
 ) {
-    /** Whether any field differs from a new product's initial values. */
-    val isDirty: Boolean get() = texts != INITIAL_TEXTS
+    /** Whether any field differs from the values the form opened with. */
+    val isDirty: Boolean get() = texts != initialTexts
+
+    /** The fields the form shows, and the keys of [texts] once it is ready: the stock is only asked for when creating a product. */
+    val fields: List<ProductFormField>
+        get() =
+            when (mode) {
+                ProductFormMode.New -> ProductFormField.entries
+                ProductFormMode.Loading -> emptyList()
+                is ProductFormMode.Edit -> ProductFormField.entries - ProductFormField.UnitsNow
+            }
 
     operator fun get(field: ProductFormField): String = texts.getValue(field)
 
@@ -42,10 +54,26 @@ data class ProductFormState(
     }
 }
 
+/** Whether the form creates a product or edits a stored one. */
+sealed interface ProductFormMode {
+    data object New : ProductFormMode
+
+    /** The stored product is being read. */
+    data object Loading : ProductFormMode
+
+    /** Editing the stored product, whose name when the form opened is [storedName]. */
+    data class Edit(
+        val storedName: String,
+    ) : ProductFormMode
+}
+
 /** One-time effects of the form. */
 sealed interface ProductFormEvent {
     /** The product was stored: the form should close. */
     data object Saved : ProductFormEvent
+
+    /** There is nothing to edit any more (the product is missing or was deleted): the form should close. */
+    data object Closed : ProductFormEvent
 
     /** A save was refused: [field] is the first invalid one and should take focus. */
     data class FocusField(

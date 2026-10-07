@@ -37,7 +37,11 @@ class ProductListAddButtonTest {
     private fun show(names: List<String>) =
         composeRule.setContent {
             CustomNotifierTheme {
-                ProductListScreen(names.map { testProduct(it, NOW) }.toListState(NOW, ZoneOffset.UTC), onAddProduct = { added++ })
+                ProductListScreen(
+                    names.map { testProduct(it, NOW) }.toListState(NOW, ZoneOffset.UTC),
+                    onAddProduct = { added++ },
+                    onEditProduct = {},
+                )
             }
         }
 
