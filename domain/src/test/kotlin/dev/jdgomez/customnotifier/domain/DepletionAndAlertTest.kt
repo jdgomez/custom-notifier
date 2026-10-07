@@ -127,6 +127,24 @@ class DepletionAndAlertTest {
     }
 
     @Test
+    fun `product created out of stock is due for the rest of its date and none from the next date`() {
+        val created = at("2026-03-10T18:00")
+        val product =
+            Product.create(
+                ProductName("Vitamin D"),
+                UnitLabel("pill"),
+                PackageSize(30),
+                ConsumptionRate(1, 1),
+                Rule(LeadTime(10)),
+                0,
+                created,
+            )
+        assertEquals(NextAlert.Due, product.nextAlertAt(created, madrid))
+        assertEquals(NextAlert.Due, product.nextAlertAt(at("2026-03-10T23:59"), madrid))
+        assertEquals(NextAlert.None, product.nextAlertAt(at("2026-03-11T00:00"), madrid))
+    }
+
+    @Test
     fun `time zone decides the alert moment`() {
         val product = product(1, Instant.parse("2026-06-10T14:00:00Z"))
         val now = Instant.parse("2026-05-01T00:00:00Z")
