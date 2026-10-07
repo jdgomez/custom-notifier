@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -51,7 +52,7 @@ class ProductFormTest {
 
         awaitText("Vitamin D")
         // The stock has already started to decrease: "≈ 29 pills" is as valid as "30 pills".
-        composeRule.onNodeWithText("pills", substring = true).assertIsDisplayed()
+        composeRule.onAllNodes(hasText("pills", substring = true)).onFirst().assertIsDisplayed()
         composeRule.onNodeWithText("Add product", useUnmergedTree = true).assertIsDisplayed()
     }
 
