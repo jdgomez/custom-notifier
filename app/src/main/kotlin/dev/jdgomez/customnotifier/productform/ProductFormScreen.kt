@@ -2,6 +2,7 @@ package dev.jdgomez.customnotifier.productform
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -110,11 +112,17 @@ fun ProductFormScreen(
                         Icon(AppIcons.ArrowBack, stringResource(R.string.product_form_navigate_up))
                     }
                 },
-                actions = { TextButton(onClick = onSave) { Text(stringResource(R.string.product_form_save)) } },
+                actions = {
+                    TextButton(onClick = onSave, enabled = state.mode !is ProductFormMode.Loading) {
+                        Text(stringResource(R.string.product_form_save))
+                    }
+                },
             )
         },
     ) { padding ->
-        if (state.mode !is ProductFormMode.Loading) {
+        if (state.mode is ProductFormMode.Loading) {
+            LoadingIndicator(Modifier.padding(padding))
+        } else {
             FormFields(state, onTextChange, { confirmDelete = true }, requesters, Modifier.padding(padding))
         }
     }
@@ -124,6 +132,13 @@ fun ProductFormScreen(
     val mode = state.mode
     if (confirmDelete && mode is ProductFormMode.Edit) {
         DeleteDialog(mode.storedName, onCancel = { confirmDelete = false }, onDelete = onDelete)
+    }
+}
+
+@Composable
+private fun LoadingIndicator(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(Modifier.testTag("loading"))
     }
 }
 

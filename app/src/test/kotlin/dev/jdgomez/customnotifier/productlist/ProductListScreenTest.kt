@@ -1,6 +1,7 @@
 package dev.jdgomez.customnotifier.productlist
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -165,10 +167,19 @@ class ProductListScreenTest {
     }
 
     @Test
-    fun rowIsOneItemForScreenReaders() {
-        show(listOf(testProduct("A", NOW, units = 8)))
+    fun rowIsOneButtonForScreenReadersAnnouncingItsContentAndTheEditAction() {
+        show(listOf(testProduct("A", NOW, units = 8), testProduct("B", NOW, units = 5)))
 
-        // In the merged tree a single node carries the name and the stock texts.
-        composeRule.onNode(hasText("A") and hasText("8 pills")).assertIsDisplayed()
+        val rows = composeRule.onAllNodes(hasClickAction() and hasText("pills", substring = true))
+        rows.assertCountEquals(2)
+        // One merged node per row: the name, the stock and the dates, a button whose click label is "Edit".
+        composeRule.onNode(hasText("A") and hasText("8 pills") and hasText("Runs out", substring = true)).assert(
+            SemanticsMatcher("button with click label Edit") {
+                it.config.getOrNull(SemanticsProperties.Role) == Role.Button &&
+                    it.config.getOrNull(SemanticsActions.OnClick)?.label == "Edit"
+            },
+        )
+        // The children are not separate focus stops: the merged tree has no node with only the name.
+        composeRule.onAllNodes(hasText("A") and !hasText("8 pills")).assertCountEquals(0)
     }
 }

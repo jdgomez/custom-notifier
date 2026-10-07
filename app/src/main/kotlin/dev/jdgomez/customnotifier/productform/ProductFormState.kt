@@ -31,9 +31,14 @@ data class ProductFormState(
     /** Whether any field differs from the values the form opened with. */
     val isDirty: Boolean get() = texts != initialTexts
 
-    /** The fields the form shows: the stock is only asked for when creating a product. */
+    /** The fields the form shows, and the keys of [texts] once it is ready: the stock is only asked for when creating a product. */
     val fields: List<ProductFormField>
-        get() = if (mode is ProductFormMode.New) ProductFormField.entries else ProductFormField.entries - ProductFormField.UnitsNow
+        get() =
+            when (mode) {
+                ProductFormMode.New -> ProductFormField.entries
+                ProductFormMode.Loading -> emptyList()
+                is ProductFormMode.Edit -> ProductFormField.entries - ProductFormField.UnitsNow
+            }
 
     operator fun get(field: ProductFormField): String = texts.getValue(field)
 

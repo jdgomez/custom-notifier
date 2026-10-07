@@ -3,6 +3,7 @@ package dev.jdgomez.customnotifier.productform
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -15,10 +16,14 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.jdgomez.customnotifier.domain.Product
+import dev.jdgomez.customnotifier.domain.ProductId
+import dev.jdgomez.customnotifier.domain.ProductRepository
 import dev.jdgomez.customnotifier.productlist.FakeRepository
 import dev.jdgomez.customnotifier.productlist.MutableClock
 import dev.jdgomez.customnotifier.productlist.testProduct
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -244,5 +249,31 @@ class ProductFormScreenTest {
         composeRule.setContent { CustomNotifierTheme { ProductFormRoute(onClose = { closed++ }, viewModel = viewModel) } }
         composeRule.waitForIdle()
         assertEquals(1, closed)
+    }
+
+    @Test
+    fun whileTheStoredProductLoadsSaveIsUnavailableAndTheFormShowsProgress() {
+        repository.products.value = listOf(stored)
+        val gate = CompletableDeferred<Unit>()
+        val slow =
+            object : ProductRepository by repository {
+                override suspend fun find(id: ProductId): Product? {
+                    gate.await()
+                    return repository.find(id)
+                }
+            }
+        val viewModel = ProductFormViewModel(slow, MutableClock(Instant.parse("2026-02-20T10:00:00Z")), stored.id) { ZoneOffset.UTC }
+        composeRule.setContent { CustomNotifierTheme { ProductFormRoute(onClose = { closed++ }, viewModel = viewModel) } }
+        composeRule.onNodeWithText("Edit product").assertIsDisplayed()
+        composeRule.onNodeWithTag("loading").assertIsDisplayed()
+        composeRule.onNodeWithText("Save").assertIsNotEnabled()
+        composeRule.onNodeWithText("Save").performClick()
+        composeRule.waitForIdle()
+        gate.complete(Unit)
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("loading").assertDoesNotExist()
+        composeRule.onNodeWithTag("Name").assertTextEquals("Name", "Vitamin D")
+        composeRule.onNodeWithText("Enter a name").assertDoesNotExist()
+        assertEquals(0, closed)
     }
 }

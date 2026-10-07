@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Test
 import java.time.Duration
@@ -309,6 +310,82 @@ class ProductFormViewModelTest {
             viewModel.onDelete()
             runCurrent()
             assertEquals(ProductFormEvent.Closed, viewModel.events.first())
+            assertTrue(repository.products.value.isEmpty())
+        }
+
+    private suspend fun ProductFormViewModel.nextEventOrNull() = withTimeoutOrNull(1) { events.first() }
+
+    @Test
+    fun saveWhileLoadingDoesNothing() =
+        runTest {
+            val viewModel = editViewModel()
+            viewModel.onSave()
+            assertTrue(
+                viewModel.state.value.errors
+                    .isEmpty(),
+            )
+            assertNull(viewModel.nextEventOrNull())
+            runCurrent()
+            assertEquals(ProductFormMode.Edit("Vitamin D"), viewModel.state.value.mode)
+            assertTrue(
+                viewModel.state.value.errors
+                    .isEmpty(),
+            )
+            assertNull(viewModel.nextEventOrNull())
+            assertEquals(stored, repository.products.value.single())
+        }
+
+    @Test
+    fun editTextsDoNotHoldTheHiddenStockField() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            assertFalse(ProductFormField.UnitsNow in viewModel.state.value.texts)
+            assertEquals(ProductFormField.entries - ProductFormField.UnitsNow, viewModel.state.value.fields)
+        }
+
+    @Test
+    fun deleteTwiceClosesOnce() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onDelete()
+            viewModel.onDelete()
+            runCurrent()
+            assertEquals(ProductFormEvent.Closed, viewModel.events.first())
+            assertNull(viewModel.nextEventOrNull())
+        }
+
+    @Test
+    fun deleteAfterSaveIsIgnored() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.Name, "Vitamin D3")
+            viewModel.onSave()
+            viewModel.onDelete()
+            runCurrent()
+            assertEquals(ProductFormEvent.Saved, viewModel.events.first())
+            assertNull(viewModel.nextEventOrNull())
+            assertEquals(
+                "Vitamin D3",
+                repository.products.value
+                    .single()
+                    .name.value,
+            )
+        }
+
+    @Test
+    fun saveAfterDeleteDoesNotResurrectTheProduct() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.Name, "Vitamin D3")
+            viewModel.onDelete()
+            viewModel.onSave()
+            runCurrent()
+            assertEquals(ProductFormEvent.Closed, viewModel.events.first())
+            assertNull(viewModel.nextEventOrNull())
             assertTrue(repository.products.value.isEmpty())
         }
 }

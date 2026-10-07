@@ -42,7 +42,8 @@ class ProductFormViewModel(
     private val eventChannel = Channel<ProductFormEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
 
-    private var saving = false
+    /** Set once a save or a delete is under way: the form closes after it, so no other one may start. */
+    private var finishing = false
 
     /** The stored product being edited, once read. */
     private var original: Product? = null
@@ -70,7 +71,9 @@ class ProductFormViewModel(
 
     /** Deletes the stored product and closes the form. */
     fun onDelete() {
-        val id = editId ?: return
+        val id = editId
+        if (id == null || finishing) return
+        finishing = true
         viewModelScope.launch {
             repository.delete(id)
             eventChannel.send(ProductFormEvent.Closed)
@@ -91,14 +94,15 @@ class ProductFormViewModel(
 
     /** Stores the product when every field is valid; otherwise flags the invalid fields and focuses the first. */
     fun onSave() {
-        val texts = mutableState.value.texts
-        val product = buildProduct(texts)
+        val state = mutableState.value
+        if (finishing || state.mode is ProductFormMode.Loading) return
+        val product = buildProduct(state.texts)
         if (product == null) {
-            val invalid = mutableState.value.fields.filter { !isValid(it, texts.getValue(it)) }
+            val invalid = state.fields.filter { !isValid(it, state.texts.getValue(it)) }
             mutableState.update { it.copy(errors = invalid.toSet()) }
             eventChannel.trySend(ProductFormEvent.FocusField(invalid.first()))
-        } else if (!saving) {
-            saving = true
+        } else {
+            finishing = true
             viewModelScope.launch {
                 repository.save(product)
                 eventChannel.send(ProductFormEvent.Saved)
@@ -141,6 +145,7 @@ class ProductFormViewModel(
         return if (edited.consumptionRate == rate) edited else edited.changeConsumptionRate(rate, now)
     }
 
+    /** The fields' texts for editing this product: the stock is not editable, so it has none. */
     private fun Product.toTexts(): Map<ProductFormField, String> =
         mapOf(
             ProductFormField.Name to name.value,
@@ -149,7 +154,6 @@ class ProductFormViewModel(
             ProductFormField.ConsumptionUnits to consumptionRate.units.toString(),
             ProductFormField.ConsumptionDays to consumptionRate.days.toString(),
             ProductFormField.LeadTime to rule.leadTime.days.toString(),
-            ProductFormField.UnitsNow to "",
         )
 
     companion object {
