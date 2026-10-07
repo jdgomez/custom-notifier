@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Custom Notifier</string>
+    <string name="product_list_empty_title">No products yet</string>
+    <string name="product_list_empty_help">Products you add will appear here with their stock and next alert.</string>
+    <string name="product_list_stock">%1$s %2$s</string>
+    <string name="product_list_stock_approximate_prefix">"≈ "</string>
+    <string name="product_list_stock_approximate_description">about %1$s</string>
+    <string name="product_list_runs_out">Runs out %1$s</string>
+    <string name="product_list_alert">Alert %1$s</string>
+    <string name="product_list_alert_due">Alert due</string>
+    <string name="product_list_ran_out">Ran out %1$s</string>
 </resources>
