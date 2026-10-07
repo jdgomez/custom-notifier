@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -62,9 +63,9 @@ class ProductFormTest {
     fun backWithInputAsksToDiscardAndDiscardReturnsToTheEmptyList() {
         openForm()
         type("Name", "Vitamin D")
-        // Back through the activity dispatcher: a device back press is swallowed by the keyboard
-        // when it is open, which made the number of presses needed depend on the emulator.
-        composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
+        // A device back press is swallowed by the keyboard while it is open, so close it first.
+        Espresso.closeSoftKeyboard()
+        device.pressBack()
         awaitText("Discard changes?")
         composeRule.onNodeWithText("Discard changes?").assertIsDisplayed()
         composeRule.onNodeWithText("Discard").performClick()
