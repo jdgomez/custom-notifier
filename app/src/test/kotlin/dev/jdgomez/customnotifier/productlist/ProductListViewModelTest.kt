@@ -1,13 +1,8 @@
 package dev.jdgomez.customnotifier.productlist
 
-import dev.jdgomez.customnotifier.domain.Product
-import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.domain.ProductName
-import dev.jdgomez.customnotifier.domain.ProductRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -18,47 +13,19 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Test
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.ZoneOffset.UTC
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-
-private class FakeRepository : ProductRepository {
-    val products = MutableStateFlow<List<Product>>(emptyList())
-
-    override fun observeAll() = products.map { all -> all.sortedBy { it.name.value.lowercase() } }
-
-    override suspend fun find(id: ProductId) = products.value.firstOrNull { it.id == id }
-
-    override suspend fun save(product: Product) {
-        products.value = products.value.filter { it.id != product.id } + product
-    }
-
-    override suspend fun delete(id: ProductId) {
-        products.value = products.value.filter { it.id != id }
-    }
-}
-
-private class MutableClock(
-    var now: Instant,
-) : Clock() {
-    override fun getZone(): ZoneId = UTC
-
-    override fun withZone(zone: ZoneId?): Clock = this
-
-    override fun instant(): Instant = now
-}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProductListViewModelTest {
     private val start = Instant.parse("2026-03-05T10:00:00Z")
     private val repository = FakeRepository()
     private val clock = MutableClock(start)
-    private var zone: ZoneId = UTC
+    private var zone: ZoneId = ZoneOffset.UTC
 
     @After
     fun resetMain() = Dispatchers.resetMain()

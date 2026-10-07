@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
+import dev.jdgomez.customnotifier.ui.AppIcons
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -40,22 +43,31 @@ import java.util.Locale
 
 @Composable
 fun ProductListRoute(
+    onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProductListViewModel = viewModel(factory = ProductListViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProductListScreen(state, modifier)
+    ProductListScreen(state, onAddProduct, modifier)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListScreen(
     state: ProductListState,
+    onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = onAddProduct,
+                icon = { Icon(AppIcons.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.product_list_add)) },
+            )
+        },
     ) { padding ->
         when (state) {
             ProductListState.Loading -> Unit
@@ -92,7 +104,9 @@ private fun ProductList(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = contentPadding) {
+    // Room below the last row for the floating action button (56dp plus its 16dp margins).
+    val padding = PaddingValues(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding() + 88.dp)
+    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = padding) {
         items(products.rows, key = { it.id.value }) { row ->
             ProductRowItem(row)
             HorizontalDivider()

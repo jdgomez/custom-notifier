@@ -53,13 +53,17 @@ fun List<Product>.toListState(
 private fun Product.toRow(
     now: Instant,
     zone: ZoneId,
-): ProductRow {
+): ProductRow = ProductRow(id, name.value, unitLabel.value, estimatedStockAt(now), statusAt(now, zone))
+
+/** The depletion date and next alert of [this] at [now] in [zone], as the list and the product form show them. */
+fun Product.statusAt(
+    now: Instant,
+    zone: ZoneId,
+): RowStatus {
     val depletionDate = depletionDateIn(zone).date
-    val status =
-        when (val alert = nextAlertAt(now, zone)) {
-            is NextAlert.Scheduled -> RowStatus.Upcoming(depletionDate, alert.at.toLocalDate())
-            NextAlert.Due -> RowStatus.Upcoming(depletionDate, null)
-            NextAlert.None -> RowStatus.RanOut(depletionDate)
-        }
-    return ProductRow(id, name.value, unitLabel.value, estimatedStockAt(now), status)
+    return when (val alert = nextAlertAt(now, zone)) {
+        is NextAlert.Scheduled -> RowStatus.Upcoming(depletionDate, alert.at.toLocalDate())
+        NextAlert.Due -> RowStatus.Upcoming(depletionDate, null)
+        NextAlert.None -> RowStatus.RanOut(depletionDate)
+    }
 }
