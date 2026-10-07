@@ -14,14 +14,6 @@ Unit tests for the domain and app modules and Compose UI tests SHALL run on the 
 - **WHEN** the user runs the documented JVM test command
 - **THEN** unit tests, Robolectric UI tests and screenshot verification run, and the command fails if any of them fails
 
-### Requirement: Placeholder screen covered by a UI test
-The app's placeholder screen SHALL have a Robolectric Compose UI test that checks the app name is displayed, by querying the rendered UI rather than source text.
-
-#### Scenario: UI test catches a missing app name
-- **GIVEN** the placeholder screen no longer displays the app name
-- **WHEN** the JVM test command runs
-- **THEN** the UI test fails
-
 ### Requirement: Pixel-exact screenshot verification
 Screenshot tests SHALL compare rendered screens against committed reference images, and any pixel difference SHALL fail the JVM test command. Re-recording references SHALL require a separate, explicit command.
 

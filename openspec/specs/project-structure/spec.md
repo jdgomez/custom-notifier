@@ -42,14 +42,6 @@ The app SHALL install and launch on Android 8.0 (API 26) and later.
 - **WHEN** the debug APK is installed and launched
 - **THEN** the app opens its main screen without crashing
 
-### Requirement: Placeholder main screen
-Until product features exist, the app SHALL open a single Compose screen showing the app name.
-
-#### Scenario: Launch shows the app name
-- **GIVEN** the debug app is installed
-- **WHEN** the user launches it
-- **THEN** a screen showing the app name is displayed
-
 ### Requirement: Compiler warnings fail the build
 The build SHALL treat Kotlin compiler warnings as errors in every module.
 
