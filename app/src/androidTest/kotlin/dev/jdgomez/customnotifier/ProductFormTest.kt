@@ -24,10 +24,12 @@ class ProductFormTest {
 
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
-    private fun awaitText(text: String) =
-        composeRule.waitUntil(LOAD_TIMEOUT_MS) {
-            composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
-        }
+    private fun awaitText(
+        text: String,
+        timeoutMs: Long = LOAD_TIMEOUT_MS,
+    ) = composeRule.waitUntil(timeoutMs) {
+        composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+    }
 
     private fun openForm() {
         awaitText("No products yet")
@@ -61,8 +63,11 @@ class ProductFormTest {
         openForm()
         type("Name", "Vitamin D")
         // With the keyboard open, the first back closes it.
+        // The dialog shows asynchronously, so wait for it before deciding a second back is needed.
         device.pressBack()
-        if (composeRule.onAllNodes(hasText("Discard changes?")).fetchSemanticsNodes().isEmpty()) device.pressBack()
+        val dialogShown = runCatching { awaitText("Discard changes?", BACK_TIMEOUT_MS) }.isSuccess
+        if (!dialogShown) device.pressBack()
+        awaitText("Discard changes?")
         composeRule.onNodeWithText("Discard changes?").assertIsDisplayed()
         composeRule.onNodeWithText("Discard").performClick()
 
@@ -93,5 +98,6 @@ class ProductFormTest {
 
     private companion object {
         const val LOAD_TIMEOUT_MS = 5_000L
+        const val BACK_TIMEOUT_MS = 2_000L
     }
 }
