@@ -40,7 +40,7 @@ class ProductListScreenTest {
         now: Instant = NOW,
         zone: ZoneOffset = ZoneOffset.UTC,
     ) = composeRule.setContent {
-        CustomNotifierTheme { ProductListScreen(products.toListState(now, zone)) }
+        CustomNotifierTheme { ProductListScreen(products.toListState(now, zone), onAddProduct = {}) }
     }
 
     private fun stockOf(
@@ -151,7 +151,8 @@ class ProductListScreenTest {
     fun rowsHaveNoTapAction() {
         show(listOf(testProduct("A", NOW)))
 
-        composeRule.onAllNodes(hasClickAction()).assertCountEquals(0)
+        // The only tap target is the "Add product" button.
+        composeRule.onAllNodes(hasClickAction()).assertCountEquals(1)
     }
 
     @Test

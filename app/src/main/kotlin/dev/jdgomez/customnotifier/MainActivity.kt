@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import dev.jdgomez.customnotifier.productlist.ProductListRoute
+import dev.jdgomez.customnotifier.navigation.AppNavigation
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             CustomNotifierTheme {
-                ProductListRoute()
+                AppNavigation()
             }
         }
     }
