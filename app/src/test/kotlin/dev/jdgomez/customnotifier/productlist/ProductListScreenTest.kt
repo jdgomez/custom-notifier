@@ -1,20 +1,23 @@
 package dev.jdgomez.customnotifier.productlist
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.jdgomez.customnotifier.domain.Product
+import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
 import org.junit.Test
@@ -35,12 +38,26 @@ class ProductListScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private var edited: ProductId? = null
+
     private fun show(
         products: List<Product>,
         now: Instant = NOW,
         zone: ZoneOffset = ZoneOffset.UTC,
     ) = composeRule.setContent {
-        CustomNotifierTheme { ProductListScreen(products.toListState(now, zone), onAddProduct = {}) }
+        CustomNotifierTheme { ProductListScreen(products.toListState(now, zone), onAddProduct = {}, onEditProduct = { edited = it }) }
+    }
+
+    @Test
+    fun tappingARowOpensThatProductWithTheEditAction() {
+        val vitamin = testProduct("Vitamin D", NOW)
+        show(listOf(testProduct("Detergent", NOW), vitamin))
+        composeRule.onNodeWithText("Vitamin D").assertHasClickAction()
+        composeRule.onNodeWithText("Vitamin D").performClick()
+        assertEquals(vitamin.id, edited)
+        composeRule.onNodeWithText("Vitamin D").assert(
+            SemanticsMatcher("onClick label Edit") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Edit" },
+        )
     }
 
     private fun stockOf(
@@ -145,14 +162,6 @@ class ProductListScreenTest {
         show(listOf(testProduct("A", Instant.parse("2026-03-01T23:30:00Z"), units = 10)), zone = ZoneOffset.ofHours(2))
 
         composeRule.onNodeWithText("Runs out Mar 12, 2026").assertIsDisplayed()
-    }
-
-    @Test
-    fun rowsHaveNoTapAction() {
-        show(listOf(testProduct("A", NOW)))
-
-        // The only tap target is the "Add product" button.
-        composeRule.onAllNodes(hasClickAction()).assertCountEquals(1)
     }
 
     @Test

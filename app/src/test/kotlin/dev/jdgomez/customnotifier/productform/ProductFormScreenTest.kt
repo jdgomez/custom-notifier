@@ -11,11 +11,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.jdgomez.customnotifier.productlist.FakeRepository
 import dev.jdgomez.customnotifier.productlist.MutableClock
+import dev.jdgomez.customnotifier.productlist.testProduct
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
 import org.junit.Test
@@ -40,6 +42,15 @@ class ProductFormScreenTest {
     private fun show() {
         val viewModel = ProductFormViewModel(repository, MutableClock(Instant.parse("2026-02-20T10:00:00Z"))) { ZoneOffset.UTC }
         composeRule.setContent { CustomNotifierTheme { ProductFormRoute(onClose = { closed++ }, viewModel = viewModel) } }
+    }
+
+    private val stored = testProduct("Vitamin D", Instant.parse("2026-02-20T10:00:00Z"), units = 90)
+
+    private fun showEdit() {
+        repository.products.value = listOf(stored)
+        val viewModel = ProductFormViewModel(repository, MutableClock(Instant.parse("2026-02-20T10:00:00Z")), stored.id) { ZoneOffset.UTC }
+        composeRule.setContent { CustomNotifierTheme { ProductFormRoute(onClose = { closed++ }, viewModel = viewModel) } }
+        composeRule.waitForIdle()
     }
 
     private fun type(
@@ -145,6 +156,93 @@ class ProductFormScreenTest {
         show()
         composeRule.onNodeWithContentDescription("Navigate up").performClick()
         composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun editFormIsTitledPrefilledAndHasNoStockField() {
+        showEdit()
+        composeRule.onNodeWithText("Edit product").assertIsDisplayed()
+        composeRule.onNodeWithTag("Name").assertTextEquals("Name", "Vitamin D")
+        composeRule.onNodeWithTag("PackageSize").assertTextEquals("Units per package", "30")
+        composeRule.onNodeWithTag("UnitsNow").assertDoesNotExist()
+        composeRule.onNodeWithText("Units you have now").assertDoesNotExist()
+    }
+
+    @Test
+    fun editWithAClearedNameShowsTheErrorAndKeepsTheStoredProduct() {
+        showEdit()
+        type(ProductFormField.Name, "")
+        composeRule.onNodeWithText("Save").performClick()
+        composeRule.onNodeWithText("Enter a name").assertIsDisplayed()
+        composeRule.onNodeWithTag("Name").assertIsFocused()
+        assertEquals(stored, repository.products.value.single())
+    }
+
+    @Test
+    fun editSaveStoresTheRenamedProductAndCloses() {
+        showEdit()
+        type(ProductFormField.Name, "Vitamin D3")
+        composeRule.onNodeWithText("Save").performClick()
+        composeRule.waitForIdle()
+        assertEquals(listOf("Vitamin D3"), repository.products.value.map { it.name.value })
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun editBackWithoutChangesClosesDirectlyAndWithChangesAsksToDiscard() {
+        showEdit()
+        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun editBackWithChangesAsksAndDiscardLeavesTheProductUnchanged() {
+        showEdit()
+        type(ProductFormField.Name, "Vitamin D3")
+        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        composeRule.onNodeWithText("Discard changes?").assertExists()
+        composeRule.onNodeWithText("Discard").performClick()
+        assertEquals(1, closed)
+        assertEquals(stored, repository.products.value.single())
+    }
+
+    @Test
+    fun deleteDialogUsesTheStoredNameAndCancelKeepsTheProduct() {
+        showEdit()
+        type(ProductFormField.Name, "Vitamin D3")
+        composeRule.onNodeWithText("Delete product").performScrollTo().performClick()
+        composeRule.onNodeWithText("Delete Vitamin D?").assertIsDisplayed()
+        composeRule.onNodeWithText("Its stock and alert will be removed. This can't be undone.").assertIsDisplayed()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("Delete Vitamin D?").assertDoesNotExist()
+        composeRule.onNodeWithText("Edit product").assertIsDisplayed()
+        assertEquals(stored, repository.products.value.single())
+        assertEquals(0, closed)
+    }
+
+    @Test
+    fun confirmingDeleteRemovesTheProductAndCloses() {
+        showEdit()
+        composeRule.onNodeWithText("Delete product").performScrollTo().performClick()
+        composeRule.onNodeWithText("Delete").performClick()
+        composeRule.waitForIdle()
+        assertTrue(repository.products.value.isEmpty())
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun newProductFormHasNoDeleteButton() {
+        show()
+        composeRule.onNodeWithText("Delete product").assertDoesNotExist()
+    }
+
+    @Test
+    fun editOfAMissingProductCloses() {
+        val viewModel = ProductFormViewModel(repository, MutableClock(Instant.parse("2026-02-20T10:00:00Z")), stored.id) { ZoneOffset.UTC }
+        composeRule.setContent { CustomNotifierTheme { ProductFormRoute(onClose = { closed++ }, viewModel = viewModel) } }
+        composeRule.waitForIdle()
         assertEquals(1, closed)
     }
 }

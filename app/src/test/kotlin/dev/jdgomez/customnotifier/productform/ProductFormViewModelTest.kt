@@ -3,21 +3,25 @@ package dev.jdgomez.customnotifier.productform
 import dev.jdgomez.customnotifier.domain.ConsumptionRate
 import dev.jdgomez.customnotifier.domain.LeadTime
 import dev.jdgomez.customnotifier.domain.PackageSize
+import dev.jdgomez.customnotifier.domain.Product
 import dev.jdgomez.customnotifier.domain.ProductName
 import dev.jdgomez.customnotifier.domain.UnitLabel
 import dev.jdgomez.customnotifier.productlist.FakeRepository
 import dev.jdgomez.customnotifier.productlist.MutableClock
 import dev.jdgomez.customnotifier.productlist.RowStatus
+import dev.jdgomez.customnotifier.productlist.testProduct
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -201,5 +205,110 @@ class ProductFormViewModelTest {
                 runCurrent()
             }
             assertEquals(listOf("Vitamin D", "Vitamin D"), repository.products.value.map { it.name.value })
+        }
+
+    private fun TestScope.editViewModel(product: Product? = stored): ProductFormViewModel {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        if (product != null) repository.products.value = listOf(product)
+        return ProductFormViewModel(repository, MutableClock(now), (stored).id) { ZoneOffset.UTC }
+    }
+
+    private val stored = testProduct("Vitamin D", now.minus(Duration.ofDays(10)), units = 30, leadDays = 7)
+
+    @Test
+    fun editLoadsTheStoredValuesWithoutTheStock() =
+        runTest {
+            val viewModel = editViewModel()
+            assertEquals(ProductFormMode.Loading, viewModel.state.value.mode)
+            runCurrent()
+            val state = viewModel.state.value
+            assertEquals(ProductFormMode.Edit("Vitamin D"), state.mode)
+            assertEquals("Vitamin D", state[ProductFormField.Name])
+            assertEquals("pills", state[ProductFormField.Unit])
+            assertEquals("30", state[ProductFormField.PackageSize])
+            assertEquals("1", state[ProductFormField.ConsumptionUnits])
+            assertEquals("1", state[ProductFormField.ConsumptionDays])
+            assertEquals("7", state[ProductFormField.LeadTime])
+            assertFalse(ProductFormField.UnitsNow in state.fields)
+            assertFalse(state.isDirty)
+        }
+
+    @Test
+    fun editOfAMissingProductCloses() =
+        runTest {
+            val viewModel = editViewModel(null)
+            runCurrent()
+            assertEquals(ProductFormEvent.Closed, viewModel.events.first())
+        }
+
+    @Test
+    fun editIsDirtyAgainstTheStoredValues() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.Name, "Vitamin D3")
+            assertTrue(viewModel.state.value.isDirty)
+            viewModel.onTextChange(ProductFormField.Name, "Vitamin D")
+            assertFalse(viewModel.state.value.isDirty)
+        }
+
+    @Test
+    fun editPreviewStartsFromTheCurrentStock() =
+        runTest {
+            val viewModel = editViewModel(testProduct("Vitamin D", now, units = 20, leadDays = 10))
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.LeadTime, "5")
+            assertEquals(RowStatus.Upcoming(LocalDate.of(2026, 3, 12), LocalDate.of(2026, 3, 7)), viewModel.state.value.preview)
+        }
+
+    @Test
+    fun editSaveWithoutAStockFieldFlagsOnlyVisibleFields() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.Name, "")
+            viewModel.onSave()
+            runCurrent()
+            assertEquals(setOf(ProductFormField.Name), viewModel.state.value.errors)
+            assertEquals(ProductFormEvent.FocusField(ProductFormField.Name), viewModel.events.first())
+            assertEquals(stored, repository.products.value.single())
+        }
+
+    @Test
+    fun editSaveRenamesAndKeepsTheStockWhenTheRateIsUnchanged() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.Name, "Vitamin D3")
+            viewModel.onSave()
+            runCurrent()
+            assertEquals(ProductFormEvent.Saved, viewModel.events.first())
+            val saved = repository.products.value.single()
+            assertEquals(stored.copy(name = ProductName("Vitamin D3")), saved)
+        }
+
+    @Test
+    fun editSaveWithANewRateKeepsThePastConsumption() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.ConsumptionUnits, "2")
+            viewModel.onSave()
+            runCurrent()
+            val saved = repository.products.value.single()
+            assertEquals(20.toBigInteger(), saved.estimatedStockAt(now).wholeUnits)
+            assertEquals(LocalDate.of(2026, 3, 2), saved.depletionDateIn(ZoneOffset.UTC).date)
+        }
+
+    @Test
+    fun deleteRemovesTheStoredProductAndCloses() =
+        runTest {
+            val viewModel = editViewModel()
+            runCurrent()
+            viewModel.onTextChange(ProductFormField.Name, "Changed")
+            viewModel.onDelete()
+            runCurrent()
+            assertEquals(ProductFormEvent.Closed, viewModel.events.first())
+            assertTrue(repository.products.value.isEmpty())
         }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,10 +61,10 @@ import java.time.format.FormatStyle
 fun ProductFormRoute(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModel.Factory),
+    viewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModel.factory()),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProductFormScreen(state, viewModel.events, viewModel::onTextChange, viewModel::onSave, onClose, modifier)
+    ProductFormScreen(state, viewModel.events, viewModel::onTextChange, viewModel::onSave, viewModel::onDelete, onClose, modifier)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -74,16 +74,18 @@ fun ProductFormScreen(
     events: Flow<ProductFormEvent>,
     onTextChange: (ProductFormField, String) -> Unit,
     onSave: () -> Unit,
+    onDelete: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val requesters = remember { FieldFocus() }
     val currentOnClose by rememberUpdatedState(onClose)
     LaunchedEffect(events) {
         events.collect { event ->
             when (event) {
-                ProductFormEvent.Saved -> currentOnClose()
+                ProductFormEvent.Saved, ProductFormEvent.Closed -> currentOnClose()
                 is ProductFormEvent.FocusField -> requesters[event.field].requestFocus()
             }
         }
@@ -96,7 +98,13 @@ fun ProductFormScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.product_form_title)) },
+                title = {
+                    Text(
+                        stringResource(
+                            if (state.mode is ProductFormMode.New) R.string.product_form_title else R.string.product_form_title_edit,
+                        ),
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = back) {
                         Icon(AppIcons.ArrowBack, stringResource(R.string.product_form_navigate_up))
@@ -106,10 +114,16 @@ fun ProductFormScreen(
             )
         },
     ) { padding ->
-        FormFields(state, onTextChange, requesters, Modifier.padding(padding))
+        if (state.mode !is ProductFormMode.Loading) {
+            FormFields(state, onTextChange, { confirmDelete = true }, requesters, Modifier.padding(padding))
+        }
     }
     if (confirmDiscard) {
         DiscardDialog(onKeepEditing = { confirmDiscard = false }, onDiscard = onClose)
+    }
+    val mode = state.mode
+    if (confirmDelete && mode is ProductFormMode.Edit) {
+        DeleteDialog(mode.storedName, onCancel = { confirmDelete = false }, onDelete = onDelete)
     }
 }
 
@@ -122,22 +136,10 @@ private class FieldFocus {
 }
 
 @Composable
-private fun DiscardDialog(
-    onKeepEditing: () -> Unit,
-    onDiscard: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onKeepEditing,
-        title = { Text(stringResource(R.string.product_form_discard_title)) },
-        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.product_form_discard_confirm)) } },
-        dismissButton = { TextButton(onClick = onKeepEditing) { Text(stringResource(R.string.product_form_discard_keep)) } },
-    )
-}
-
-@Composable
 private fun FormFields(
     state: ProductFormState,
     onTextChange: (ProductFormField, String) -> Unit,
+    onDeleteClick: () -> Unit,
     requesters: FieldFocus,
     modifier: Modifier = Modifier,
 ) {
@@ -173,8 +175,23 @@ private fun FormFields(
             NumberBox(ProductFormField.LeadTime, state, onTextChange, requesters, R.string.product_form_lead_time_description)
             Text(stringResource(R.string.product_form_lead_time_after))
         }
-        TextInput(ProductFormField.UnitsNow, state, onTextChange, requesters, R.string.product_form_units_now, number, ime = ImeAction.Done)
+        if (ProductFormField.UnitsNow in state.fields) {
+            TextInput(
+                ProductFormField.UnitsNow,
+                state,
+                onTextChange,
+                requesters,
+                R.string.product_form_units_now,
+                number,
+                ime = ImeAction.Done,
+            )
+        }
         state.preview?.let { Preview(it) }
+        if (state.mode is ProductFormMode.Edit) {
+            TextButton(onClick = onDeleteClick, colors = deleteColors(), contentPadding = PaddingValues(0.dp)) {
+                Text(stringResource(R.string.product_form_delete))
+            }
+        }
     }
 }
 

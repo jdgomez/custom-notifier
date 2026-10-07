@@ -11,7 +11,9 @@
     <string name="product_list_alert_due">Alert due</string>
     <string name="product_list_ran_out">Ran out %1$s</string>
     <string name="product_list_add">Add product</string>
+    <string name="product_list_edit">Edit</string>
     <string name="product_form_title">New product</string>
+    <string name="product_form_title_edit">Edit product</string>
     <string name="product_form_navigate_up">Navigate up</string>
     <string name="product_form_save">Save</string>
     <string name="product_form_name">Name</string>
@@ -32,6 +34,11 @@
     <string name="product_form_error_name">Enter a name</string>
     <string name="product_form_error_unit">Enter a unit</string>
     <string name="product_form_error_range">Enter a whole number from %1$s to %2$s</string>
+    <string name="product_form_delete">Delete product</string>
+    <string name="product_form_delete_title">Delete %1$s?</string>
+    <string name="product_form_delete_text">Its stock and alert will be removed. This can\'t be undone.</string>
+    <string name="product_form_delete_cancel">Cancel</string>
+    <string name="product_form_delete_confirm">Delete</string>
     <string name="product_form_discard_title">Discard changes?</string>
     <string name="product_form_discard_keep">Keep editing</string>
     <string name="product_form_discard_confirm">Discard</string>
