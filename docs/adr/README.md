@@ -33,3 +33,4 @@ The index below is updated in the same change that adds or supersedes an ADR.
 | [0012](0012-development-practices.md) | Development practices | Accepted |
 | [0013](0013-agent-engineering-workflow.md) | Agent engineering workflow and the no-mistakes gate | Accepted |
 | [0014](0014-play-app-signing.md) | Play App Signing with the upload key as a GitHub Actions secret | Accepted |
+| [0015](0015-manual-dependency-injection.md) | Manual dependency injection | Accepted |

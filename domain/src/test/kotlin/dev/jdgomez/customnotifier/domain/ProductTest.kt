@@ -5,6 +5,7 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class ProductTest {
@@ -121,5 +122,25 @@ class ProductTest {
         val edited = product(30).changeRule(Rule(LeadTime(5)))
         assertEquals(5, edited.rule.leadTime.days)
         assertEquals(Quantity.of(30), edited.estimatedStockAt(t0).exact)
+    }
+
+    @Test
+    fun `identity is kept through edits`() {
+        val original = product()
+        val edited =
+            original
+                .adjust(-1, days(1))
+                .restock(1, days(2))
+                .rename(ProductName("Vitamin C"))
+                .changeRule(Rule(LeadTime(3)))
+                .changeConsumptionRate(ConsumptionRate(2, 1), days(3))
+                .changePackageSize(PackageSize(10))
+                .relabelUnit(UnitLabel("capsule"))
+        assertEquals(original.id, edited.id)
+    }
+
+    @Test
+    fun `identical values give different identities`() {
+        assertNotEquals(product().id, product().id)
     }
 }

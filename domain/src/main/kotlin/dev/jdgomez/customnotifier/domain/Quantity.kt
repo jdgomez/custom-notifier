@@ -4,8 +4,8 @@ import java.math.BigInteger
 
 /** An exact signed amount of units, kept as a reduced fraction of [BigInteger]s. */
 class Quantity private constructor(
-    private val numerator: BigInteger,
-    private val denominator: BigInteger,
+    val numerator: BigInteger,
+    val denominator: BigInteger,
 ) : Comparable<Quantity> {
     /** True when the amount is a whole number of units. */
     val isWhole: Boolean get() = denominator == BigInteger.ONE

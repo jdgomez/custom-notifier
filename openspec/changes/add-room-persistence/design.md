@@ -65,3 +65,5 @@ Robolectric JVM tests in `:app` against a real Room database:
 - [`NOCASE` ordering is ASCII-only: "Ábaco" sorts after "Zinc"] → Acceptable until the Spanish translation (`#48`); then sort in the domain with a `Collator` if the owner wants it.
 - [Robolectric's SQLite may differ from a device's] → Room runs the same generated SQL; the E2E suite will exercise the real database once the UI exists (`#42`).
 - [`Product` constructor and `Product.create` change again (new `id`)] → Only tests call them; persisted data does not exist yet.
+- [Android Lint flags Room 3.0.1 as outdated and lint runs with warnings as errors] -> Implemented with Room 3.0.3 (patch release of the same approved dependency). KSP is 2.3.12 (its versions are independent of Kotlin) and coroutines 1.11.0.
+- [`Flow` in the domain port must reach `:app` at compile time] -> `:domain` applies `java-library` and exposes `kotlinx-coroutines-core` with `api`.

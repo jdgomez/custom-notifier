@@ -23,6 +23,7 @@ class DepletionAndAlertTest {
         rate: ConsumptionRate = ConsumptionRate(1, 1),
         leadDays: Int = 10,
     ) = Product(
+        ProductId(java.util.UUID.randomUUID()),
         ProductName("Vitamin D"),
         UnitLabel("pill"),
         PackageSize(30),

@@ -11,6 +11,10 @@ detekt = "2.0.0-alpha.6"
 # Compose rules 0.6.x is built for detekt 2.x (0.4.x targets detekt 1.x).
 composeRules = "0.6.7"
 junit = "4.13.2"
+room = "3.0.3"
+# KSP 2.3.x versions are independent of the Kotlin version.
+ksp = "2.3.12"
+coroutines = "1.11.0"
 robolectric = "4.17"
 roborazzi = "1.76.0"
 androidxTestCore = "1.7.0"
@@ -31,6 +35,10 @@ androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
+room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -54,3 +62,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+room = { id = "androidx.room3", version.ref = "room" }

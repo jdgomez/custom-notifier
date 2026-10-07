@@ -51,4 +51,12 @@ class QuantityTest {
         assertFailsWith<IllegalArgumentException> { fraction(1, 0) }
         assertFailsWith<IllegalArgumentException> { Quantity.of(1) / 0 }
     }
+
+    @Test
+    fun `numerator and denominator rebuild the same quantity`() {
+        val value = fraction(34, 4)
+        assertEquals(BigInteger.valueOf(17), value.numerator)
+        assertEquals(BigInteger.valueOf(2), value.denominator)
+        assertEquals(value, Quantity.of(value.numerator, value.denominator))
+    }
 }
