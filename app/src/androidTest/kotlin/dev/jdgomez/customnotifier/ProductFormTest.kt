@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -24,10 +25,12 @@ class ProductFormTest {
 
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
-    private fun awaitText(text: String) =
-        composeRule.waitUntil(LOAD_TIMEOUT_MS) {
-            composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
-        }
+    private fun awaitText(
+        text: String,
+        timeoutMs: Long = LOAD_TIMEOUT_MS,
+    ) = composeRule.waitUntil(timeoutMs) {
+        composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+    }
 
     private fun openForm() {
         awaitText("No products yet")
@@ -60,9 +63,10 @@ class ProductFormTest {
     fun backWithInputAsksToDiscardAndDiscardReturnsToTheEmptyList() {
         openForm()
         type("Name", "Vitamin D")
-        // With the keyboard open, the first back closes it.
+        // A device back press is swallowed by the keyboard while it is open, so close it first.
+        Espresso.closeSoftKeyboard()
         device.pressBack()
-        if (composeRule.onAllNodes(hasText("Discard changes?")).fetchSemanticsNodes().isEmpty()) device.pressBack()
+        awaitText("Discard changes?")
         composeRule.onNodeWithText("Discard changes?").assertIsDisplayed()
         composeRule.onNodeWithText("Discard").performClick()
 
