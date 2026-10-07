@@ -37,6 +37,12 @@ data class Stock(
         return EstimatedStock((units - consumed).coerceAtLeast(Quantity.ZERO))
     }
 
+    /** The exact moment the estimate reaches zero under [rate], floored to whole milliseconds; [recordedAt] when out of stock. */
+    fun depletionMoment(rate: ConsumptionRate): Instant {
+        val millis = (units * (rate.days * MILLIS_PER_DAY) / rate.units.toLong()).floor()
+        return recordedAt.plusMillis(millis.longValueExact())
+    }
+
     /** Whole milliseconds from [recordedAt] to [now], exact for any pair of instants. */
     private fun elapsedMillis(now: Instant): BigInteger {
         val seconds = BigInteger.valueOf(now.epochSecond) - BigInteger.valueOf(recordedAt.epochSecond)
