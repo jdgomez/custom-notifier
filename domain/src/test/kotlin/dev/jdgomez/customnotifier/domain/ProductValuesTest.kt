@@ -43,4 +43,12 @@ class ProductValuesTest {
         assertRejects("consumptionRate.days") { ConsumptionRate(1, 0) }
         assertRejects("consumptionRate.days") { ConsumptionRate(1, -2) }
     }
+
+    @Test
+    fun `lead time accepts 0 to 365 days and rejects anything else naming the lead time`() {
+        assertEquals(0, Rule(LeadTime(0)).leadTime.days)
+        assertEquals(365, Rule(LeadTime(365)).leadTime.days)
+        assertRejects("leadTime") { LeadTime(-1) }
+        assertRejects("leadTime") { LeadTime(366) }
+    }
 }

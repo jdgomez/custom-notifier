@@ -16,16 +16,25 @@ class ProductTest {
         initialUnits: Int = 30,
         packageSize: Int = 90,
         rate: ConsumptionRate = ConsumptionRate(1, 1),
-    ) = Product.create(ProductName("Vitamin D"), UnitLabel("pill"), PackageSize(packageSize), rate, initialUnits, t0)
+    ) = Product.create(ProductName("Vitamin D"), UnitLabel("pill"), PackageSize(packageSize), rate, Rule(LeadTime(10)), initialUnits, t0)
 
     private fun Quantity.half() = this / 2
 
     @Test
     fun `valid product starts at its initial stock`() {
         val product =
-            Product.create(ProductName(" Vitamin D "), UnitLabel("pill"), PackageSize(90), ConsumptionRate(1, 1), 30, t0)
+            Product.create(
+                ProductName(" Vitamin D "),
+                UnitLabel("pill"),
+                PackageSize(90),
+                ConsumptionRate(1, 1),
+                Rule(LeadTime(10)),
+                30,
+                t0,
+            )
         assertEquals("Vitamin D", product.name.value)
         assertEquals("pill", product.unitLabel.value)
+        assertEquals(10, product.rule.leadTime.days)
         assertEquals(Quantity.of(30), product.estimatedStockAt(t0).exact)
     }
 
@@ -105,5 +114,12 @@ class ProductTest {
     @Test
     fun `a product cannot be copied into a negative stock`() {
         assertFailsWith<IllegalArgumentException> { product().copy(stock = Stock(Quantity.of(-1), t0)) }
+    }
+
+    @Test
+    fun `changing the rule keeps the stock`() {
+        val edited = product(30).changeRule(Rule(LeadTime(5)))
+        assertEquals(5, edited.rule.leadTime.days)
+        assertEquals(Quantity.of(30), edited.estimatedStockAt(t0).exact)
     }
 }
