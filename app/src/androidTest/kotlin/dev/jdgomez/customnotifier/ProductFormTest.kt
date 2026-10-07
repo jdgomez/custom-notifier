@@ -62,11 +62,9 @@ class ProductFormTest {
     fun backWithInputAsksToDiscardAndDiscardReturnsToTheEmptyList() {
         openForm()
         type("Name", "Vitamin D")
-        // With the keyboard open, the first back closes it.
-        // The dialog shows asynchronously, so wait for it before deciding a second back is needed.
-        device.pressBack()
-        val dialogShown = runCatching { awaitText("Discard changes?", BACK_TIMEOUT_MS) }.isSuccess
-        if (!dialogShown) device.pressBack()
+        // Back through the activity dispatcher: a device back press is swallowed by the keyboard
+        // when it is open, which made the number of presses needed depend on the emulator.
+        composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
         awaitText("Discard changes?")
         composeRule.onNodeWithText("Discard changes?").assertIsDisplayed()
         composeRule.onNodeWithText("Discard").performClick()
@@ -98,6 +96,5 @@ class ProductFormTest {
 
     private companion object {
         const val LOAD_TIMEOUT_MS = 5_000L
-        const val BACK_TIMEOUT_MS = 2_000L
     }
 }
