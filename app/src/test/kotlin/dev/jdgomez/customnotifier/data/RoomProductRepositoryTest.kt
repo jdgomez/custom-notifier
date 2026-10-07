@@ -168,4 +168,18 @@ class RoomProductRepositoryTest {
             listOf("diapers", "Vitamin D", "Detergent").forEach { repository.save(product(it)) }
             assertEquals(listOf("Detergent", "diapers", "Vitamin D"), repository.observeAll().first().map { it.name.value })
         }
+
+    @Test
+    fun `order ignores case of accented names and ties break by identity`() =
+        runTest {
+            val upper = product("Ágata")
+            val lower = product("ágata")
+            listOf("zucchini", "Éponge", "eau").forEach { repository.save(product(it)) }
+            repository.save(upper)
+            repository.save(lower)
+            val names = repository.observeAll().first().map { it.name.value.lowercase() }
+            assertEquals(listOf("eau", "zucchini", "ágata", "ágata", "éponge"), names)
+            val tied = repository.observeAll().first().filter { it.name.value.equals("ágata", ignoreCase = true) }
+            assertEquals(listOf(upper, lower).sortedBy { it.id.value.toString() }, tied)
+        }
 }

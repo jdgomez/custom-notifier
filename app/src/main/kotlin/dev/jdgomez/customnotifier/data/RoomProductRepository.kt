@@ -21,7 +21,7 @@ import java.util.UUID
 class RoomProductRepository(
     private val dao: ProductDao,
 ) : ProductRepository {
-    override fun observeAll(): Flow<List<Product>> = dao.observeAll().map { rows -> rows.map { it.toDomain() } }
+    override fun observeAll(): Flow<List<Product>> = dao.observeAll().map { rows -> rows.map { it.toDomain() }.sortedWith(byNameThenId) }
 
     override suspend fun find(id: ProductId): Product? = dao.find(id.value.toString())?.toDomain()
 
@@ -29,6 +29,10 @@ class RoomProductRepository(
 
     override suspend fun delete(id: ProductId) = dao.delete(id.value.toString())
 }
+
+private val byNameThenId =
+    compareBy<Product, String>(String.CASE_INSENSITIVE_ORDER) { it.name.value }
+        .thenBy { it.id.value.toString() }
 
 private fun Product.toEntity() =
     ProductEntity(

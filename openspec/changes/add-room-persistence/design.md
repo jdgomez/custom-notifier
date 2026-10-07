@@ -46,7 +46,7 @@ The adapter (`RoomProductRepository`) maps entity to domain and back in one plac
 | `Stock.recordedAt` | `recorded_at_epoch_second INTEGER`, `recorded_at_nano INTEGER` |
 | `Rule.leadTime` | `lead_time_days INTEGER` |
 
-`Quantity` needs a way to expose and rebuild its numerator and denominator; the executor adds the narrowest public API for that (for example `numerator`/`denominator` properties and the existing `of(numerator, denominator)` factory). Ordering for `observeAll` (`ORDER BY name COLLATE NOCASE, id`) is done in SQL. SQLite's `NOCASE` folds ASCII only; acceptable for the MVP and noted below.
+`Quantity` needs a way to expose and rebuild its numerator and denominator; the executor adds the narrowest public API for that (for example `numerator`/`denominator` properties and the existing `of(numerator, denominator)` factory). Ordering for `observeAll` is done in `RoomProductRepository` with a Unicode-aware case-insensitive comparator on the name, then the identity text (SQLite's `NOCASE` folds ASCII only).
 
 ### Manual dependency injection (ADR 0015)
 A `CustomNotifierApplication` (declared in the manifest) creates one `AppContainer` that lazily builds the database and exposes `productRepository: ProductRepository`. Later changes add to it (`Clock`, `ZoneId` provider, scheduler). ViewModels get dependencies through a factory reading the container.
@@ -62,7 +62,6 @@ Robolectric JVM tests in `:app` against a real Room database:
 ## Risks / Trade-offs
 
 - [KSP version must match Kotlin 2.4.20 and AGP 9.4.1] → The executor picks the matching KSP release and records it in the catalog; if none is compatible, stop and escalate (no workaround).
-- [`NOCASE` ordering is ASCII-only: "Ábaco" sorts after "Zinc"] → Acceptable until the Spanish translation (`#48`); then sort in the domain with a `Collator` if the owner wants it.
 - [Robolectric's SQLite may differ from a device's] → Room runs the same generated SQL; the E2E suite will exercise the real database once the UI exists (`#42`).
 - [`Product` constructor and `Product.create` change again (new `id`)] → Only tests call them; persisted data does not exist yet.
 - [Android Lint flags Room 3.0.1 as outdated and lint runs with warnings as errors] -> Implemented with Room 3.0.3 (patch release of the same approved dependency). KSP is 2.3.12 (its versions are independent of Kotlin) and coroutines 1.11.0.

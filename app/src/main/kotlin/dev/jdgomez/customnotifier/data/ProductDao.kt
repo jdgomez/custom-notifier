@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductDao {
-    @Query("SELECT * FROM products ORDER BY name COLLATE NOCASE, id")
+    @Query("SELECT * FROM products ORDER BY id")
     fun observeAll(): Flow<List<ProductEntity>>
 
     @Query("SELECT * FROM products WHERE id = :id")
