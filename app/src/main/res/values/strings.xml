@@ -42,4 +42,17 @@
     <string name="product_form_discard_title">Discard changes?</string>
     <string name="product_form_discard_keep">Keep editing</string>
     <string name="product_form_discard_confirm">Discard</string>
+    <string name="stock_section_title">Stock</string>
+    <string name="stock_restock">Restock</string>
+    <string name="stock_adjust">Adjust</string>
+    <string name="stock_cancel">Cancel</string>
+    <string name="stock_after">Stock after:</string>
+    <string name="stock_restock_title">Restock %1$s</string>
+    <string name="stock_restock_fewer">Fewer packages</string>
+    <string name="stock_restock_more">More packages</string>
+    <string name="stock_restock_added">+%1$s %2$s</string>
+    <string name="stock_adjust_title">Adjust stock</string>
+    <string name="stock_adjust_add">Add</string>
+    <string name="stock_adjust_remove">Remove</string>
+    <string name="stock_adjust_units">Units</string>
 </resources>

@@ -36,13 +36,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
+import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.AppIcons
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 
 @Composable
 fun ProductListRoute(
@@ -139,7 +139,7 @@ private fun ProductRowItem(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(text = row.name, style = MaterialTheme.typography.titleMedium)
-        StockText(row, locale)
+        StockText(row.stock, row.unitLabel)
         when (val status = row.status) {
             is RowStatus.Upcoming -> {
                 DateText(stringResource(R.string.product_list_runs_out, status.depletionDate.format(dateFormat)))
@@ -157,25 +157,34 @@ private fun ProductRowItem(
 
 private fun LocalDate.format(formatter: DateTimeFormatter): String = formatter.format(this)
 
+/** The estimated [stock] in [unitLabel] with the list's rounding rules: "≈ " when rounded down, [label] first when given. */
 @Composable
-private fun StockText(
-    row: ProductRow,
-    locale: Locale,
+internal fun StockText(
+    stock: EstimatedStock,
+    unitLabel: String,
+    modifier: Modifier = Modifier,
+    label: String? = null,
 ) {
-    val stock = row.stock
-    val whole = stringResource(R.string.product_list_stock, NumberFormat.getIntegerInstance(locale).format(stock.wholeUnits), row.unitLabel)
+    val locale = LocalConfiguration.current.locales[0]
+    val whole = stringResource(R.string.product_list_stock, NumberFormat.getIntegerInstance(locale).format(stock.wholeUnits), unitLabel)
     val prefix = stringResource(R.string.product_list_stock_approximate_prefix)
     val zeroStyle = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
     val text =
         buildAnnotatedString {
+            if (label != null) append("$label ")
             if (stock.rounded) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(prefix) }
             if (stock.wholeUnits.signum() == 0) withStyle(zeroStyle) { append(whole) } else append(whole)
         }
-    val description = if (stock.rounded) stringResource(R.string.product_list_stock_approximate_description, whole) else null
+    val description =
+        if (stock.rounded) {
+            listOfNotNull(label, stringResource(R.string.product_list_stock_approximate_description, whole)).joinToString(" ")
+        } else {
+            null
+        }
     Text(
         text = text,
         style = MaterialTheme.typography.bodyLarge,
-        modifier = if (description == null) Modifier else Modifier.semantics { contentDescription = description },
+        modifier = if (description == null) modifier else modifier.semantics { contentDescription = description },
     )
 }
 

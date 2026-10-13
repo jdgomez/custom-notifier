@@ -66,7 +66,16 @@ fun ProductFormRoute(
     viewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModel.factory()),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProductFormScreen(state, viewModel.events, viewModel::onTextChange, viewModel::onSave, viewModel::onDelete, onClose, modifier)
+    ProductFormScreen(
+        state,
+        viewModel.events,
+        viewModel::onTextChange,
+        viewModel::onSave,
+        viewModel::onDelete,
+        onClose,
+        modifier,
+        viewModel::onStockAction,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -79,6 +88,7 @@ fun ProductFormScreen(
     onDelete: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    onStockAction: (StockAction) -> Unit = {},
 ) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -123,7 +133,7 @@ fun ProductFormScreen(
         if (state.mode is ProductFormMode.Loading) {
             LoadingIndicator(Modifier.padding(padding))
         } else {
-            FormFields(state, onTextChange, { confirmDelete = true }, requesters, Modifier.padding(padding))
+            FormFields(state, onTextChange, { confirmDelete = true }, requesters, onStockAction, Modifier.padding(padding))
         }
     }
     if (confirmDiscard) {
@@ -133,6 +143,7 @@ fun ProductFormScreen(
     if (confirmDelete && mode is ProductFormMode.Edit) {
         DeleteDialog(mode.storedName, onCancel = { confirmDelete = false }, onDelete = onDelete)
     }
+    StockDialogs(state, onStockAction)
 }
 
 @Composable
@@ -156,6 +167,7 @@ private fun FormFields(
     onTextChange: (ProductFormField, String) -> Unit,
     onDeleteClick: () -> Unit,
     requesters: FieldFocus,
+    onStockAction: (StockAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val text = KeyboardType.Text
@@ -169,6 +181,7 @@ private fun FormFields(
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        state.stock?.let { StockSection(it, onStockAction) }
         TextInput(ProductFormField.Name, state, onTextChange, requesters, R.string.product_form_name, text)
         TextInput(ProductFormField.Unit, state, onTextChange, requesters, R.string.product_form_unit, text, R.string.product_form_unit_help)
         TextInput(ProductFormField.PackageSize, state, onTextChange, requesters, R.string.product_form_package_size, number)

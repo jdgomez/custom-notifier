@@ -66,7 +66,53 @@ class ProductFormViewModel(
                 preview = product.statusAt(clock.instant(), zone()),
                 initialTexts = texts,
                 mode = ProductFormMode.Edit(product.name.value),
+                stock = product.stockSummary(clock.instant()),
             )
+    }
+
+    /** Handles a tap in the stock section or its dialogs; the dialogs' stock after is computed by the domain. */
+    fun onStockAction(action: StockAction) {
+        val product = original ?: return
+        val now = clock.instant()
+        val dialog = mutableState.value.stockDialog
+        when {
+            action == StockAction.OpenRestock -> showStockDialog(product.restockDialog(1, now))
+            action == StockAction.OpenAdjust -> showStockDialog(product.adjustDialog(remove = true, units = "", now))
+            action == StockAction.Dismiss -> mutableState.update { it.copy(stockDialog = null) }
+            action == StockAction.Confirm -> confirmStock(dialog)
+            action is StockAction.Step && dialog is StockDialog.Restock ->
+                showStockDialog(product.restockDialog((dialog.packages + action.delta).coerceIn(StockLimits.packages), now))
+            action is StockAction.SetMode && dialog is StockDialog.Adjust ->
+                showStockDialog(product.adjustDialog(action.remove, dialog.units, now))
+            action is StockAction.SetUnits && dialog is StockDialog.Adjust ->
+                showStockDialog(
+                    product.adjustDialog(dialog.remove, action.text.filter(Char::isDigit).take(StockLimits.UNITS_MAX_LENGTH), now),
+                )
+        }
+    }
+
+    private fun showStockDialog(dialog: StockDialog) {
+        if (!finishing) mutableState.update { it.copy(stockDialog = dialog) }
+    }
+
+    /** Stores [dialog]'s result now and closes it; the form stays open with its unsaved edits. */
+    private fun confirmStock(dialog: StockDialog?) {
+        val id = editId
+        if (finishing || id == null || dialog?.stockAfter == null) return
+        mutableState.update { it.copy(stockDialog = null) }
+        viewModelScope.launch {
+            val stored = repository.find(id)
+            if (stored == null) {
+                eventChannel.send(ProductFormEvent.Closed)
+                return@launch
+            }
+            if (finishing) return@launch
+            val now = clock.instant()
+            val updated = dialog.applyTo(stored, now)
+            repository.save(updated)
+            original = updated
+            mutableState.update { it.copy(stock = updated.stockSummary(now), preview = buildProduct(it.texts)?.statusAt(now, zone())) }
+        }
     }
 
     /** Deletes the stored product and closes the form. */

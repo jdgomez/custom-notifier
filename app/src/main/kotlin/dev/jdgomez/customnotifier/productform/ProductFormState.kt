@@ -1,5 +1,6 @@
 package dev.jdgomez.customnotifier.productform
 
+import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.productlist.RowStatus
 
 /** The form's fields in screen order, with the input rules of each: the length cap and, for numbers, the allowed range. */
@@ -27,6 +28,10 @@ data class ProductFormState(
     /** The texts the form opened with: a new product's defaults, or the stored product's values. */
     val initialTexts: Map<ProductFormField, String> = INITIAL_TEXTS,
     val mode: ProductFormMode = ProductFormMode.New,
+    /** The stored product's estimated stock and unit label, shown in the edit form's "Stock" section. */
+    val stock: StockSummary? = null,
+    /** The restock or adjust dialog being shown, if any. */
+    val stockDialog: StockDialog? = null,
 ) {
     /** Whether any field differs from the values the form opened with. */
     val isDirty: Boolean get() = texts != initialTexts
@@ -54,6 +59,39 @@ data class ProductFormState(
     }
 }
 
+/** The estimated [stock] of a stored product, counted in [unitLabel]. */
+data class StockSummary(
+    val stock: EstimatedStock,
+    val unitLabel: String,
+)
+
+/** The limits of the stock dialogs (see the stock-update spec). */
+@Suppress("MagicNumber") // Input rules of the spec, written once here.
+object StockLimits {
+    val packages = 1..99
+    val units = 1..1_000_000
+    const val UNITS_MAX_LENGTH = 7
+}
+
+/** A stock dialog: [stockAfter] is the estimated stock it would result in, or null while its input is invalid. */
+sealed interface StockDialog {
+    val stockAfter: EstimatedStock?
+
+    /** Restocking [packages] packages, which add [addedUnits] units. */
+    data class Restock(
+        val packages: Int,
+        val addedUnits: Int,
+        override val stockAfter: EstimatedStock,
+    ) : StockDialog
+
+    /** Adding or, when [remove], removing the whole units typed in [units]. */
+    data class Adjust(
+        val remove: Boolean,
+        val units: String,
+        override val stockAfter: EstimatedStock?,
+    ) : StockDialog
+}
+
 /** Whether the form creates a product or edits a stored one. */
 sealed interface ProductFormMode {
     data object New : ProductFormMode
@@ -79,4 +117,31 @@ sealed interface ProductFormEvent {
     data class FocusField(
         val field: ProductFormField,
     ) : ProductFormEvent
+}
+
+/** What the user can do in the stock section and its dialogs. */
+sealed interface StockAction {
+    data object OpenRestock : StockAction
+
+    data object OpenAdjust : StockAction
+
+    /** Changes the restock package count by [delta]. */
+    data class Step(
+        val delta: Int,
+    ) : StockAction
+
+    /** Selects "Remove" ([remove]) or "Add" in the adjust dialog. */
+    data class SetMode(
+        val remove: Boolean,
+    ) : StockAction
+
+    /** Sets the units field of the adjust dialog; only its digits are kept. */
+    data class SetUnits(
+        val text: String,
+    ) : StockAction
+
+    data object Dismiss : StockAction
+
+    /** Stores the open dialog's result. */
+    data object Confirm : StockAction
 }

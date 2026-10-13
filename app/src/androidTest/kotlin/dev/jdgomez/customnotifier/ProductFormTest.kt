@@ -5,10 +5,12 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -125,6 +127,50 @@ class ProductFormTest {
             device.setOrientationNatural()
             device.unfreezeRotation()
         }
+    }
+
+    private fun createVitaminD() {
+        openForm()
+        type("Name", "Vitamin D")
+        type("Unit", "pills")
+        type("PackageSize", "90")
+        type("ConsumptionUnits", "1")
+        type("UnitsNow", "30")
+        composeRule.onNodeWithText("Save").performClick()
+        awaitRowText(STOCK_TEXT)
+    }
+
+    private fun openEditForm() {
+        composeRule.onNodeWithText("Vitamin D").performClick()
+        composeRule.onNodeWithText("Edit product").assertIsDisplayed()
+    }
+
+    @Test
+    fun restockIsShownInTheFormAndTheList() {
+        createVitaminD()
+        openEditForm()
+        composeRule.onNodeWithTag("restock").performClick()
+        composeRule.onNodeWithText("Restock Vitamin D").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("More packages").performClick()
+        composeRule.onNodeWithText("+180 pills").assertIsDisplayed()
+        composeRule.onNodeWithTag("stock_confirm").performClick()
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈ 209 pills")
+        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        awaitRowText("≈ 209 pills")
+        composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
+    }
+
+    @Test
+    fun removedUnitsAreShownInTheFormAndTheList() {
+        createVitaminD()
+        openEditForm()
+        composeRule.onNodeWithTag("adjust").performClick()
+        composeRule.onNodeWithTag("adjust_units").performTextInput("5")
+        composeRule.onNodeWithText("Stock after: ≈ 24 pills").assertIsDisplayed()
+        composeRule.onNodeWithTag("stock_confirm").performClick()
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈ 24 pills")
+        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        awaitRowText("≈ 24 pills")
     }
 
     private companion object {
