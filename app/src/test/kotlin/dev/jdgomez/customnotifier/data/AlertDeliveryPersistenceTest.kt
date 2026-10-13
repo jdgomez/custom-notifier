@@ -76,6 +76,18 @@ class AlertDeliveryPersistenceTest {
         }
 
     @Test
+    fun `recording for a product that no longer exists is ignored`() =
+        runBlocking {
+            val db = open()
+            val deliveries = RoomAlertDeliveries(db.alertDeliveryDao())
+            val product = testProduct("Vitamin D", recordedAt)
+
+            deliveries.record(product.id)
+
+            assertFalse(deliveries.isDelivered(product.id))
+        }
+
+    @Test
     fun `record survives reopening the database`() =
         runBlocking {
             val product = testProduct("Vitamin D", recordedAt)

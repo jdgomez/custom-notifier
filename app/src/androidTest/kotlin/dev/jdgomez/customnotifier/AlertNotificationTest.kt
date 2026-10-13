@@ -72,7 +72,6 @@ class AlertNotificationTest {
         assertNotNull(device.findObject(By.text(expected)))
         title.click()
 
-        // Opening the app from the shade is a window transition plus a database read: slow on a loaded CI emulator.
         assertNotNull(device.wait(Until.findObject(By.pkg(application.packageName).text("Vitamin D")), UI_TIMEOUT_MS))
         assertTrue(device.wait(Until.gone(By.text("Buy Vitamin D")), UI_TIMEOUT_MS))
     }

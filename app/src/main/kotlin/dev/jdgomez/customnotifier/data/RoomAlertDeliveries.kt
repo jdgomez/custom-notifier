@@ -9,7 +9,7 @@ class RoomAlertDeliveries(
 ) : AlertDeliveries {
     override suspend fun isDelivered(id: ProductId) = dao.isDelivered(id.value.toString())
 
-    override suspend fun record(id: ProductId) = dao.record(AlertDeliveryEntity(id.value.toString()))
+    override suspend fun record(id: ProductId) = dao.record(id.value.toString())
 
     override suspend fun clear(id: ProductId) = dao.clear(id.value.toString())
 }
