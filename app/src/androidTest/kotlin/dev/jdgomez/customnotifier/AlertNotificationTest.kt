@@ -68,20 +68,20 @@ class AlertNotificationTest {
         val expected = "Runs out " + DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()).format(date)
 
         device.openNotification()
-        val title = assertNotNull(device.wait(Until.findObject(By.text("Buy Vitamin D")), TIMEOUT_MS))
+        val title = assertNotNull(device.wait(Until.findObject(By.text("Buy Vitamin D")), UI_TIMEOUT_MS))
         assertNotNull(device.findObject(By.text(expected)))
         title.click()
 
         // Opening the app from the shade is a window transition plus a database read: slow on a loaded CI emulator.
-        assertNotNull(device.wait(Until.findObject(By.pkg(application.packageName).text("Vitamin D")), LAUNCH_TIMEOUT_MS))
-        assertTrue(device.wait(Until.gone(By.text("Buy Vitamin D")), TIMEOUT_MS))
+        assertNotNull(device.wait(Until.findObject(By.pkg(application.packageName).text("Vitamin D")), UI_TIMEOUT_MS))
+        assertTrue(device.wait(Until.gone(By.text("Buy Vitamin D")), UI_TIMEOUT_MS))
     }
 
     @Test
     fun scheduledProductHasAPendingAlarm() {
         seed(units = 30, daysAgo = 0)
 
-        val deadline = System.currentTimeMillis() + TIMEOUT_MS
+        val deadline = System.currentTimeMillis() + UI_TIMEOUT_MS
         var alarms: String
         do {
             alarms = device.executeShellCommand("dumpsys alarm")
@@ -93,8 +93,6 @@ class AlertNotificationTest {
     }
 
     private companion object {
-        const val TIMEOUT_MS = 10_000L
-        const val LAUNCH_TIMEOUT_MS = 30_000L
         const val POLL_MS = 250L
         const val SECONDS_PER_DAY = 86_400L
         const val ALARM_RECEIVER = "dev.jdgomez.customnotifier/.alerts.AlertAlarmReceiver"

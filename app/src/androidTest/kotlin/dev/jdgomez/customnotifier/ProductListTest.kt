@@ -63,7 +63,7 @@ class ProductListTest {
 
     /** The list loads from the database off the main thread, which Compose's idling does not wait for. */
     private fun awaitText(text: String) =
-        composeRule.waitUntil(LOAD_TIMEOUT_MS) { composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
+        composeRule.waitUntil(UI_TIMEOUT_MS) { composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
 
     @Test
     fun emptyStateOnACleanInstall() {
@@ -96,6 +96,5 @@ class ProductListTest {
 
     private companion object {
         const val SECONDS_PER_DAY = 86_400L
-        const val LOAD_TIMEOUT_MS = 5_000L
     }
 }

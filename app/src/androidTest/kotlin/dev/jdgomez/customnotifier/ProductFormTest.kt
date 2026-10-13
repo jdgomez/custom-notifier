@@ -31,20 +31,20 @@ class ProductFormTest {
 
     private fun awaitText(
         text: String,
-        timeoutMs: Long = LOAD_TIMEOUT_MS,
+        timeoutMs: Long = UI_TIMEOUT_MS,
     ) = composeRule.waitUntil(timeoutMs) {
         composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
     }
 
     /** Waits for a list row's text: unlike [awaitText], it cannot match a form field that is still on screen. */
     private fun awaitRowText(text: String) =
-        composeRule.waitUntil(LOAD_TIMEOUT_MS) {
+        composeRule.waitUntil(UI_TIMEOUT_MS) {
             composeRule.onAllNodes(hasText(text) and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()
         }
 
     /** Waits for the form's stock text: the stock change is stored asynchronously after the dialog closes. */
     private fun awaitFormStock(text: String) =
-        composeRule.waitUntil(LOAD_TIMEOUT_MS) {
+        composeRule.waitUntil(UI_TIMEOUT_MS) {
             composeRule.onAllNodes(hasTestTag("stock") and hasText(text)).fetchSemanticsNodes().isNotEmpty()
         }
 
@@ -174,7 +174,7 @@ class ProductFormTest {
         openEditForm()
         repeat(5) {
             composeRule.onNodeWithTag("adjust").performClick()
-            composeRule.waitUntil(LOAD_TIMEOUT_MS) {
+            composeRule.waitUntil(UI_TIMEOUT_MS) {
                 composeRule.onAllNodes(hasTestTag("adjust_units") and isFocused()).fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNodeWithText("Cancel").performClick()
@@ -198,6 +198,5 @@ class ProductFormTest {
     private companion object {
         /** 30 pills consumed at 1 per day: a few seconds after creation the exact stock is already just under 30. */
         const val STOCK_TEXT = "≈\u00A029\u00A0pills"
-        const val LOAD_TIMEOUT_MS = 5_000L
     }
 }
