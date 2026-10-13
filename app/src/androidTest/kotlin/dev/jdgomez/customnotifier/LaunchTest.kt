@@ -31,12 +31,8 @@ class LaunchTest {
             assertNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName))
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
         context.startActivity(launchIntent)
-        assertNotNull(device.wait(Until.findObject(By.pkg(context.packageName)), LAUNCH_TIMEOUT_MS))
+        assertNotNull(device.wait(Until.findObject(By.pkg(context.packageName)), UI_TIMEOUT_MS))
 
         composeRule.onNodeWithText(context.getString(R.string.app_name)).assertIsDisplayed()
-    }
-
-    private companion object {
-        const val LAUNCH_TIMEOUT_MS = 30_000L
     }
 }

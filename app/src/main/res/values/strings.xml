@@ -56,4 +56,8 @@
     <string name="stock_adjust_add">Add</string>
     <string name="stock_adjust_remove">Remove</string>
     <string name="stock_adjust_units">Units</string>
+    <string name="alert_channel_name">Depletion alerts</string>
+    <string name="alert_title">Buy %1$s</string>
+    <string name="alert_text">Runs out %1$s</string>
+    <string name="alert_text_today">Runs out today</string>
 </resources>
