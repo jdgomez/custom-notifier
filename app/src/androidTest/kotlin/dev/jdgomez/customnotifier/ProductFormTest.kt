@@ -42,6 +42,12 @@ class ProductFormTest {
             composeRule.onAllNodes(hasText(text) and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()
         }
 
+    /** Waits for the form's stock text: the stock change is stored asynchronously after the dialog closes. */
+    private fun awaitFormStock(text: String) =
+        composeRule.waitUntil(LOAD_TIMEOUT_MS) {
+            composeRule.onAllNodes(hasTestTag("stock") and hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
+
     private fun openForm() {
         awaitText("No products yet")
         composeRule.onNodeWithText("Add product", useUnmergedTree = true).performClick()
@@ -156,7 +162,7 @@ class ProductFormTest {
         composeRule.onNodeWithContentDescription("More packages").performClick()
         composeRule.onNodeWithText("+180\u00A0pills").assertIsDisplayed()
         composeRule.onNodeWithTag("stock_confirm").performClick()
-        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A0209\u00A0pills")
+        awaitFormStock("≈\u00A0209\u00A0pills")
         composeRule.onNodeWithContentDescription("Navigate up").performClick()
         awaitRowText("≈\u00A0209\u00A0pills")
         composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
@@ -184,7 +190,7 @@ class ProductFormTest {
         composeRule.onNodeWithTag("adjust_units").performTextInput("5")
         composeRule.onNodeWithText("Stock after: ≈\u00A024\u00A0pills").assertIsDisplayed()
         composeRule.onNodeWithTag("stock_confirm").performClick()
-        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A024\u00A0pills")
+        awaitFormStock("≈\u00A024\u00A0pills")
         composeRule.onNodeWithContentDescription("Navigate up").performClick()
         awaitRowText("≈\u00A024\u00A0pills")
     }
