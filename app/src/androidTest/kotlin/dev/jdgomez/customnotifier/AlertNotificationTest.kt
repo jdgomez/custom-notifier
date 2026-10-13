@@ -72,7 +72,8 @@ class AlertNotificationTest {
         assertNotNull(device.findObject(By.text(expected)))
         title.click()
 
-        assertNotNull(device.wait(Until.findObject(By.pkg(application.packageName).text("Vitamin D")), TIMEOUT_MS))
+        // Opening the app from the shade is a window transition plus a database read: slow on a loaded CI emulator.
+        assertNotNull(device.wait(Until.findObject(By.pkg(application.packageName).text("Vitamin D")), LAUNCH_TIMEOUT_MS))
         assertTrue(device.wait(Until.gone(By.text("Buy Vitamin D")), TIMEOUT_MS))
     }
 
@@ -93,6 +94,7 @@ class AlertNotificationTest {
 
     private companion object {
         const val TIMEOUT_MS = 10_000L
+        const val LAUNCH_TIMEOUT_MS = 30_000L
         const val POLL_MS = 250L
         const val SECONDS_PER_DAY = 86_400L
         const val ALARM_RECEIVER = "dev.jdgomez.customnotifier/.alerts.AlertAlarmReceiver"
