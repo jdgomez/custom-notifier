@@ -82,7 +82,7 @@ class ProductListScreenshotTest {
     private fun Screen(
         state: ProductListState,
         darkTheme: Boolean,
-    ) = CustomNotifierTheme(darkTheme) { ProductListScreen(state, onAddProduct = {}) }
+    ) = CustomNotifierTheme(darkTheme) { ProductListScreen(state, onAddProduct = {}, onEditProduct = {}) }
 
     @Test
     fun empty() {

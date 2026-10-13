@@ -1,20 +1,25 @@
 package dev.jdgomez.customnotifier.productlist
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.jdgomez.customnotifier.domain.Product
+import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
 import org.junit.Test
@@ -35,12 +40,26 @@ class ProductListScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private var edited: ProductId? = null
+
     private fun show(
         products: List<Product>,
         now: Instant = NOW,
         zone: ZoneOffset = ZoneOffset.UTC,
     ) = composeRule.setContent {
-        CustomNotifierTheme { ProductListScreen(products.toListState(now, zone), onAddProduct = {}) }
+        CustomNotifierTheme { ProductListScreen(products.toListState(now, zone), onAddProduct = {}, onEditProduct = { edited = it }) }
+    }
+
+    @Test
+    fun tappingARowOpensThatProductWithTheEditAction() {
+        val vitamin = testProduct("Vitamin D", NOW)
+        show(listOf(testProduct("Detergent", NOW), vitamin))
+        composeRule.onNodeWithText("Vitamin D").assertHasClickAction()
+        composeRule.onNodeWithText("Vitamin D").performClick()
+        assertEquals(vitamin.id, edited)
+        composeRule.onNodeWithText("Vitamin D").assert(
+            SemanticsMatcher("onClick label Edit") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Edit" },
+        )
     }
 
     private fun stockOf(
@@ -148,18 +167,19 @@ class ProductListScreenTest {
     }
 
     @Test
-    fun rowsHaveNoTapAction() {
-        show(listOf(testProduct("A", NOW)))
+    fun rowIsOneButtonForScreenReadersAnnouncingItsContentAndTheEditAction() {
+        show(listOf(testProduct("A", NOW, units = 8), testProduct("B", NOW, units = 5)))
 
-        // The only tap target is the "Add product" button.
-        composeRule.onAllNodes(hasClickAction()).assertCountEquals(1)
-    }
-
-    @Test
-    fun rowIsOneItemForScreenReaders() {
-        show(listOf(testProduct("A", NOW, units = 8)))
-
-        // In the merged tree a single node carries the name and the stock texts.
-        composeRule.onNode(hasText("A") and hasText("8 pills")).assertIsDisplayed()
+        val rows = composeRule.onAllNodes(hasClickAction() and hasText("pills", substring = true))
+        rows.assertCountEquals(2)
+        // One merged node per row: the name, the stock and the dates, a button whose click label is "Edit".
+        composeRule.onNode(hasText("A") and hasText("8 pills") and hasText("Runs out", substring = true)).assert(
+            SemanticsMatcher("button with click label Edit") {
+                it.config.getOrNull(SemanticsProperties.Role) == Role.Button &&
+                    it.config.getOrNull(SemanticsActions.OnClick)?.label == "Edit"
+            },
+        )
+        // The children are not separate focus stops: the merged tree has no node with only the name.
+        composeRule.onAllNodes(hasText("A") and !hasText("8 pills")).assertCountEquals(0)
     }
 }

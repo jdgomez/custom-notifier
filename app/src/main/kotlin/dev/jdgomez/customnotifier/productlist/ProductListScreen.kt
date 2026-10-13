@@ -1,5 +1,6 @@
 package dev.jdgomez.customnotifier.productlist
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
+import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.AppIcons
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -44,11 +47,12 @@ import java.util.Locale
 @Composable
 fun ProductListRoute(
     onAddProduct: () -> Unit,
+    onEditProduct: (ProductId) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProductListViewModel = viewModel(factory = ProductListViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProductListScreen(state, onAddProduct, modifier)
+    ProductListScreen(state, onAddProduct, onEditProduct, modifier)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +60,7 @@ fun ProductListRoute(
 fun ProductListScreen(
     state: ProductListState,
     onAddProduct: () -> Unit,
+    onEditProduct: (ProductId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -72,7 +77,7 @@ fun ProductListScreen(
         when (state) {
             ProductListState.Loading -> Unit
             ProductListState.Empty -> EmptyState(Modifier.padding(padding))
-            is ProductListState.Products -> ProductList(state, padding)
+            is ProductListState.Products -> ProductList(state, onEditProduct, padding)
         }
     }
 }
@@ -101,6 +106,7 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 @Composable
 private fun ProductList(
     products: ProductListState.Products,
+    onEditProduct: (ProductId) -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
@@ -108,7 +114,7 @@ private fun ProductList(
     val padding = PaddingValues(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding() + 88.dp)
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = padding) {
         items(products.rows, key = { it.id.value }) { row ->
-            ProductRowItem(row)
+            ProductRowItem(row, onClick = { onEditProduct(row.id) })
             HorizontalDivider()
         }
     }
@@ -117,6 +123,7 @@ private fun ProductList(
 @Composable
 private fun ProductRowItem(
     row: ProductRow,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locale = LocalConfiguration.current.locales[0]
@@ -125,6 +132,7 @@ private fun ProductRowItem(
         modifier =
             modifier
                 .fillMaxWidth()
+                .clickable(onClickLabel = stringResource(R.string.product_list_edit), role = Role.Button, onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
                 // One item for screen readers; its children keep their own text.
                 .semantics(mergeDescendants = true) {},

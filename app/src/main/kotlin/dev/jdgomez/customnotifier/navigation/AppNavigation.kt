@@ -8,14 +8,20 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.productform.ProductFormRoute
+import dev.jdgomez.customnotifier.productform.ProductFormViewModel
 import dev.jdgomez.customnotifier.productlist.ProductListRoute
 
-/** The screens of the app; the edit change adds `EditProduct(id)`. */
+/** The screens of the app. */
 sealed interface Destination {
     data object ProductList : Destination
 
     data object NewProduct : Destination
+
+    data class EditProduct(
+        val id: ProductId,
+    ) : Destination
 }
 
 /**
@@ -42,8 +48,16 @@ fun AppNavigation(model: NavigationViewModel = viewModel()) {
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
         entryProvider =
             entryProvider {
-                entry<Destination.ProductList> { ProductListRoute(onAddProduct = { model.push(Destination.NewProduct) }) }
+                entry<Destination.ProductList> {
+                    ProductListRoute(
+                        onAddProduct = { model.push(Destination.NewProduct) },
+                        onEditProduct = { model.push(Destination.EditProduct(it)) },
+                    )
+                }
                 entry<Destination.NewProduct> { ProductFormRoute(onClose = model::pop) }
+                entry<Destination.EditProduct> { key ->
+                    ProductFormRoute(onClose = model::pop, viewModel = viewModel(factory = ProductFormViewModel.factory(key.id)))
+                }
             },
     )
 }
