@@ -157,10 +157,10 @@ private fun ProductRowItem(
 
 private fun LocalDate.format(formatter: DateTimeFormatter): String = formatter.format(this)
 
-/** The no-break space the stock text joins its "≈ " prefix, number and unit label with, so the value wraps as one unit. */
-private const val NBSP = '\u00A0'
-
-/** The estimated [stock] in [unitLabel] with the list's rounding rules: "≈ " when rounded down, [label] first when given. */
+/**
+ * The estimated [stock] in [unitLabel] with the list's rounding rules: "≈ " when rounded down. [label], when given, goes first
+ * (for example "Stock after:"). The number and the unit label are joined by a no-break space (see the strings) so the value wraps as one.
+ */
 @Composable
 internal fun StockText(
     stock: EstimatedStock,
@@ -168,22 +168,20 @@ internal fun StockText(
     modifier: Modifier = Modifier,
     label: String? = null,
 ) {
-    val locale = LocalConfiguration.current.locales[0]
-    val whole = stringResource(R.string.product_list_stock, NumberFormat.getIntegerInstance(locale).format(stock.wholeUnits), unitLabel)
+    val number = NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0]).format(stock.wholeUnits)
+    val whole = stringResource(R.string.product_list_stock, number, unitLabel)
     val prefix = stringResource(R.string.product_list_stock_approximate_prefix)
     val zeroStyle = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
     val text =
         buildAnnotatedString {
-            if (label != null) append("$label ")
+            if (label != null) append(stringResource(R.string.stock_labeled, label, ""))
             if (stock.rounded) withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(prefix) }
             if (stock.wholeUnits.signum() == 0) withStyle(zeroStyle) { append(whole) } else append(whole)
         }
     val description =
         if (stock.rounded) {
-            listOfNotNull(
-                label,
-                stringResource(R.string.product_list_stock_approximate_description, whole.replace(NBSP, ' ')),
-            ).joinToString(" ")
+            val approximate = stringResource(R.string.product_list_stock_approximate_description, number, unitLabel)
+            if (label == null) approximate else stringResource(R.string.stock_labeled, label, approximate)
         } else {
             null
         }

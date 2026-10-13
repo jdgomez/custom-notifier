@@ -3,7 +3,9 @@ package dev.jdgomez.customnotifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -158,6 +160,20 @@ class ProductFormTest {
         composeRule.onNodeWithContentDescription("Navigate up").performClick()
         awaitRowText("≈\u00A0209\u00A0pills")
         composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
+    }
+
+    @Test
+    fun theAdjustDialogFocusesUnitsEveryTimeItOpens() {
+        createVitaminD()
+        openEditForm()
+        repeat(5) {
+            composeRule.onNodeWithTag("adjust").performClick()
+            composeRule.waitUntil(LOAD_TIMEOUT_MS) {
+                composeRule.onAllNodes(hasTestTag("adjust_units") and isFocused()).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNodeWithText("Cancel").performClick()
+            composeRule.onNodeWithTag("adjust_units").assertDoesNotExist()
+        }
     }
 
     @Test

@@ -49,10 +49,14 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
 import dev.jdgomez.customnotifier.productlist.RowStatus
+import dev.jdgomez.customnotifier.productlist.ticker
 import dev.jdgomez.customnotifier.ui.AppIcons
 import kotlinx.coroutines.flow.Flow
 import java.text.NumberFormat
@@ -66,6 +70,11 @@ fun ProductFormRoute(
     viewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModel.factory()),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The same ticker as the list: the stock and the dates are recomputed when the form returns to the foreground and every minute.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { ticker().collect { viewModel.onTick() } }
+    }
     ProductFormScreen(
         state,
         viewModel.events,

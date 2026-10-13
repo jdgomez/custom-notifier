@@ -43,8 +43,8 @@ class ProductListViewModel(
     }
 }
 
-/** Emits at once and then every [REFRESH_PERIOD]. */
-private fun ticker() =
+/** Emits at once and then every [REFRESH_PERIOD]; the product form refreshes its stock with it too. */
+internal fun ticker() =
     flow {
         while (true) {
             emit(Unit)

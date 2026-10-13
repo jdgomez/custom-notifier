@@ -5,7 +5,7 @@
     <string name="product_list_empty_help">Products you add will appear here with their stock and next alert.</string>
     <string name="product_list_stock">%1$s&#160;%2$s</string>
     <string name="product_list_stock_approximate_prefix">"≈&#160;"</string>
-    <string name="product_list_stock_approximate_description">about %1$s</string>
+    <string name="product_list_stock_approximate_description">about %1$s %2$s</string>
     <string name="product_list_runs_out">Runs out %1$s</string>
     <string name="product_list_alert">Alert %1$s</string>
     <string name="product_list_alert_due">Alert due</string>
@@ -47,6 +47,7 @@
     <string name="stock_adjust">Adjust</string>
     <string name="stock_cancel">Cancel</string>
     <string name="stock_after">Stock after:</string>
+    <string name="stock_labeled">%1$s %2$s</string>
     <string name="stock_restock_title">Restock %1$s</string>
     <string name="stock_restock_fewer">Fewer packages</string>
     <string name="stock_restock_more">More packages</string>
