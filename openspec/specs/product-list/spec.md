@@ -7,7 +7,7 @@ Shows the user every stored product with its estimated stock, depletion date and
 ## Requirements
 
 ### Requirement: Main screen lists the stored products
-When the app is launched, it SHALL show the product list screen: a top app bar with the app name and one row per stored product, in the order the stored products are provided (name, case-insensitive, then identity). A row SHALL have no tap action.
+When the app is launched, it SHALL show the product list screen: a top app bar with the app name and one row per stored product, in the order the stored products are provided (name, case-insensitive, then identity). Tapping a row SHALL open the "Edit product" form for that product, and accessibility services SHALL announce the row's action as "Edit".
 
 #### Scenario: Products are listed in stored order
 - **GIVEN** stored products named "Vitamin D", "diapers" and "Detergent"
@@ -19,6 +19,11 @@ When the app is launched, it SHALL show the product list screen: a top app bar w
 - **GIVEN** the product list is visible
 - **WHEN** a product is stored, changed or removed
 - **THEN** the list shows the change without the user leaving the screen
+
+#### Scenario: Tapping a row opens it for editing
+- **GIVEN** a stored product named "Vitamin D"
+- **WHEN** the user taps its row
+- **THEN** the "Edit product" form for "Vitamin D" is shown
 
 ### Requirement: Empty state
 When no products are stored, the screen SHALL show the title "No products yet" and the help line "Products you add will appear here with their stock and next alert." instead of the list.
