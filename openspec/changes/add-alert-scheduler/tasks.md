@@ -22,7 +22,7 @@
 
 ## 4. Evidence and end to end
 
-- [ ] 4.1 E2E tests: due product posts the notification with the exact texts and tapping opens the list; scheduled product has a pending alarm
-- [ ] 4.2 Doze and standby experiment on `cn-api26` and `cn-api37` (one emulator at a time); ADR 0017 with the results; ADR index updated
-- [ ] 4.3 Run the app on both emulators (light, dark, largest font for the notification), check the notification pixel by pixel, fix anything that looks off
-- [ ] 4.4 Update `AGENTS.md` project state; `./gradlew assembleDebug lintAll test` and `scripts/e2e.sh` pass with zero warnings; report the production line count (if it will clearly exceed ~400, stop and report before finishing so the owner can decide on a split)
+- [x] 4.1 E2E tests: due product posts the notification with the exact texts and tapping opens the list; scheduled product has a pending alarm
+- [x] 4.2 Doze and standby experiment on `cn-api26` and `cn-api37` (one emulator at a time); ADR 0017 with the results; ADR index updated
+- [x] 4.3 Run the app on both emulators (light, dark, largest font for the notification), check the notification pixel by pixel, fix anything that looks off
+- [x] 4.4 Update `AGENTS.md` project state; `./gradlew assembleDebug lintAll test` and `scripts/e2e.sh` pass with zero warnings; report the production line count (if it will clearly exceed ~400, stop and report before finishing so the owner can decide on a split)

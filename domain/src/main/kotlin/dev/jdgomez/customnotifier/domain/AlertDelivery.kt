@@ -49,7 +49,7 @@ sealed interface AlertAction {
     data object Deliver : AlertAction
 
     /** Nothing to do; any pending alarm is not needed. */
-    data object Nothing : AlertAction
+    data object Skip : AlertAction
 
     companion object {
         fun decide(
@@ -58,8 +58,8 @@ sealed interface AlertAction {
         ): AlertAction =
             when (next) {
                 is NextAlert.Scheduled -> Schedule(next.at)
-                NextAlert.Due -> if (delivered) Nothing else Deliver
-                NextAlert.None -> Nothing
+                NextAlert.Due -> if (delivered) Skip else Deliver
+                NextAlert.None -> Skip
             }
     }
 }

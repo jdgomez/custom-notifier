@@ -30,8 +30,9 @@ class AlertReconciler(
         lock.withLock {
             val now = clock.instant()
             val zone = zone()
-            (known - current.mapTo(mutableSetOf()) { it.id }).forEach(scheduler::cancel)
-            known = current.mapTo(mutableSetOf()) { it.id }
+            val ids = current.map { it.id }.toSet()
+            (known - ids).forEach(scheduler::cancel)
+            known = ids
             current.forEach { product -> reconcile(product, now, zone) }
         }
 
@@ -51,7 +52,7 @@ class AlertReconciler(
                 val today = now.atZone(zone).toLocalDate()
                 if (notifier.notify(product, product.depletionDateIn(zone), today)) deliveries.record(id)
             }
-            AlertAction.Nothing -> scheduler.cancel(id)
+            AlertAction.Skip -> scheduler.cancel(id)
         }
     }
 }

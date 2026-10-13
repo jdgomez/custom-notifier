@@ -126,8 +126,8 @@ class AlertReconcilerTest {
         assertEquals(AlertAction.Schedule(at), AlertAction.decide(NextAlert.Scheduled(at), delivered = true))
         assertEquals(AlertAction.Schedule(at), AlertAction.decide(NextAlert.Scheduled(at), delivered = false))
         assertEquals(AlertAction.Deliver, AlertAction.decide(NextAlert.Due, delivered = false))
-        assertEquals(AlertAction.Nothing, AlertAction.decide(NextAlert.Due, delivered = true))
-        assertEquals(AlertAction.Nothing, AlertAction.decide(NextAlert.None, delivered = false))
+        assertEquals(AlertAction.Skip, AlertAction.decide(NextAlert.Due, delivered = true))
+        assertEquals(AlertAction.Skip, AlertAction.decide(NextAlert.None, delivered = false))
     }
 
     @Test
