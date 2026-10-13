@@ -64,7 +64,7 @@ class StockUpdateScreenTest {
     fun editFormShowsTheStockAboveTheFieldsWithBothButtons() {
         showEdit(units = 59, halves = true)
         composeRule.onNodeWithText("Stock").assertIsDisplayed()
-        composeRule.onNodeWithTag("stock").assertTextEquals("≈ 29 pills")
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A029\u00A0pills")
         composeRule.onNodeWithTag("restock").assertIsDisplayed()
         composeRule.onNodeWithTag("adjust").assertIsDisplayed()
         val stockTop =
@@ -98,8 +98,8 @@ class StockUpdateScreenTest {
         composeRule.onNodeWithTag("packages").assertTextEquals("1")
         composeRule.onNodeWithContentDescription("More packages").performClick()
         composeRule.onNodeWithTag("packages").assertTextEquals("2")
-        composeRule.onNodeWithText("+60 pills").assertIsDisplayed()
-        composeRule.onNodeWithText("Stock after: 65 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("+60\u00A0pills").assertIsDisplayed()
+        composeRule.onNodeWithText("Stock after: 65\u00A0pills").assertIsDisplayed()
     }
 
     @Test
@@ -128,7 +128,7 @@ class StockUpdateScreenTest {
         composeRule.onNodeWithContentDescription("More packages").performClick()
         composeRule.onNodeWithText("Cancel").performClick()
         composeRule.onNodeWithText("Restock Vitamin D").assertDoesNotExist()
-        composeRule.onNodeWithTag("stock").assertTextEquals("5 pills")
+        composeRule.onNodeWithTag("stock").assertTextEquals("5\u00A0pills")
         assertEquals(
             5.toBigInteger(),
             repository.products.value
@@ -144,7 +144,7 @@ class StockUpdateScreenTest {
         composeRule.onNodeWithTag("restock").performClick()
         confirm()
         composeRule.onNodeWithText("Restock Vitamin D").assertDoesNotExist()
-        composeRule.onNodeWithTag("stock").assertTextEquals("35 pills")
+        composeRule.onNodeWithTag("stock").assertTextEquals("35\u00A0pills")
         assertEquals(
             35.toBigInteger(),
             repository.products.value
@@ -173,7 +173,7 @@ class StockUpdateScreenTest {
         showEdit(units = 20)
         composeRule.onNodeWithTag("adjust").performClick()
         composeRule.onNodeWithTag("adjust_units").performTextInput("3")
-        composeRule.onNodeWithText("Stock after: 17 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("Stock after: 17\u00A0pills").assertIsDisplayed()
         composeRule.onNodeWithTag("stock_confirm").assertIsEnabled()
     }
 
@@ -182,7 +182,7 @@ class StockUpdateScreenTest {
         showEdit(units = 2)
         composeRule.onNodeWithTag("adjust").performClick()
         composeRule.onNodeWithTag("adjust_units").performTextInput("5")
-        composeRule.onNodeWithText("Stock after: 0 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("Stock after: 0\u00A0pills").assertIsDisplayed()
     }
 
     @Test
@@ -191,7 +191,7 @@ class StockUpdateScreenTest {
         composeRule.onNodeWithTag("adjust").performClick()
         composeRule.onNodeWithText("Add").performClick()
         composeRule.onNodeWithTag("adjust_units").performTextInput("4")
-        composeRule.onNodeWithText("Stock after: 24 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("Stock after: 24\u00A0pills").assertIsDisplayed()
     }
 
     @Test
@@ -219,7 +219,7 @@ class StockUpdateScreenTest {
         composeRule.onNodeWithTag("adjust").performClick()
         composeRule.onNodeWithTag("adjust_units").performTextInput("3")
         confirm()
-        composeRule.onNodeWithTag("stock").assertTextEquals("17 pills")
+        composeRule.onNodeWithTag("stock").assertTextEquals("17\u00A0pills")
         composeRule.onNodeWithTag("Name").assertTextEquals("Name", "Vitamin D3")
         assertEquals(
             "Vitamin D",
@@ -247,8 +247,8 @@ class StockUpdateScreenTest {
         composeRule.onNodeWithTag("restock").performClick()
         composeRule.onNodeWithText("Restock ${"N".repeat(60)}").assertIsDisplayed()
         composeRule.onNodeWithTag("packages").assertIsDisplayed()
-        composeRule.onNodeWithText("+30 pills").assertIsDisplayed()
-        composeRule.onNodeWithText("Stock after: 35 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("+30\u00A0pills").assertIsDisplayed()
+        composeRule.onNodeWithText("Stock after: 35\u00A0pills").assertIsDisplayed()
         composeRule.onNodeWithTag("stock_confirm").assertIsDisplayed()
         composeRule.onNodeWithText("Cancel").assertIsDisplayed()
     }

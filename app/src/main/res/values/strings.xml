@@ -3,8 +3,8 @@
     <string name="app_name">Custom Notifier</string>
     <string name="product_list_empty_title">No products yet</string>
     <string name="product_list_empty_help">Products you add will appear here with their stock and next alert.</string>
-    <string name="product_list_stock">%1$s %2$s</string>
-    <string name="product_list_stock_approximate_prefix">"≈ "</string>
+    <string name="product_list_stock">%1$s&#160;%2$s</string>
+    <string name="product_list_stock_approximate_prefix">"≈&#160;"</string>
     <string name="product_list_stock_approximate_description">about %1$s</string>
     <string name="product_list_runs_out">Runs out %1$s</string>
     <string name="product_list_alert">Alert %1$s</string>
@@ -50,7 +50,7 @@
     <string name="stock_restock_title">Restock %1$s</string>
     <string name="stock_restock_fewer">Fewer packages</string>
     <string name="stock_restock_more">More packages</string>
-    <string name="stock_restock_added">+%1$s %2$s</string>
+    <string name="stock_restock_added">+%1$s&#160;%2$s</string>
     <string name="stock_adjust_title">Adjust stock</string>
     <string name="stock_adjust_add">Add</string>
     <string name="stock_adjust_remove">Remove</string>

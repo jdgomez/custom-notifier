@@ -157,6 +157,9 @@ private fun ProductRowItem(
 
 private fun LocalDate.format(formatter: DateTimeFormatter): String = formatter.format(this)
 
+/** The no-break space the stock text joins its "≈ " prefix, number and unit label with, so the value wraps as one unit. */
+private const val NBSP = '\u00A0'
+
 /** The estimated [stock] in [unitLabel] with the list's rounding rules: "≈ " when rounded down, [label] first when given. */
 @Composable
 internal fun StockText(
@@ -177,7 +180,10 @@ internal fun StockText(
         }
     val description =
         if (stock.rounded) {
-            listOfNotNull(label, stringResource(R.string.product_list_stock_approximate_description, whole)).joinToString(" ")
+            listOfNotNull(
+                label,
+                stringResource(R.string.product_list_stock_approximate_description, whole.replace(NBSP, ' ')),
+            ).joinToString(" ")
         } else {
             null
         }

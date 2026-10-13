@@ -183,10 +183,11 @@ class ProductFormScreenshotTest {
         fontScale: Float = 1f,
         productName: String = "Vitamin D",
         units: String? = null,
+        stockUnits: Long = 5,
     ) {
         val now = Instant.parse("2026-02-20T10:00:00Z")
         val repository = FakeRepository()
-        val product = testProduct(productName, now, units = 5)
+        val product = testProduct(productName, now, units = stockUnits)
         repository.products.value = listOf(product)
         val viewModel = ProductFormViewModel(repository, MutableClock(now), product.id) { ZoneOffset.UTC }
         // The system font scale, not a LocalDensity override: dialogs are windows of their own and ignore the override.
@@ -213,6 +214,10 @@ class ProductFormScreenshotTest {
     @Test
     fun restockDialogLargestFont() =
         captureStockDialog("restock_font_2", open = "restock", fontScale = 2f, productName = "Extra strength vitamin D3 drops for adults")
+
+    @Test
+    fun restockDialogLargestFontWrapsTheStockAsOneUnit() =
+        captureStockDialog("restock_font_2_wrap", open = "restock", fontScale = 2f, stockUnits = 12_345_678)
 
     @Test
     fun adjustDialogEmpty() = captureStockDialog("adjust_empty", open = "adjust")

@@ -152,11 +152,11 @@ class ProductFormTest {
         composeRule.onNodeWithTag("restock").performClick()
         composeRule.onNodeWithText("Restock Vitamin D").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("More packages").performClick()
-        composeRule.onNodeWithText("+180 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("+180\u00A0pills").assertIsDisplayed()
         composeRule.onNodeWithTag("stock_confirm").performClick()
-        composeRule.onNodeWithTag("stock").assertTextEquals("≈ 209 pills")
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A0209\u00A0pills")
         composeRule.onNodeWithContentDescription("Navigate up").performClick()
-        awaitRowText("≈ 209 pills")
+        awaitRowText("≈\u00A0209\u00A0pills")
         composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
     }
 
@@ -166,16 +166,16 @@ class ProductFormTest {
         openEditForm()
         composeRule.onNodeWithTag("adjust").performClick()
         composeRule.onNodeWithTag("adjust_units").performTextInput("5")
-        composeRule.onNodeWithText("Stock after: ≈ 24 pills").assertIsDisplayed()
+        composeRule.onNodeWithText("Stock after: ≈\u00A024\u00A0pills").assertIsDisplayed()
         composeRule.onNodeWithTag("stock_confirm").performClick()
-        composeRule.onNodeWithTag("stock").assertTextEquals("≈ 24 pills")
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A024\u00A0pills")
         composeRule.onNodeWithContentDescription("Navigate up").performClick()
-        awaitRowText("≈ 24 pills")
+        awaitRowText("≈\u00A024\u00A0pills")
     }
 
     private companion object {
         /** 30 pills consumed at 1 per day: a few seconds after creation the exact stock is already just under 30. */
-        const val STOCK_TEXT = "≈ 29 pills"
+        const val STOCK_TEXT = "≈\u00A029\u00A0pills"
         const val LOAD_TIMEOUT_MS = 5_000L
     }
 }
