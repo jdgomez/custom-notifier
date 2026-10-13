@@ -7,6 +7,11 @@ import androidx.lifecycle.viewmodel.CreationExtras
 /** Owns the [AppContainer] for the life of the process. */
 class CustomNotifierApplication : Application() {
     val container: AppContainer by lazy { AppContainer(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        container.startAlerts()
+    }
 }
 
 /** The [AppContainer] of the application that creates this ViewModel. */

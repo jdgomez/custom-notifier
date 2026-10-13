@@ -4,21 +4,21 @@
 
 ## 1. Domain
 
-- [ ] 1.1 `AlertScheduler`, `AlertNotifier` and `AlertDeliveries` ports, the delivery decision and `AlertReconciler` per design.md
-- [ ] 1.2 Unit tests for every `alert-delivery` rule that does not need Android
+- [x] 1.1 `AlertScheduler`, `AlertNotifier` and `AlertDeliveries` ports, the delivery decision and `AlertReconciler` per design.md
+- [x] 1.2 Unit tests for every `alert-delivery` rule that does not need Android
 
 ## 2. Persistence
 
-- [ ] 2.1 `alert_deliveries` table with cascade, `Migration(1, 2)`, exported schema 2, `AlertDeliveries` Room adapter
-- [ ] 2.2 Migration test from schema 1 and DAO tests (record, clear, cascade on delete)
+- [x] 2.1 `alert_deliveries` table with cascade, `Migration(1, 2)`, exported schema 2, `AlertDeliveries` Room adapter
+- [x] 2.2 Migration test from schema 1 and DAO tests (record, clear, cascade on delete)
 
 ## 3. Android adapters and wiring
 
-- [ ] 3.1 `AlarmManager` adapter (inexact, idle-allowed, wake-up, per-product data URI)
-- [ ] 3.2 Notification channel at start and notification adapter (texts as string resources, disabled check, tap opens the list, small icon)
-- [ ] 3.3 Receivers (boot, package replaced, time zone, time set; alarm) with `goAsync()`, manifest entries and `RECEIVE_BOOT_COMPLETED` / `POST_NOTIFICATIONS`
-- [ ] 3.4 Application-scope reconcile on start and on every product change, wired in `AppContainer`
-- [ ] 3.5 Robolectric tests for adapters and receivers; merged-manifest check for exact-alarm permissions
+- [x] 3.1 `AlarmManager` adapter (inexact, idle-allowed, wake-up, per-product data URI)
+- [x] 3.2 Notification channel at start and notification adapter (texts as string resources, disabled check, tap opens the list, small icon)
+- [x] 3.3 Receivers (boot, package replaced, time zone, time set; alarm) with `goAsync()`, manifest entries and `RECEIVE_BOOT_COMPLETED` / `POST_NOTIFICATIONS`
+- [x] 3.4 Application-scope reconcile on start and on every product change, wired in `AppContainer`
+- [x] 3.5 Robolectric tests for adapters and receivers; merged-manifest check for exact-alarm permissions
 
 ## 4. Evidence and end to end
 
