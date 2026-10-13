@@ -18,17 +18,17 @@ The "Edit product" form SHALL show, above its fields, a section with the label "
 - **THEN** no "Stock" section, "Restock" or "Adjust" button is shown
 
 ### Requirement: Restock dialog
-Tapping "Restock" SHALL show the dialog "Restock <stored name>" with a package count starting at 1, a "-" and a "+" button that change it by 1 within 1 to 99 (each button disabled at its limit), the line "+<count × package size> <unit label>" and the line "Stock after: <stock>", where the stock after is the estimated stock now plus the added units, shown with the list's stock text rules. The buttons are "Cancel" (closes the dialog, nothing changes) and "Restock" (applies the restock).
+Tapping "Restock" SHALL show the dialog "Restock <stored name>" with a package count starting at 1, a "Fewer packages" and a "More packages" icon button (a minus and a plus icon) that change it by 1 within 1 to 99 (each button disabled at its limit), the line "+<count × package size> <unit label>" and the line "Stock after: <stock>", where the stock after is the estimated stock now plus the added units, shown with the list's stock text rules. The buttons are "Cancel" (closes the dialog, nothing changes) and "Restock" (applies the restock).
 
 #### Scenario: Restock preview
 - **GIVEN** a product with package size 30, unit label "pills" and an estimated stock of exactly 5 units, with its "Edit product" form open
-- **WHEN** the user taps "Restock" and then "+" once
+- **WHEN** the user taps "Restock" and then "More packages" once
 - **THEN** the dialog shows the count 2, "+60 pills" and "Stock after: 65 pills"
 
 #### Scenario: Count limits
 - **GIVEN** the restock dialog with the count 1
 - **WHEN** it is shown
-- **THEN** "-" is disabled and "+" is enabled
+- **THEN** "Fewer packages" is disabled and "More packages" is enabled
 
 #### Scenario: Cancel a restock
 - **GIVEN** the restock dialog with the count 3
