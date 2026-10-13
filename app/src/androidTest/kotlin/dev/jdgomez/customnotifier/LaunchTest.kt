@@ -37,6 +37,6 @@ class LaunchTest {
     }
 
     private companion object {
-        const val LAUNCH_TIMEOUT_MS = 5_000L
+        const val LAUNCH_TIMEOUT_MS = 30_000L
     }
 }

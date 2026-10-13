@@ -63,6 +63,7 @@ The owner starts a work session, tells Brain whether parallel work is allowed, a
 3. **Delegate.** Brain creates a flow for the change and hands it over. The issue moves to In progress.
 4. **Implement.** The executor works on branch `change/<change-name>`, committing with Conventional Commits.
 5. **Gate.** The reviewer runs no-mistakes. It ends with a pull request (title in Conventional Commits format, body with `Closes #N`) and green CI. The issue moves to In review. For now (temporary, until the gate is reliable), Brain checks the gate's own commits (e.g. document step edits) and the PR title and body (`Closes`/`Refs`, template sections) before handing the PR to the owner.
+   The PR checklist (`.github/pull_request_template.md`) lists only judgement items; lint, tests and CI are enforced by the required checks. Before reporting PASSED, the reviewer resolves every checklist item: ticked after checking it, or ticked with `n/a: <reason>`. An unticked item means not done. Brain checks that no item is left unticked before announcing a PR.
 6. **Review and merge (human checkpoint).** The owner reviews, including UX from screenshots and video, and squash-merges. GitHub closes the issue and moves it to Done.
 7. **Archive.** The OpenSpec change is archived and the main specs are updated.
 8. **Close.** Once the pull request is merged or the change is abandoned, Brain closes the flow: its worktree, workspace and status files are removed. Flows are never reused.
