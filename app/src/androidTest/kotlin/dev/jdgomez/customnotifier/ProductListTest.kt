@@ -85,9 +85,9 @@ class ProductListTest {
             val tops = listOf("Detergent", "diapers", "Vitamin D").map { composeRule.onNodeWithText(it).getUnclippedBoundsInRoot().top }
             assertTrue(tops == tops.sorted(), "rows must follow the stored order, got tops $tops")
 
-            composeRule.onNodeWithText("5 ml").assertIsDisplayed()
-            composeRule.onNodeWithText("20 pcs").assertIsDisplayed()
-            composeRule.onNodeWithText("30 pills").assertIsDisplayed()
+            composeRule.onNodeWithText("5\u00A0ml").assertIsDisplayed()
+            composeRule.onNodeWithText("20\u00A0pcs").assertIsDisplayed()
+            composeRule.onNodeWithText("30\u00A0pills").assertIsDisplayed()
             composeRule.onNodeWithText(runsOutText(detergent)).assertIsDisplayed()
             // 5 days to depletion with a 10 day lead time: the alert is due for Detergent only.
             composeRule.onNodeWithText("Alert due").assertIsDisplayed()

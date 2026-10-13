@@ -49,10 +49,14 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
 import dev.jdgomez.customnotifier.productlist.RowStatus
+import dev.jdgomez.customnotifier.productlist.ticker
 import dev.jdgomez.customnotifier.ui.AppIcons
 import kotlinx.coroutines.flow.Flow
 import java.text.NumberFormat
@@ -66,7 +70,21 @@ fun ProductFormRoute(
     viewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModel.factory()),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProductFormScreen(state, viewModel.events, viewModel::onTextChange, viewModel::onSave, viewModel::onDelete, onClose, modifier)
+    // The same ticker as the list: the stock and the dates are recomputed when the form returns to the foreground and every minute.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { ticker().collect { viewModel.onTick() } }
+    }
+    ProductFormScreen(
+        state,
+        viewModel.events,
+        viewModel::onTextChange,
+        viewModel::onSave,
+        viewModel::onDelete,
+        onClose,
+        modifier,
+        viewModel::onStockAction,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -79,6 +97,7 @@ fun ProductFormScreen(
     onDelete: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    onStockAction: (StockAction) -> Unit = {},
 ) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -123,7 +142,7 @@ fun ProductFormScreen(
         if (state.mode is ProductFormMode.Loading) {
             LoadingIndicator(Modifier.padding(padding))
         } else {
-            FormFields(state, onTextChange, { confirmDelete = true }, requesters, Modifier.padding(padding))
+            FormFields(state, onTextChange, { confirmDelete = true }, requesters, onStockAction, Modifier.padding(padding))
         }
     }
     if (confirmDiscard) {
@@ -133,6 +152,7 @@ fun ProductFormScreen(
     if (confirmDelete && mode is ProductFormMode.Edit) {
         DeleteDialog(mode.storedName, onCancel = { confirmDelete = false }, onDelete = onDelete)
     }
+    StockDialogs(state, onStockAction)
 }
 
 @Composable
@@ -156,6 +176,7 @@ private fun FormFields(
     onTextChange: (ProductFormField, String) -> Unit,
     onDeleteClick: () -> Unit,
     requesters: FieldFocus,
+    onStockAction: (StockAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val text = KeyboardType.Text
@@ -169,6 +190,7 @@ private fun FormFields(
                 .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        state.stock?.let { StockSection(it, onStockAction) }
         TextInput(ProductFormField.Name, state, onTextChange, requesters, R.string.product_form_name, text)
         TextInput(ProductFormField.Unit, state, onTextChange, requesters, R.string.product_form_unit, text, R.string.product_form_unit_help)
         TextInput(ProductFormField.PackageSize, state, onTextChange, requesters, R.string.product_form_package_size, number)

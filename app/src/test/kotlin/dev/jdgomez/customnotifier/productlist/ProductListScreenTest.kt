@@ -92,21 +92,29 @@ class ProductListScreenTest {
     fun wholeEstimateHasNoPrefix() {
         show(listOf(testProduct("Vitamin", NOW, units = 8)))
 
-        stockOf("8 pills")
+        stockOf("8\u00A0pills")
     }
 
     @Test
     fun roundedEstimateHasMutedPrefixAndAboutDescription() {
         show(listOf(testProduct("Vitamin", NOW, units = 17, halves = true)))
 
-        stockOf("≈ 8 pills", description = "about 8 pills")
+        stockOf("≈\u00A08\u00A0pills", description = "about 8 pills")
         val text =
             composeRule
-                .onNodeWithText("≈ 8 pills", useUnmergedTree = true)
+                .onNodeWithText("≈\u00A08\u00A0pills", useUnmergedTree = true)
                 .fetchSemanticsNode()
                 .config[SemanticsProperties.Text]
                 .single()
         assertTrue(text.spanStyles.any { it.start == 0 && it.end == 2 && it.item.color != Color.Unspecified })
+    }
+
+    @Test
+    fun stockValueIsJoinedWithNoBreakSpacesButTheLabelKeepsItsOwn() {
+        show(listOf(testProduct("Vitamin", NOW, units = 17, halves = true, unitLabel = "ml water")))
+
+        // "≈ 8" and "8 ml" cannot be split by wrapping; spaces inside the unit label stay breakable.
+        stockOf("≈\u00A08\u00A0ml water", description = "about 8 ml water")
     }
 
     @Test
@@ -115,7 +123,7 @@ class ProductListScreenTest {
 
         val text: AnnotatedString =
             composeRule
-                .onNodeWithText("0 pills", useUnmergedTree = true)
+                .onNodeWithText("0\u00A0pills", useUnmergedTree = true)
                 .fetchSemanticsNode()
                 .config[SemanticsProperties.Text]
                 .single()
@@ -131,7 +139,7 @@ class ProductListScreenTest {
     fun largeStockUsesLocaleGrouping() {
         show(listOf(testProduct("Soap", NOW, units = 12_000, unitLabel = "ml")))
 
-        stockOf("12,000 ml")
+        stockOf("12,000\u00A0ml")
     }
 
     @Test
@@ -173,13 +181,13 @@ class ProductListScreenTest {
         val rows = composeRule.onAllNodes(hasClickAction() and hasText("pills", substring = true))
         rows.assertCountEquals(2)
         // One merged node per row: the name, the stock and the dates, a button whose click label is "Edit".
-        composeRule.onNode(hasText("A") and hasText("8 pills") and hasText("Runs out", substring = true)).assert(
+        composeRule.onNode(hasText("A") and hasText("8\u00A0pills") and hasText("Runs out", substring = true)).assert(
             SemanticsMatcher("button with click label Edit") {
                 it.config.getOrNull(SemanticsProperties.Role) == Role.Button &&
                     it.config.getOrNull(SemanticsActions.OnClick)?.label == "Edit"
             },
         )
         // The children are not separate focus stops: the merged tree has no node with only the name.
-        composeRule.onAllNodes(hasText("A") and !hasText("8 pills")).assertCountEquals(0)
+        composeRule.onAllNodes(hasText("A") and !hasText("8\u00A0pills")).assertCountEquals(0)
     }
 }

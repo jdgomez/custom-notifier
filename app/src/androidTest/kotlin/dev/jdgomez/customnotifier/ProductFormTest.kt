@@ -3,12 +3,16 @@ package dev.jdgomez.customnotifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -127,9 +131,67 @@ class ProductFormTest {
         }
     }
 
+    private fun createVitaminD() {
+        openForm()
+        type("Name", "Vitamin D")
+        type("Unit", "pills")
+        type("PackageSize", "90")
+        type("ConsumptionUnits", "1")
+        type("UnitsNow", "30")
+        composeRule.onNodeWithText("Save").performClick()
+        awaitRowText(STOCK_TEXT)
+    }
+
+    private fun openEditForm() {
+        composeRule.onNodeWithText("Vitamin D").performClick()
+        composeRule.onNodeWithText("Edit product").assertIsDisplayed()
+    }
+
+    @Test
+    fun restockIsShownInTheFormAndTheList() {
+        createVitaminD()
+        openEditForm()
+        composeRule.onNodeWithTag("restock").performClick()
+        composeRule.onNodeWithText("Restock Vitamin D").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("More packages").performClick()
+        composeRule.onNodeWithText("+180\u00A0pills").assertIsDisplayed()
+        composeRule.onNodeWithTag("stock_confirm").performClick()
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A0209\u00A0pills")
+        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        awaitRowText("≈\u00A0209\u00A0pills")
+        composeRule.onNodeWithText("Discard changes?").assertDoesNotExist()
+    }
+
+    @Test
+    fun theAdjustDialogFocusesUnitsEveryTimeItOpens() {
+        createVitaminD()
+        openEditForm()
+        repeat(5) {
+            composeRule.onNodeWithTag("adjust").performClick()
+            composeRule.waitUntil(LOAD_TIMEOUT_MS) {
+                composeRule.onAllNodes(hasTestTag("adjust_units") and isFocused()).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNodeWithText("Cancel").performClick()
+            composeRule.onNodeWithTag("adjust_units").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun removedUnitsAreShownInTheFormAndTheList() {
+        createVitaminD()
+        openEditForm()
+        composeRule.onNodeWithTag("adjust").performClick()
+        composeRule.onNodeWithTag("adjust_units").performTextInput("5")
+        composeRule.onNodeWithText("Stock after: ≈\u00A024\u00A0pills").assertIsDisplayed()
+        composeRule.onNodeWithTag("stock_confirm").performClick()
+        composeRule.onNodeWithTag("stock").assertTextEquals("≈\u00A024\u00A0pills")
+        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        awaitRowText("≈\u00A024\u00A0pills")
+    }
+
     private companion object {
         /** 30 pills consumed at 1 per day: a few seconds after creation the exact stock is already just under 30. */
-        const val STOCK_TEXT = "≈ 29 pills"
+        const val STOCK_TEXT = "≈\u00A029\u00A0pills"
         const val LOAD_TIMEOUT_MS = 5_000L
     }
 }

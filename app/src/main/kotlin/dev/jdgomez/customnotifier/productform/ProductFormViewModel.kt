@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Clock
 import java.time.ZoneId
 
@@ -45,8 +47,11 @@ class ProductFormViewModel(
     /** Set once a save or a delete is under way: the form closes after it, so no other one may start. */
     private var finishing = false
 
-    /** The stored product being edited, once read. */
+    /** The stored product being edited, as last read or written. */
     private var original: Product? = null
+
+    /** Serializes the operations that read and write the stored product: stock updates, save and delete. */
+    private val operations = Mutex()
 
     init {
         if (editId != null) viewModelScope.launch { load(editId) }
@@ -66,7 +71,61 @@ class ProductFormViewModel(
                 preview = product.statusAt(clock.instant(), zone()),
                 initialTexts = texts,
                 mode = ProductFormMode.Edit(product.name.value),
+                stock = product.stockSummary(clock.instant()),
             )
+    }
+
+    /** Handles a tap in the stock section or its dialogs; the dialogs' stock after is computed by the domain. */
+    fun onStockAction(action: StockAction) {
+        val product = original ?: return
+        when (val outcome = product.stockOutcome(mutableState.value.stockDialog, action, clock.instant())) {
+            is StockOutcome.Show -> setStockDialog(outcome.dialog)
+            StockOutcome.Close -> setStockDialog(null)
+            is StockOutcome.Confirm -> confirmStock(outcome.dialog)
+            StockOutcome.Ignore -> Unit
+        }
+    }
+
+    /** Recomputes everything that depends on the current moment: the stock, the open dialog's stock after and the preview. */
+    fun onTick() {
+        val product = original
+        val now = clock.instant()
+        mutableState.update { current ->
+            current.copy(
+                preview = buildProduct(current.texts)?.statusAt(now, zone()),
+                stock = product?.stockSummary(now) ?: current.stock,
+                stockDialog = product?.let { current.stockDialog?.refreshedFor(it, now) } ?: current.stockDialog,
+            )
+        }
+    }
+
+    /** Shows [dialog], or closes the open one when null; nothing opens once a save or delete is under way. */
+    private fun setStockDialog(dialog: StockDialog?) {
+        if (dialog == null || !finishing) mutableState.update { it.copy(stockDialog = dialog) }
+    }
+
+    /**
+     * Stores [dialog]'s result now and closes it; the form stays open with its unsaved edits. The update runs under [operations],
+     * so a save or delete started meanwhile reads the stored product after it.
+     */
+    private fun confirmStock(dialog: StockDialog) {
+        val id = editId
+        if (finishing || id == null || dialog.stockAfter == null) return
+        setStockDialog(null)
+        viewModelScope.launch {
+            operations.withLock {
+                val stored = repository.find(id)
+                if (stored == null) {
+                    eventChannel.send(ProductFormEvent.Closed)
+                    return@withLock
+                }
+                val now = clock.instant()
+                val updated = dialog.applyTo(stored, now)
+                repository.save(updated)
+                original = updated
+                mutableState.update { it.copy(stock = updated.stockSummary(now), preview = buildProduct(it.texts)?.statusAt(now, zone())) }
+            }
+        }
     }
 
     /** Deletes the stored product and closes the form. */
@@ -75,8 +134,10 @@ class ProductFormViewModel(
         if (id == null || finishing) return
         finishing = true
         viewModelScope.launch {
-            repository.delete(id)
-            eventChannel.send(ProductFormEvent.Closed)
+            operations.withLock {
+                repository.delete(id)
+                eventChannel.send(ProductFormEvent.Closed)
+            }
         }
     }
 
@@ -92,28 +153,28 @@ class ProductFormViewModel(
         }
     }
 
-    /** Stores the product when every field is valid; otherwise flags the invalid fields and focuses the first. */
+    /**
+     * Stores the product when every field is valid; otherwise flags the invalid fields and focuses the first. The stored product is
+     * read after any pending stock update, so saving never overwrites one.
+     */
     fun onSave() {
         val state = mutableState.value
         if (finishing || state.mode is ProductFormMode.Loading) return
-        val product = buildProduct(state.texts)
-        if (product == null) {
-            val invalid = state.fields.filter { !isValid(it, state.texts.getValue(it)) }
+        val invalid = state.fields.filter { !isValid(it, state.texts.getValue(it)) }
+        if (invalid.isNotEmpty()) {
             mutableState.update { it.copy(errors = invalid.toSet()) }
             eventChannel.trySend(ProductFormEvent.FocusField(invalid.first()))
-        } else {
-            finishing = true
-            viewModelScope.launch {
-                repository.save(product)
+            return
+        }
+        finishing = true
+        viewModelScope.launch {
+            operations.withLock {
+                val stored = editId?.let { repository.find(it) ?: original }
+                repository.save(build(state.texts, stored))
                 eventChannel.send(ProductFormEvent.Saved)
             }
         }
     }
-
-    private fun isValid(
-        field: ProductFormField,
-        text: String,
-    ): Boolean = field.range?.let { text.toIntOrNull() in it } ?: text.isNotBlank()
 
     /** The product the texts describe at the current moment, or null when any field is invalid or the stored one is not read yet. */
     private fun buildProduct(texts: Map<ProductFormField, String>): Product? {
@@ -145,17 +206,6 @@ class ProductFormViewModel(
         return if (edited.consumptionRate == rate) edited else edited.changeConsumptionRate(rate, now)
     }
 
-    /** The fields' texts for editing this product: the stock is not editable, so it has none. */
-    private fun Product.toTexts(): Map<ProductFormField, String> =
-        mapOf(
-            ProductFormField.Name to name.value,
-            ProductFormField.Unit to unitLabel.value,
-            ProductFormField.PackageSize to packageSize.units.toString(),
-            ProductFormField.ConsumptionUnits to consumptionRate.units.toString(),
-            ProductFormField.ConsumptionDays to consumptionRate.days.toString(),
-            ProductFormField.LeadTime to rule.leadTime.days.toString(),
-        )
-
     companion object {
         /** The factory for the form of a new product, or of the stored product [editId]. */
         fun factory(editId: ProductId? = null): ViewModelProvider.Factory =
@@ -167,3 +217,19 @@ class ProductFormViewModel(
             }
     }
 }
+
+private fun isValid(
+    field: ProductFormField,
+    text: String,
+): Boolean = field.range?.let { text.toIntOrNull() in it } ?: text.isNotBlank()
+
+/** The fields' texts for editing this product: the stock is not editable, so it has none. */
+private fun Product.toTexts(): Map<ProductFormField, String> =
+    mapOf(
+        ProductFormField.Name to name.value,
+        ProductFormField.Unit to unitLabel.value,
+        ProductFormField.PackageSize to packageSize.units.toString(),
+        ProductFormField.ConsumptionUnits to consumptionRate.units.toString(),
+        ProductFormField.ConsumptionDays to consumptionRate.days.toString(),
+        ProductFormField.LeadTime to rule.leadTime.days.toString(),
+    )

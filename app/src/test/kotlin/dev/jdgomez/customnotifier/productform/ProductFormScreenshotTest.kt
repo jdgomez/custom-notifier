@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -20,6 +21,8 @@ import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import dev.jdgomez.customnotifier.domain.EstimatedStock
+import dev.jdgomez.customnotifier.domain.Quantity
 import dev.jdgomez.customnotifier.productlist.FakeRepository
 import dev.jdgomez.customnotifier.productlist.MutableClock
 import dev.jdgomez.customnotifier.productlist.RowStatus
@@ -29,9 +32,11 @@ import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.math.BigInteger
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -56,7 +61,12 @@ private val FILLED =
 private val EDIT =
     FILLED.let { filled ->
         val texts = filled.texts + (ProductFormField.UnitsNow to "")
-        filled.copy(texts = texts, initialTexts = texts, mode = ProductFormMode.Edit("Vitamin D"))
+        filled.copy(
+            texts = texts,
+            initialTexts = texts,
+            mode = ProductFormMode.Edit("Vitamin D"),
+            stock = StockSummary(EstimatedStock(Quantity.of(BigInteger.valueOf(59), BigInteger.TWO)), "pills"),
+        )
     }
 
 private val WITH_ERRORS =
@@ -163,4 +173,61 @@ class ProductFormScreenshotTest {
         shadowOf(Looper.getMainLooper()).idle()
         captureScreenRoboImage("src/test/screenshots/product_form_discard.png", options)
     }
+
+    /** Opens the edit form of a product holding 5 pills, taps [open] and captures the whole screen with the dialog on top. */
+    @OptIn(ExperimentalRoborazziApi::class)
+    private fun captureStockDialog(
+        name: String,
+        open: String,
+        darkTheme: Boolean = false,
+        fontScale: Float = 1f,
+        productName: String = "Vitamin D",
+        units: String? = null,
+        stockUnits: Long = 5,
+    ) {
+        val now = Instant.parse("2026-02-20T10:00:00Z")
+        val repository = FakeRepository()
+        val product = testProduct(productName, now, units = stockUnits)
+        repository.products.value = listOf(product)
+        val viewModel = ProductFormViewModel(repository, MutableClock(now), product.id) { ZoneOffset.UTC }
+        // The system font scale, not a LocalDensity override: dialogs are windows of their own and ignore the override.
+        RuntimeEnvironment.setFontScale(fontScale)
+        composeRule.setContent {
+            CompositionLocalProvider(LocalRippleConfiguration provides null) {
+                CustomNotifierTheme(darkTheme) { ProductFormRoute(onClose = {}, viewModel = viewModel) }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag(open).performClick()
+        if (units != null) composeRule.onNodeWithTag("adjust_units").performTextInput(units)
+        composeRule.waitForIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        captureScreenRoboImage("src/test/screenshots/product_form_$name.png", options)
+    }
+
+    @Test
+    fun restockDialog() = captureStockDialog("restock", open = "restock")
+
+    @Test
+    fun restockDialogDark() = captureStockDialog("restock_dark", open = "restock", darkTheme = true)
+
+    @Test
+    fun restockDialogLargestFont() =
+        captureStockDialog("restock_font_2", open = "restock", fontScale = 2f, productName = "Extra strength vitamin D3 drops for adults")
+
+    @Test
+    fun restockDialogLargestFontWrapsTheStockAsOneUnit() =
+        captureStockDialog("restock_font_2_wrap", open = "restock", fontScale = 2f, stockUnits = 12_345_678)
+
+    @Test
+    fun adjustDialogEmpty() = captureStockDialog("adjust_empty", open = "adjust")
+
+    @Test
+    fun adjustDialogWithUnits() = captureStockDialog("adjust", open = "adjust", units = "3")
+
+    @Test
+    fun adjustDialogWithUnitsDark() = captureStockDialog("adjust_dark", open = "adjust", darkTheme = true, units = "3")
+
+    @Test
+    fun adjustDialogLargestFont() = captureStockDialog("adjust_font_2", open = "adjust", fontScale = 2f, units = "3")
 }
