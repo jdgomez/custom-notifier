@@ -4,12 +4,12 @@ The app shows each product's next alert, but nothing alerts the user: the core p
 
 ## What Changes
 
-- An `AlertScheduler` port in `:domain` and an `AlarmManager` adapter in `:app`: one inexact alarm (`setAndAllowWhileIdle`, `RTC_WAKEUP`) per product at its scheduled next alert, keyed by product identity.
+- An `AlertScheduler` port in `:domain` and an `AlarmManager` adapter in `:app`: one inexact alarm with a bounded delivery window (`setWindow`, `RTC_WAKEUP`, window 3 hours starting at the alert moment) per product at its scheduled next alert, keyed by product identity.
 - One idempotent reconcile that rebuilds every product's alarm from the database, run on device boot, app update, time zone change, clock change, app start and every product change (create, edit, restock, adjustment, delete).
 - Delivery: when an alert is due and not yet delivered, the app posts one local notification for the product and records the delivery, so a product is alerted exactly once per alert; a missed alert is delivered late on the next boot or app start, until the depletion date.
 - A notification channel "Depletion alerts" created at app start, and the notification itself (texts in the spec). Posting is skipped while notifications are disabled; the delivery is then not recorded, so it is retried on the next reconcile.
 - Room schema version 2 with a migration, storing the delivery record per product (removed with the product).
-- ADR 0017 "Alerts use inexact alarms, no exact-alarm permission", with the Doze and standby delay experiment on `cn-api26` and `cn-api37` as evidence.
+- ADR 0017 "Alerts use inexact alarms with a bounded window, no exact-alarm permission", with the Doze and standby delay experiment on `cn-api26` and `cn-api37` as evidence.
 - Manifest: `RECEIVE_BOOT_COMPLETED` (normal permission, no prompt) and `POST_NOTIFICATIONS` declared.
 
 No new dependencies.

@@ -44,7 +44,7 @@ class AlertAdaptersTest {
     }
 
     @Test
-    fun `schedules one inexact idle-allowed wake-up alarm per product and replaces it`() {
+    fun `schedules one wake-up alarm with a 3 hour window per product and replaces it`() {
         val a = ProductId(UUID.randomUUID())
         val b = ProductId(UUID.randomUUID())
         val first = Instant.parse("2030-03-01T09:00:00Z")
@@ -57,9 +57,9 @@ class AlertAdaptersTest {
             alarms().map { it.triggerAtMs }.toSet(),
         )
         assertEquals(2, alarms().size)
-        assertTrue(alarms().all { it.getType() == AlarmManager.RTC_WAKEUP && it.isAllowWhileIdle })
-        // Exact alarms have a zero window; inexact ones a heuristic (negative) or positive window.
-        assertTrue(alarms().none { it.getWindowLengthMs() == 0L })
+        assertTrue(alarms().all { it.getType() == AlarmManager.RTC_WAKEUP })
+        // Inexact with a window that starts at the alert moment and does not depend on how far ahead it is.
+        assertTrue(alarms().all { it.getWindowLengthMs() == THREE_HOURS_MS })
 
         scheduler.cancel(a)
         assertEquals(listOf(first.plusSeconds(60).toEpochMilli()), alarms().map { it.triggerAtMs })
@@ -152,5 +152,9 @@ class AlertAdaptersTest {
         assertTrue("android.permission.RECEIVE_BOOT_COMPLETED" in requested)
         assertTrue("android.permission.POST_NOTIFICATIONS" in requested)
         assertNull(requested.firstOrNull { it.endsWith("SCHEDULE_EXACT_ALARM") || it.endsWith("USE_EXACT_ALARM") })
+    }
+
+    private companion object {
+        const val THREE_HOURS_MS = 3 * 60 * 60 * 1000L
     }
 }

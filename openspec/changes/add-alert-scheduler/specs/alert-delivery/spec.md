@@ -38,7 +38,17 @@ A product SHALL therefore get a new alert only after its next alert has become s
 - **THEN** no alarm is pending for it and no notification is posted
 
 ### Requirement: Inexact alarms only
-Alarms SHALL be inexact, allowed while the device is idle, and SHALL wake the device. The app SHALL NOT declare or request any exact-alarm permission and SHALL NOT poll in the background.
+Alarms SHALL be inexact with a delivery window that starts at the alert moment and lasts 3 hours, independent of how far ahead they are set, and SHALL wake the device. In deep idle (Doze) the system defers such an alarm until a maintenance window or until the device leaves idle, so the delivery can be later than the window. The app SHALL NOT declare or request any exact-alarm permission and SHALL NOT poll in the background.
+
+#### Scenario: Bounded delivery window
+- **GIVEN** a product whose next alert is scheduled at 2026-03-01 09:00, set days ahead, on a device that is not in deep idle
+- **WHEN** the alarm is registered
+- **THEN** it is delivered no earlier than 2026-03-01 09:00 and at most 3 hours after, whatever the lead time
+
+#### Scenario: Deep idle
+- **GIVEN** a product whose alarm moment passes while the device is in deep idle
+- **WHEN** the device leaves deep idle, or the app is opened or started
+- **THEN** the alert is delivered then, late, by the system or by the reconcile, and never before its alert moment
 
 #### Scenario: No exact-alarm permission
 - **GIVEN** the app's merged manifest
