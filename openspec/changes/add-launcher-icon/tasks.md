@@ -14,4 +14,4 @@
 ## 3. Visual verification
 
 - [x] 3.1 Install on `cn-api26` and `cn-api37` (one at a time) and capture launcher screenshots: app list on both, and themed icons on with API 37; check the mark is whole and centered in the mask and readable at launcher size; attach as PR evidence
-- [ ] 3.2 (owner) Approve the icon as it looks on the devices before merge
+- [x] 3.2 (owner) Approve the icon as it looks on the devices before merge
