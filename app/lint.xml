@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+        Checks that report a newer upstream version are time-dependent: the same commit would
+        pass today and fail tomorrow once a release is published, so builds are not reproducible.
+        Versions are bumped deliberately in their own pull requests (gradle/libs.versions.toml).
+        Nothing else is deactivated here.
+    -->
+    <!-- A newer version of a Gradle dependency (Google Maven, from the version catalog). -->
+    <issue id="GradleDependency" severity="ignore" />
+    <!-- A newer version of a dependency from any other repository. -->
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <!-- A newer Android Gradle Plugin is available. -->
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <!--
+        The target SDK is older than the latest API level. Time-dependent: it fires as soon as a
+        new Android release ships. The target SDK is raised deliberately in its own change, and
+        Google Play enforces its own target API deadline at upload.
+    -->
+    <issue id="OldTargetApi" severity="ignore" />
+</lint>
