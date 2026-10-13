@@ -31,6 +31,6 @@
 
 - [x] 5.1 Planning artifacts and ADR 0017 updated for `setWindow` with a 3 hour window
 - [x] 5.2 Adapter uses `setWindow(RTC_WAKEUP, at, 3 hours)`; Robolectric test asserts the window; no exact-alarm permission
-- [ ] 5.3 Re-measure on `cn-api26` and `cn-api37` (normal, force-idle, alarm days ahead), results in ADR 0017
-- [ ] 5.4 Visual check of the notification on `cn-api26`
-- [ ] 5.5 `./gradlew assembleDebug lintAll test` and `scripts/e2e.sh` green on the final head
+- [x] 5.3 Re-measure on `cn-api26` and `cn-api37` (normal, force-idle, alarm days ahead), results in ADR 0017
+- [x] 5.4 Visual check of the notification on `cn-api26`
+- [x] 5.5 `./gradlew assembleDebug lintAll test` and `scripts/e2e.sh` green on the final head

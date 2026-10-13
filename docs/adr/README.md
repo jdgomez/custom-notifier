@@ -35,4 +35,4 @@ The index below is updated in the same change that adds or supersedes an ADR.
 | [0014](0014-play-app-signing.md) | Play App Signing with the upload key as a GitHub Actions secret | Accepted |
 | [0015](0015-manual-dependency-injection.md) | Manual dependency injection | Accepted |
 | [0016](0016-navigation-with-androidx-navigation-3.md) | Navigation with AndroidX Navigation 3 | Accepted |
-| [0017](0017-inexact-alarms-for-alerts.md) | Alerts use inexact alarms, no exact-alarm permission | Proposed |
+| [0017](0017-inexact-alarms-for-alerts.md) | Alerts use inexact alarms with a bounded window, no exact-alarm permission | Accepted |
