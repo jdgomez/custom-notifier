@@ -61,12 +61,11 @@ The owner starts a work session, tells Brain whether parallel work is allowed, a
 1. **Propose.** Brain writes an OpenSpec change (`openspec-propose`), declaring `depends on:` and `touches:`, and creates the matching GitHub issue in the phase milestone.
 2. **Approve (human checkpoint).** The owner reviews and approves the proposal. The issue moves to Ready.
 3. **Delegate.** Brain creates a flow for the change and hands it over. The issue moves to In progress.
-4. **Implement.** The executor works on branch `change/<change-name>`, committing with Conventional Commits.
+4. **Implement.** The executor works on branch `change/<change-name>`, committing with Conventional Commits. The last task of every change's `tasks.md` is `Archive`: the executor runs `openspec archive` for the change, syncs its delta specs into `openspec/specs/` and updates the Project state in `AGENTS.md`, before handing the work to the reviewer. The gate therefore reviews code, archive and spec sync together in one PR. If review or the owner asks for changes afterwards, the executor edits the artifacts in the archive directory (and the synced main specs) on the same branch; the archive folder date is the archive date, not the merge date. Separate archive PRs are not the normal path.
 5. **Gate.** The reviewer runs no-mistakes. It ends with a pull request (title in Conventional Commits format, body with `Closes #N`) and green CI. The issue moves to In review. For now (temporary, until the gate is reliable), Brain checks the gate's own commits (e.g. document step edits) and the PR title and body (`Closes`/`Refs`, template sections) before handing the PR to the owner.
    The PR checklist (`.github/pull_request_template.md`) lists only judgement items; lint, tests and CI are enforced by the required checks. Before reporting PASSED, the reviewer resolves every checklist item: ticked after checking it, or ticked with `n/a: <reason>`. An unticked item means not done. Brain checks that no item is left unticked before announcing a PR.
 6. **Review and merge (human checkpoint).** The owner reviews, including UX from screenshots and video, and squash-merges. GitHub closes the issue and moves it to Done.
-7. **Archive.** The OpenSpec change is archived and the main specs are updated.
-8. **Close.** Once the pull request is merged or the change is abandoned, Brain closes the flow: its worktree, workspace and status files are removed. Flows are never reused.
+7. **Close.** Once the pull request is merged or the change is abandoned, Brain closes the flow: its worktree, workspace and status files are removed. Flows are never reused.
 
 A spike is investigation only. It ends with its findings posted as a comment on its issue, the issue closed, and follow-up issues created for any work it uncovers (blocked ones labelled `blocked`).
 
@@ -79,6 +78,7 @@ A change is done only when all of these hold:
 - The no-mistakes gate passes.
 - CI is green.
 - Documentation is updated where relevant (repo `AGENTS.md`, ADRs, specs).
+- The change is archived and its specs synced in the same pull request.
 - For user-visible changes: screenshots and a short video in the pull request. The video is recorded by the E2E tests in CI (no token cost; review is manual by the owner) and linked from the PR as a CI artifact.
 - Size is reviewable in one sitting: about 400 lines of production code at most, excluding tests. Larger work is split into several changes.
 
@@ -144,7 +144,7 @@ Brain creates and moves issues. The reviewer (through no-mistakes) opens the pul
 ## Documentation
 - **Repo `AGENTS.md`:** short; key commands and conventions for agents.
 - **`SESSION0.md` and `WAYOFWORKING.md`:** reference documents; changed only with owner approval.
-- **OpenSpec specs:** source of truth for behavior; changes are archived when completed.
+- **OpenSpec specs:** source of truth for behavior; a change is archived inside its own pull request (lifecycle step 4).
 - **ADRs:** `docs/adr/NNNN-title.md`, Nygard format (context, decision, consequences). The decisions already made in `SESSION0.md` become the first, retroactive ADRs.
 
 ## Phases
@@ -164,7 +164,7 @@ Changes 3 and 4 both touch the Gradle build, so they are not parallelizable with
 
 Alongside Phase 0, Brain sets up GitHub: labels, milestones per phase, and the project board.
 
-Success criterion: a trivial change goes through the full lifecycle (proposal, issue, flow, gate, PR with green CI including E2E and video, owner merge, archive).
+Success criterion: a trivial change goes through the full lifecycle (proposal, issue, flow, gate, PR with green CI including E2E and video, archive inside the PR, owner merge).
 
 ### Phase 1 - MVP (Android)
 Product scope as defined in `SESSION0.md`. Planned order following the prioritization rules:

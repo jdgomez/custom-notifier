@@ -27,3 +27,4 @@ rules:
   tasks:
     - Mark owner-only steps explicitly with "(owner)" so agents stop and escalate instead of improvising.
     - Keep each change within about 400 lines of production code, excluding tests.
+    - End tasks.md with a final "Archive" task: run openspec archive for the change, sync its delta specs into openspec/specs/ and update the Project state in AGENTS.md. It is done inside the change's own pull request, before handing the work to the reviewer.
