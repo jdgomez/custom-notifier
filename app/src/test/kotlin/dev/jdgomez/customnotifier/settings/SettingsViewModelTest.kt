@@ -46,7 +46,17 @@ private class FakeGateway(
     /** When set, the next [find] waits for it and answers with the calendars as they were when it started. */
     var holdNextFind: CompletableDeferred<Unit>? = null
 
-    override suspend fun writableCalendars() = calendars
+    /** When set, the next [writableCalendars] waits for it and answers with the calendars as they were when it started. */
+    var holdNextList: CompletableDeferred<Unit>? = null
+
+    override suspend fun writableCalendars(): List<DeviceCalendar> {
+        val answer = calendars
+        holdNextList?.let {
+            holdNextList = null
+            it.await()
+        }
+        return answer
+    }
 
     override suspend fun find(id: CalendarId): DeviceCalendar? {
         val answer = calendars.firstOrNull { it.id == id }
@@ -426,5 +436,50 @@ class SettingsViewModelTest {
         viewModel.refresh()
         viewModel.refresh()
         assertEquals(before, viewModel.state.value)
+    }
+
+    @Test
+    fun `a choice is not undone by a refresh queued behind a slow check`() {
+        access.state = CalendarAccessState.Granted
+        settings.channel.value = CalendarChannel.On(HOME.id)
+        val viewModel = viewModel()
+        val gate = CompletableDeferred<Unit>()
+        gateway.holdNextFind = gate
+        viewModel.refresh()
+        viewModel.openChooser()
+        viewModel.choose(FAMILY)
+        viewModel.refresh()
+        gate.complete(Unit)
+
+        assertEquals(CalendarChannel.On(FAMILY.id), settings.channel.value)
+        assertEquals(CalendarRow.Chosen(FAMILY), viewModel.state.value.calendarRow)
+        assertNull(viewModel.state.value.dialog)
+    }
+
+    @Test
+    fun `dismissing wins over a chooser that was still loading`() {
+        access.state = CalendarAccessState.Granted
+        val viewModel = viewModel()
+        val gate = CompletableDeferred<Unit>()
+        gateway.holdNextList = gate
+        viewModel.ask(explanationDue = false)
+        viewModel.dismissDialog()
+        gate.complete(Unit)
+
+        assertNull(viewModel.state.value.dialog)
+    }
+
+    @Test
+    fun `events are handled in order whatever their speed`() {
+        access.state = CalendarAccessState.Granted
+        val viewModel = viewModel()
+        val gate = CompletableDeferred<Unit>()
+        gateway.holdNextList = gate
+        viewModel.openChooser()
+        viewModel.dismissDialog()
+        viewModel.openChooser()
+        gate.complete(Unit)
+
+        assertEquals(listOf(HOME, FAMILY), viewModel.chooser().calendars)
     }
 }

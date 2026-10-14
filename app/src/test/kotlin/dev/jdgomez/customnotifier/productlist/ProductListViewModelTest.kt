@@ -169,37 +169,63 @@ class ProductListViewModelTest {
             assertEquals(1, reconciles)
         }
 
+    private fun ProductListViewModel.request(
+        userInitiated: Boolean,
+        explanationDue: Boolean,
+    ): Boolean {
+        assertEquals(true, startRequest(userInitiated))
+        return onPermissionResult(explanationDue)
+    }
+
     @Test
     fun denialAfterSavingOpensNothing() =
         runTest {
             access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
-            assertEquals(false, viewModel.onPermissionResult(userInitiated = false, explanationDue = false))
-            assertEquals(false, viewModel.onPermissionResult(userInitiated = false, explanationDue = true))
+            assertEquals(false, viewModel.request(userInitiated = false, explanationDue = false))
+            assertEquals(false, viewModel.request(userInitiated = false, explanationDue = true))
         }
 
     @Test
     fun turnOnWithASilentDenialOpensTheNotificationSettings() =
         runTest {
             access.state = NotificationAccessState.PermissionMissing
-            val viewModel = viewModel()
-            assertEquals(true, viewModel.onPermissionResult(userInitiated = true, explanationDue = false))
+            assertEquals(true, viewModel().request(userInitiated = true, explanationDue = false))
         }
 
     @Test
     fun turnOnWithAnExplanationStillDueOpensNothing() =
         runTest {
             access.state = NotificationAccessState.PermissionMissing
-            val viewModel = viewModel()
-            assertEquals(false, viewModel.onPermissionResult(userInitiated = true, explanationDue = true))
+            assertEquals(false, viewModel().request(userInitiated = true, explanationDue = true))
         }
 
     @Test
     fun grantedResultIsReadFromTheAccessAndOpensNothing() =
         runTest {
             access.state = NotificationAccessState.Allowed
+            assertEquals(false, viewModel().request(userInitiated = true, explanationDue = false))
+        }
+
+    @Test
+    fun aNewRequestCannotStartWhileOneIsInFlightAndTheOriginIsKept() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
-            assertEquals(false, viewModel.onPermissionResult(userInitiated = true, explanationDue = false))
+            assertEquals(true, viewModel.startRequest(userInitiated = true))
+            // A save-triggered request or the explanation's Continue arrives meanwhile: it must not replace the origin.
+            assertEquals(false, viewModel.startRequest(userInitiated = false))
+            assertEquals(true, viewModel.onPermissionResult(explanationDue = false))
+            // The request finished: the next one may start, with its own origin.
+            assertEquals(true, viewModel.startRequest(userInitiated = false))
+            assertEquals(false, viewModel.onPermissionResult(explanationDue = false))
+        }
+
+    @Test
+    fun aResultWithNoRequestOfTheViewModelOpensNothing() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            assertEquals(false, viewModel().onPermissionResult(explanationDue = false))
         }
 }
 

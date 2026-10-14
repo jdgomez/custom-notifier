@@ -72,12 +72,10 @@ fun ProductListRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var explaining by rememberSaveable { mutableStateOf(false) }
-    // Whether the request in flight comes from the banner: only then a denial opens the notification settings.
-    var userInitiated by rememberSaveable { mutableStateOf(false) }
     val explanationDue = { context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, PERMISSION) } == true }
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            if (viewModel.onPermissionResult(userInitiated, explanationDue())) {
+            if (viewModel.onPermissionResult(explanationDue())) {
                 context.startActivity(viewModel.settingsIntent())
             }
         }
@@ -91,8 +89,7 @@ fun ProductListRoute(
             if (explanationDue()) {
                 explaining = true
             } else {
-                userInitiated = false
-                launcher.launch(PERMISSION)
+                if (viewModel.startRequest(userInitiated = false)) launcher.launch(PERMISSION)
             }
         }
     }
@@ -105,8 +102,7 @@ fun ProductListRoute(
         onTurnOnAlerts = {
             val access = viewModel.refreshAccess()
             if (access == NotificationAccessState.PermissionMissing) {
-                userInitiated = true
-                launcher.launch(PERMISSION)
+                if (viewModel.startRequest(userInitiated = true)) launcher.launch(PERMISSION)
             } else if (access != NotificationAccessState.Allowed) {
                 context.startActivity(viewModel.settingsIntent())
             }
@@ -115,8 +111,7 @@ fun ProductListRoute(
     if (explaining) {
         AlertsExplanationDialog(onContinue = {
             explaining = false
-            userInitiated = false
-            launcher.launch(PERMISSION)
+            if (viewModel.startRequest(userInitiated = false)) launcher.launch(PERMISSION)
         }, onNotNow = { explaining = false })
     }
 }
