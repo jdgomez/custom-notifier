@@ -79,4 +79,48 @@ class CalendarAccessTest {
         access.clearPermanentDenial()
         assertEquals(CalendarAccessState.Missing(canAsk = true), access.current())
     }
+
+    @Test
+    fun `silent denial after returning from the settings unchanged is reported and blocks further asking`() {
+        deny()
+        assertEquals(false, access.recordDenied(explanationBefore = false, explanationAfter = true))
+        assertEquals(false, access.recordDenied(explanationBefore = true, explanationAfter = false))
+        access.clearPermanentDenial()
+        assertEquals(CalendarAccessState.Missing(canAsk = true), access.current())
+
+        // The permission was not changed in the settings: Android shows no dialog and the request comes back at once.
+        assertEquals(true, access.recordDenied(explanationBefore = false, explanationAfter = false))
+        assertEquals(CalendarAccessState.Missing(canAsk = false), access.current())
+    }
+
+    @Test
+    fun `reset to ask every time then denied once can be asked again`() {
+        deny()
+        access.recordDenied(explanationBefore = false, explanationAfter = true)
+        access.recordDenied(explanationBefore = true, explanationAfter = false)
+        access.clearPermanentDenial()
+
+        // Android shows the dialog again and the user denies it: a normal first denial.
+        assertEquals(false, access.recordDenied(explanationBefore = false, explanationAfter = true))
+        assertEquals(CalendarAccessState.Missing(canAsk = true), access.current())
+    }
+
+    @Test
+    fun `a first dismissed dialog is asked again and is not reported`() {
+        deny()
+        assertEquals(false, access.recordDenied(explanationBefore = false, explanationAfter = false))
+        assertEquals(CalendarAccessState.Missing(canAsk = true), access.current())
+    }
+
+    @Test
+    fun `granting forgets that the user was asked`() {
+        deny()
+        access.recordDenied(explanationBefore = false, explanationAfter = true)
+        grant()
+        access.current()
+        deny()
+        // Revoked in the settings and asked again: a dismissed dialog is a first dismissal, not a silent denial.
+        assertEquals(false, access.recordDenied(explanationBefore = false, explanationAfter = false))
+        assertEquals(CalendarAccessState.Missing(canAsk = true), access.current())
+    }
 }

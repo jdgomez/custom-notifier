@@ -106,9 +106,13 @@ class SettingsViewModel(
     ) {
         viewModelScope.launch {
             val granted = access.current() == CalendarAccessState.Granted
-            if (!granted) access.recordDenied(explanationBefore, explanationAfter)
+            val noDialog = !granted && access.recordDenied(explanationBefore, explanationAfter)
             recompute()
-            if (granted) openChooser(onlyIfUnusable = true)
+            when {
+                granted -> openChooser(onlyIfUnusable = true)
+                // Android showed no dialog: only the system settings can allow access.
+                noDialog -> mutableState.update { it.copy(dialog = SettingsDialog.DeniedForGood) }
+            }
         }
     }
 

@@ -28,11 +28,17 @@ sealed interface NotificationAccessState {
 interface NotificationAccess {
     fun current(): NotificationAccessState
 
-    /** Records a denied request: [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
+    /**
+     * Records a denied request: [explanationBefore] and [explanationAfter] are the rationale flags around the request.
+     * Returns true when Android showed no dialog for it, so the user must go to the system settings.
+     */
     fun recordDenied(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
-    )
+    ): Boolean
+
+    /** Forgets a recorded permanent denial: the user came back from the system settings, where it may have been reset. */
+    fun clearPermanentDenial()
 
     /** The system settings screen where the user can fix [state]: the channel's when only it is off, else the app's. */
     fun settingsIntent(state: NotificationAccessState): Intent
@@ -61,16 +67,16 @@ class PlatformNotificationAccess(
             !manager.areNotificationsEnabled() -> NotificationAccessState.AppNotificationsOff
             manager.getNotificationChannel(NotificationAlertNotifier.CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE ->
                 NotificationAccessState.ChannelOff
-            else -> NotificationAccessState.Allowed.also { denial.clear() }
+            else -> NotificationAccessState.Allowed.also { denial.reset() }
         }
     }
 
     override fun recordDenied(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
-    ) {
-        denial.record(explanationBefore, explanationAfter)
-    }
+    ): Boolean = denial.record(explanationBefore, explanationAfter)
+
+    override fun clearPermanentDenial() = denial.clear()
 
     override fun settingsIntent(state: NotificationAccessState): Intent {
         val intent =

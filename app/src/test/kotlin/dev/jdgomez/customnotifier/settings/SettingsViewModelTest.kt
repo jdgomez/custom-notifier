@@ -63,14 +63,16 @@ private class FakeAccess(
 ) : CalendarAccess {
     var denied: Pair<Boolean, Boolean>? = null
     var cleared = 0
+    var silent = false
 
     override fun current() = state
 
     override fun recordDenied(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
-    ) {
+    ): Boolean {
         denied = explanationBefore to explanationAfter
+        return silent
     }
 
     override fun clearPermanentDenial() {
@@ -390,5 +392,24 @@ class SettingsViewModelTest {
         val viewModel = viewModel()
         viewModel.refresh(backFromSystemSettings = true)
         assertEquals(1, access.cleared)
+    }
+
+    @Test
+    fun `a request denied with no dialog shown leads to the access is off dialog`() {
+        val viewModel = viewModel()
+        viewModel.ask(explanationDue = false)
+        access.silent = true
+        viewModel.onPermissionResult(explanationBefore = false, explanationAfter = false)
+
+        assertEquals(SettingsDialog.DeniedForGood, viewModel.state.value.dialog)
+        assertFalse(viewModel.state.value.channelOn)
+    }
+
+    @Test
+    fun `a denial with a dialog shown does not open the access is off dialog yet`() {
+        val viewModel = viewModel()
+        viewModel.ask(explanationDue = false)
+        viewModel.onPermissionResult(explanationBefore = true, explanationAfter = false)
+        assertNull(viewModel.state.value.dialog)
     }
 }

@@ -43,7 +43,9 @@ class ProductListViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0), ProductListState.Loading)
 
     /** Reads the notification access again; alerts that became due while it was off are delivered when it turns on. */
-    fun refreshAccess(): NotificationAccessState {
+    fun refreshAccess(backFromSystemSettings: Boolean = false): NotificationAccessState {
+        // The user may have reset the permission to "ask every time" there, so a recorded denial is forgotten.
+        if (backFromSystemSettings) access.clearPermanentDenial()
         val before = accessState.value
         val now = access.current()
         accessState.value = now
@@ -51,14 +53,18 @@ class ProductListViewModel(
         return now
     }
 
-    /** The system dialog was answered; [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
+    /**
+     * The system dialog was answered; [explanationBefore] and [explanationAfter] are the rationale flags around the request.
+     * Returns true when Android showed no dialog for it: the screen then opens the notification settings.
+     */
     fun onPermissionResult(
         granted: Boolean,
         explanationBefore: Boolean,
         explanationAfter: Boolean,
-    ) {
-        if (!granted) access.recordDenied(explanationBefore, explanationAfter)
+    ): Boolean {
+        val noDialog = !granted && access.recordDenied(explanationBefore, explanationAfter)
         refreshAccess()
+        return noDialog
     }
 
     fun settingsIntent(): Intent = access.settingsIntent(accessState.value)

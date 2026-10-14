@@ -22,11 +22,14 @@ sealed interface CalendarAccessState {
 interface CalendarAccess {
     fun current(): CalendarAccessState
 
-    /** Records a denied request: [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
+    /**
+     * Records a denied request: [explanationBefore] and [explanationAfter] are the rationale flags around the request.
+     * Returns true when Android showed no dialog for it, so the user must go to the system settings.
+     */
     fun recordDenied(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
-    )
+    ): Boolean
 
     /** Forgets a recorded permanent denial: Android shows a rationale again, or the user came back from the system settings. */
     fun clearPermanentDenial()
@@ -51,16 +54,14 @@ class PlatformCalendarAccess(
                 ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
             }
         if (!granted) return CalendarAccessState.Missing(canAsk = !denial.isRecorded)
-        denial.clear()
+        denial.reset()
         return CalendarAccessState.Granted
     }
 
     override fun recordDenied(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
-    ) {
-        denial.record(explanationBefore, explanationAfter)
-    }
+    ): Boolean = denial.record(explanationBefore, explanationAfter)
 
     override fun clearPermanentDenial() = denial.clear()
 

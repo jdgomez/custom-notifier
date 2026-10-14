@@ -74,17 +74,24 @@ fun ProductListRoute(
     var explaining by rememberSaveable { mutableStateOf(false) }
     // The rationale flag before the request, to tell a second denial from a first one.
     var explanationBefore by rememberSaveable { mutableStateOf(false) }
+    var leftForSettings by rememberSaveable { mutableStateOf(false) }
     val explanationDue = { context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, PERMISSION) } == true }
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            viewModel.onPermissionResult(granted, explanationBefore, explanationDue())
+            if (viewModel.onPermissionResult(granted, explanationBefore, explanationDue())) {
+                leftForSettings = true
+                context.startActivity(viewModel.settingsIntent())
+            }
         }
     val request = {
         explanationBefore = explanationDue()
         launcher.launch(PERMISSION)
     }
     // Returning from settings or from the system dialog: the state may have changed.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshAccess(backFromSystemSettings = leftForSettings)
+        leftForSettings = false
+    }
     val currentConsume by rememberUpdatedState(onConsumeAskForNotifications)
     LaunchedEffect(askForNotifications) {
         if (!askForNotifications) return@LaunchedEffect
@@ -105,6 +112,7 @@ fun ProductListRoute(
             if (access is NotificationAccessState.PermissionMissing && access.canAsk) {
                 request()
             } else if (access != NotificationAccessState.Allowed) {
+                leftForSettings = true
                 context.startActivity(viewModel.settingsIntent())
             }
         },

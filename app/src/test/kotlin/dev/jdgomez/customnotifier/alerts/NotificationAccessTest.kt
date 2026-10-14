@@ -66,6 +66,29 @@ class NotificationAccessTest {
     }
 
     @Test
+    fun `reset to ask every time after a denial for good can be asked again`() {
+        deny()
+        access.recordDenied(explanationBefore = false, explanationAfter = true)
+        access.recordDenied(explanationBefore = true, explanationAfter = false)
+        assertEquals(NotificationAccessState.PermissionMissing(canAsk = false), access.current())
+
+        // Back from the system settings after the user reset the permission without granting it.
+        access.clearPermanentDenial()
+        assertEquals(NotificationAccessState.PermissionMissing(canAsk = true), access.current())
+    }
+
+    @Test
+    fun `silent denial after returning from the settings unchanged is reported`() {
+        deny()
+        access.recordDenied(explanationBefore = false, explanationAfter = true)
+        access.recordDenied(explanationBefore = true, explanationAfter = false)
+        access.clearPermanentDenial()
+
+        assertEquals(true, access.recordDenied(explanationBefore = false, explanationAfter = false))
+        assertEquals(NotificationAccessState.PermissionMissing(canAsk = false), access.current())
+    }
+
+    @Test
     fun `granted but notifications off for the app`() {
         grant()
         createChannel()
