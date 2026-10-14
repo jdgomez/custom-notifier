@@ -21,7 +21,7 @@
 
 - [x] 4.1 Instrumented tests on `cn-api37` with UiAutomator and test-created local calendars, covering the scenarios in design decision 6
 - [x] 4.2 Run `scripts/e2e.sh` on `cn-api37` and check the video; boot `cn-api26`, install and verify by hand that turning the switch on asks for access, the chooser lists the test calendars and the choice survives a relaunch; shut the emulators down
-- [ ] 4.3 Check the production line count (about 400 at most, tests excluded); if clearly over, stop and report before going on
+- [x] 4.3 Check the production line count (about 400 at most, tests excluded); if clearly over, stop and report before going on. Measured 480 code lines (about 710 raw); the owner accepted the size as a one-off exception
 
 ## 5. Archive
 

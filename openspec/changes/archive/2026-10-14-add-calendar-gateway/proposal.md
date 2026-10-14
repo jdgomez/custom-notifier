@@ -38,3 +38,7 @@ No new dependencies. The calendar permissions are new manifest permissions; thei
 - Depends on: #45 (`add-alert-scheduler`, `add-notification-permission`; both merged). Part b depends on this change.
 - Touches: `:domain` (calendar port and channel types), `:app` (calendar adapter, Room entity, DAO and migration 2 to 3 with `app/schemas/3.json`, manifest permissions, new `settings` package with screen and ViewModel, navigation destination, product list top bar action), `docs/SESSION0.md` (glossary term). Not parallelizable with part b; parallelizable with work that does not touch navigation, the product list top bar or the Room schema.
 - Issue: Refs #46, which must stay open until part b.
+
+## Handoff note
+
+Size: this change is about 480 production code lines (about 710 raw), over the usual 400. The owner accepted it as a one-off exception. The pull request body must state this exception, to be raised at the Phase 1 retrospective.

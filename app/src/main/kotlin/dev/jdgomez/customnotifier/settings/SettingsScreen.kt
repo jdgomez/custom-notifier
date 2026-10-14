@@ -133,10 +133,7 @@ fun SettingsScreen(
                     ),
             )
             if (state.accessRemoved) AccessRemoved(onAllow)
-            when (val row = state.calendarRow) {
-                null -> Unit
-                else -> CalendarRowItem(row, onChooseCalendar)
-            }
+            state.calendarRow?.let { CalendarRowItem(it, onChooseCalendar) }
         }
     }
     SettingsDialogs(state.dialog, onContinueFromExplanation, onChoose, onOpenSystemSettings, onDismissDialog)

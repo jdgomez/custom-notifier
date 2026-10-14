@@ -8,11 +8,12 @@ import android.provider.CalendarContract.Calendars
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -21,6 +22,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import org.junit.After
 import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,14 +34,22 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 class CalendarChannelTest {
     @get:Rule
-    val composeRule = createAndroidComposeRule<MainActivity>()
+    val composeRule = createEmptyComposeRule()
+
+    private lateinit var scenario: ActivityScenario<MainActivity>
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
     private val application = ApplicationProvider.getApplicationContext<CustomNotifierApplication>()
 
+    @Before
+    fun launchApp() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+    }
+
     @After
     fun removeTestCalendars() {
+        scenario.close()
         withShellPermissions {
             application.contentResolver.delete(syncAdapterUri(), "${Calendars.ACCOUNT_NAME} = ?", arrayOf(ACCOUNT))
         }
@@ -121,7 +131,7 @@ class CalendarChannelTest {
     }
 
     @Test
-    fun firstTimeOnAsksThenChoosingKeepsTheChannel() {
+    fun firstTimeOnAsksThenChoosingKeepsTheChannelAcrossARelaunch() {
         assumeTrue(!deviceHasWritableCalendar())
         createCalendar("Home")
         createCalendar("Holidays", Calendars.CAL_ACCESS_READ)
@@ -140,8 +150,9 @@ class CalendarChannelTest {
         composeRule.onNodeWithText("Home").assertIsDisplayed()
         composeRule.onNodeWithText(ACCOUNT).assertIsDisplayed()
 
-        // Leaving Settings drops its ViewModel: the choice is read again from the database.
-        composeRule.onNodeWithContentDescription("Back").performClick()
+        // A new activity instance has none of the screen state: the choice is read again from the database.
+        scenario.close()
+        scenario = ActivityScenario.launch(MainActivity::class.java)
         openSettings()
         awaitText("Calendar")
         composeRule.onNodeWithText("Add alerts to my calendar").assertIsOn()
