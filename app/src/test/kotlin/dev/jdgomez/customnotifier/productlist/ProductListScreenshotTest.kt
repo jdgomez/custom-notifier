@@ -120,6 +120,10 @@ class ProductListScreenshotTest {
     fun alertsOffBannerLargestFont() = capture("alerts_off_font_2", fontScale = 2f, products = products(LONG_NAME), alertsOff = true)
 
     @Test
+    fun alertsOffBannerDarkLargestFont() =
+        capture("alerts_off_dark_font_2", darkTheme = true, fontScale = 2f, products = products(LONG_NAME), alertsOff = true)
+
+    @Test
     @OptIn(ExperimentalRoborazziApi::class)
     fun explanationDialog() {
         composeRule.setContent {
