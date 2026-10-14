@@ -8,6 +8,7 @@ import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -42,15 +43,26 @@ private class FakeSettings(
 private class FakeGateway(
     var calendars: List<DeviceCalendar> = listOf(HOME, FAMILY),
 ) : CalendarGateway {
+    /** When set, the next [find] waits for it and answers with the calendars as they were when it started. */
+    var holdNextFind: CompletableDeferred<Unit>? = null
+
     override suspend fun writableCalendars() = calendars
 
-    override suspend fun find(id: CalendarId) = calendars.firstOrNull { it.id == id }
+    override suspend fun find(id: CalendarId): DeviceCalendar? {
+        val answer = calendars.firstOrNull { it.id == id }
+        holdNextFind?.let {
+            holdNextFind = null
+            it.await()
+        }
+        return answer
+    }
 }
 
 private class FakeAccess(
     var state: CalendarAccessState = CalendarAccessState.Missing(canAsk = true),
 ) : CalendarAccess {
     var denied: Pair<Boolean, Boolean>? = null
+    var cleared = 0
 
     override fun current() = state
 
@@ -59,6 +71,10 @@ private class FakeAccess(
         explanationAfter: Boolean,
     ) {
         denied = explanationBefore to explanationAfter
+    }
+
+    override fun clearPermanentDenial() {
+        cleared++
     }
 
     override fun settingsIntent() = Intent("settings")
@@ -103,7 +119,7 @@ class SettingsViewModelTest {
         val viewModel = viewModel()
         viewModel.ask(false)
         access.state = CalendarAccessState.Granted
-        viewModel.onPermissionResult(granted = true, explanationBefore = false, explanationAfter = false)
+        viewModel.onPermissionResult(explanationBefore = false, explanationAfter = false)
 
         assertEquals(listOf(HOME, FAMILY), viewModel.chooser().calendars)
         assertFalse(viewModel.state.value.channelOn)
@@ -113,7 +129,7 @@ class SettingsViewModelTest {
     fun `access denied closes everything and the switch stays off`() {
         val viewModel = viewModel()
         viewModel.ask(false)
-        viewModel.onPermissionResult(granted = false, explanationBefore = false, explanationAfter = true)
+        viewModel.onPermissionResult(explanationBefore = false, explanationAfter = true)
 
         assertNull(viewModel.state.value.dialog)
         assertFalse(viewModel.state.value.channelOn)
@@ -258,7 +274,7 @@ class SettingsViewModelTest {
         val viewModel = viewModel()
         viewModel.ask(false)
         access.state = CalendarAccessState.Granted
-        viewModel.onPermissionResult(granted = true, explanationBefore = false, explanationAfter = false)
+        viewModel.onPermissionResult(explanationBefore = false, explanationAfter = false)
 
         assertFalse(viewModel.state.value.accessRemoved)
         assertEquals(CalendarRow.Chosen(HOME), viewModel.state.value.calendarRow)
@@ -299,8 +315,80 @@ class SettingsViewModelTest {
         val viewModel = viewModel()
         viewModel.ask(false)
         access.state = CalendarAccessState.Granted
-        viewModel.onPermissionResult(granted = true, explanationBefore = false, explanationAfter = false)
+        viewModel.onPermissionResult(explanationBefore = false, explanationAfter = false)
 
         assertEquals(listOf(FAMILY), viewModel.chooser().calendars)
+    }
+
+    @Test
+    fun `a cancelled request returns no result and is not treated as granted`() {
+        val viewModel = viewModel()
+        viewModel.ask(false)
+        // The system dialog was interrupted: access is still missing, whatever the result map said.
+        viewModel.onPermissionResult(explanationBefore = false, explanationAfter = false)
+
+        assertNull(viewModel.state.value.dialog)
+        assertFalse(viewModel.state.value.channelOn)
+    }
+
+    @Test
+    fun `the latest check wins when an older one finishes late`() {
+        access.state = CalendarAccessState.Granted
+        settings.channel.value = CalendarChannel.On(HOME.id)
+        val viewModel = viewModel()
+        assertEquals(CalendarRow.Chosen(HOME), viewModel.state.value.calendarRow)
+
+        // The older check starts while "Home" exists and is held; the calendar then disappears and a newer check sees that.
+        val gate = CompletableDeferred<Unit>()
+        gateway.holdNextFind = gate
+        viewModel.refresh()
+        gateway.calendars = emptyList()
+        viewModel.refresh()
+        assertEquals(CalendarRow.Unavailable, viewModel.state.value.calendarRow)
+
+        gate.complete(Unit)
+        assertEquals(CalendarRow.Unavailable, viewModel.state.value.calendarRow)
+    }
+
+    @Test
+    fun `choosing is refused when access was removed meanwhile`() {
+        access.state = CalendarAccessState.Granted
+        val viewModel = viewModel()
+        viewModel.ask(false)
+        access.state = CalendarAccessState.Missing(canAsk = true)
+        viewModel.choose(HOME)
+
+        assertEquals(CalendarChannel.Off, settings.channel.value)
+        assertFalse(viewModel.state.value.channelOn)
+        assertNull(viewModel.state.value.dialog)
+    }
+
+    @Test
+    fun `choosing is refused when the calendar is gone and the chooser shows the current ones`() {
+        access.state = CalendarAccessState.Granted
+        val viewModel = viewModel()
+        viewModel.ask(false)
+        gateway.calendars = listOf(FAMILY)
+        viewModel.choose(HOME)
+
+        assertEquals(CalendarChannel.Off, settings.channel.value)
+        assertEquals(listOf(FAMILY), viewModel.chooser().calendars)
+    }
+
+    @Test
+    fun `an explanation due means a recorded permanent denial is stale`() {
+        val viewModel = viewModel()
+        viewModel.ask(explanationDue = true)
+        assertEquals(1, access.cleared)
+        viewModel.ask(explanationDue = false)
+        assertEquals(1, access.cleared)
+    }
+
+    @Test
+    fun `coming back from the system settings forgets the permanent denial`() {
+        access.state = CalendarAccessState.Missing(canAsk = false)
+        val viewModel = viewModel()
+        viewModel.refresh(backFromSystemSettings = true)
+        assertEquals(1, access.cleared)
     }
 }

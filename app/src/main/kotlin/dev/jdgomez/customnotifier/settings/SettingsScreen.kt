@@ -55,16 +55,20 @@ fun SettingsRoute(
     val context = LocalContext.current
     // The rationale flag before the request, to tell a denial for good from a first one.
     var explanationBefore by rememberSaveable { mutableStateOf(false) }
+    var leftForSystemSettings by rememberSaveable { mutableStateOf(false) }
     val explanationDue = {
         context.findActivity()?.let { activity ->
             CalendarAccess.PERMISSIONS.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }
         } == true
     }
     val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-            viewModel.onPermissionResult(results.values.all { it }, explanationBefore, explanationDue())
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            viewModel.onPermissionResult(explanationBefore, explanationDue())
         }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh(backFromSystemSettings = leftForSystemSettings)
+        leftForSystemSettings = false
+    }
     LaunchedEffect(state.requestPermission) {
         if (!state.requestPermission) return@LaunchedEffect
         viewModel.onPermissionRequested()
@@ -81,6 +85,7 @@ fun SettingsRoute(
         onChoose = viewModel::choose,
         onOpenSystemSettings = {
             viewModel.dismissDialog()
+            leftForSystemSettings = true
             context.startActivity(viewModel.settingsIntent())
         },
         onDismissDialog = viewModel::dismissDialog,

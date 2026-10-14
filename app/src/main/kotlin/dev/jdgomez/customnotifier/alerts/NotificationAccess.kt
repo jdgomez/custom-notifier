@@ -8,7 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
+import dev.jdgomez.customnotifier.permissions.PermanentDenial
 
 /** Whether alerts can be shown and, when not, why. */
 sealed interface NotificationAccessState {
@@ -50,18 +50,18 @@ interface NotificationAccess {
 class PlatformNotificationAccess(
     private val context: Context,
 ) : NotificationAccess {
-    private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val denial = PermanentDenial(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
 
     override fun current(): NotificationAccessState {
         val manager = NotificationManagerCompat.from(context)
         return when {
             needsRuntimePermission() && !hasRuntimePermission() -> {
-                NotificationAccessState.PermissionMissing(canAsk = !prefs.getBoolean(KEY_PERMANENTLY_DENIED, false))
+                NotificationAccessState.PermissionMissing(canAsk = !denial.isRecorded)
             }
             !manager.areNotificationsEnabled() -> NotificationAccessState.AppNotificationsOff
             manager.getNotificationChannel(NotificationAlertNotifier.CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE ->
                 NotificationAccessState.ChannelOff
-            else -> NotificationAccessState.Allowed.also { prefs.edit { remove(KEY_PERMANENTLY_DENIED) } }
+            else -> NotificationAccessState.Allowed.also { denial.clear() }
         }
     }
 
@@ -69,7 +69,7 @@ class PlatformNotificationAccess(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
     ) {
-        if (explanationBefore && !explanationAfter) prefs.edit { putBoolean(KEY_PERMANENTLY_DENIED, true) }
+        denial.record(explanationBefore, explanationAfter)
     }
 
     override fun settingsIntent(state: NotificationAccessState): Intent {
@@ -91,6 +91,5 @@ class PlatformNotificationAccess(
 
     companion object {
         private const val PREFS = "notification_access"
-        private const val KEY_PERMANENTLY_DENIED = "permanently_denied"
     }
 }

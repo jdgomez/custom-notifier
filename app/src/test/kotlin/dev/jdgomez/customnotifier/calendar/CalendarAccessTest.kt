@@ -70,4 +70,13 @@ class CalendarAccessTest {
         assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, intent.action)
         assertEquals("package:${app.packageName}", intent.data.toString())
     }
+
+    @Test
+    fun `a permission reset to ask again without granting can be asked again after clearing the denial`() {
+        deny()
+        access.recordDenied(explanationBefore = true, explanationAfter = false)
+        assertEquals(CalendarAccessState.Missing(canAsk = false), access.current())
+        access.clearPermanentDenial()
+        assertEquals(CalendarAccessState.Missing(canAsk = true), access.current())
+    }
 }

@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
+import dev.jdgomez.customnotifier.permissions.PermanentDenial
 
 /** Whether the app may read and write calendars and, when not, whether Android still shows its dialog. */
 sealed interface CalendarAccessState {
@@ -28,6 +28,9 @@ interface CalendarAccess {
         explanationAfter: Boolean,
     )
 
+    /** Forgets a recorded permanent denial: Android shows a rationale again, or the user came back from the system settings. */
+    fun clearPermanentDenial()
+
     /** The app's system settings screen, where the user can allow calendar access again. */
     fun settingsIntent(): Intent
 
@@ -40,15 +43,15 @@ interface CalendarAccess {
 class PlatformCalendarAccess(
     private val context: Context,
 ) : CalendarAccess {
-    private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val denial = PermanentDenial(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
 
     override fun current(): CalendarAccessState {
         val granted =
             CalendarAccess.PERMISSIONS.all {
                 ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
             }
-        if (!granted) return CalendarAccessState.Missing(canAsk = !prefs.getBoolean(KEY_PERMANENTLY_DENIED, false))
-        prefs.edit { remove(KEY_PERMANENTLY_DENIED) }
+        if (!granted) return CalendarAccessState.Missing(canAsk = !denial.isRecorded)
+        denial.clear()
         return CalendarAccessState.Granted
     }
 
@@ -56,8 +59,10 @@ class PlatformCalendarAccess(
         explanationBefore: Boolean,
         explanationAfter: Boolean,
     ) {
-        if (explanationBefore && !explanationAfter) prefs.edit { putBoolean(KEY_PERMANENTLY_DENIED, true) }
+        denial.record(explanationBefore, explanationAfter)
     }
+
+    override fun clearPermanentDenial() = denial.clear()
 
     override fun settingsIntent(): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
@@ -65,6 +70,5 @@ class PlatformCalendarAccess(
 
     private companion object {
         const val PREFS = "calendar_access"
-        const val KEY_PERMANENTLY_DENIED = "permanently_denied"
     }
 }

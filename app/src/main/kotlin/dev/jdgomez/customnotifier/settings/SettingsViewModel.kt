@@ -13,6 +13,7 @@ import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,18 +34,26 @@ class SettingsViewModel(
 
     private var channel: CalendarChannel = CalendarChannel.Off
 
+    // Only the latest check may write the state: an older one finishing late would show a stale answer.
+    private var recomputeJob: Job? = null
+
     init {
         viewModelScope.launch {
             settings.observe().collect {
                 channel = it
-                recompute()
+                refresh()
             }
         }
     }
 
-    /** Checks calendar access and the chosen calendar again; the screen calls it whenever it becomes visible. */
-    fun refresh() {
-        viewModelScope.launch { recompute() }
+    /**
+     * Checks calendar access and the chosen calendar again; the screen calls it whenever it becomes visible. With
+     * [backFromSystemSettings] the permission may have been reset to "ask every time" there, so a recorded denial is forgotten.
+     */
+    fun refresh(backFromSystemSettings: Boolean = false) {
+        if (backFromSystemSettings) access.clearPermanentDenial()
+        recomputeJob?.cancel()
+        recomputeJob = viewModelScope.launch { recompute() }
     }
 
     private suspend fun recompute() {
@@ -68,6 +77,8 @@ class SettingsViewModel(
      * chosen. [explanationDue] is Android's rationale flag, known only to the screen.
      */
     fun ask(explanationDue: Boolean) {
+        // Android only reports a rationale when the dialog can still be shown: a recorded permanent denial is stale.
+        if (explanationDue) access.clearPermanentDenial()
         viewModelScope.launch {
             when (val current = access.current()) {
                 CalendarAccessState.Granted -> openChooser(onlyIfUnusable = true)
@@ -85,14 +96,17 @@ class SettingsViewModel(
 
     fun onPermissionRequested() = mutableState.update { it.copy(requestPermission = false) }
 
-    /** The system dialog was answered; [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
+    /**
+     * The system dialog was answered or interrupted; [explanationBefore] and [explanationAfter] are the rationale flags around the
+     * request. The result map is not trusted: the access is read again, so a cancelled request counts as not granted.
+     */
     fun onPermissionResult(
-        granted: Boolean,
         explanationBefore: Boolean,
         explanationAfter: Boolean,
     ) {
-        if (!granted) access.recordDenied(explanationBefore, explanationAfter)
         viewModelScope.launch {
+            val granted = access.current() == CalendarAccessState.Granted
+            if (!granted) access.recordDenied(explanationBefore, explanationAfter)
             recompute()
             if (granted) openChooser(onlyIfUnusable = true)
         }
@@ -110,9 +124,16 @@ class SettingsViewModel(
         }
     }
 
+    /** Stores the choice only while calendar access is there and the calendar still exists; otherwise the screen is brought up to date. */
     fun choose(calendar: DeviceCalendar) {
         mutableState.update { it.copy(dialog = null) }
-        viewModelScope.launch { settings.set(CalendarChannel.On(calendar.id)) }
+        viewModelScope.launch {
+            when {
+                access.current() != CalendarAccessState.Granted -> recompute()
+                gateway.find(calendar.id) == null -> openChooser()
+                else -> settings.set(CalendarChannel.On(calendar.id))
+            }
+        }
     }
 
     fun dismissDialog() = mutableState.update { it.copy(dialog = null) }
