@@ -145,7 +145,7 @@ class CalendarChannelTest {
         assertFalse(textShown("Holidays"), "a read-only calendar was offered")
         composeRule.onNodeWithText("Home").performClick()
 
-        awaitText("Calendar")
+        awaitText(ACCOUNT)
         composeRule.onNodeWithText("Add alerts to my calendar").assertIsOn()
         composeRule.onNodeWithText("Home").assertIsDisplayed()
         composeRule.onNodeWithText(ACCOUNT).assertIsDisplayed()
@@ -154,7 +154,7 @@ class CalendarChannelTest {
         scenario.close()
         scenario = ActivityScenario.launch(MainActivity::class.java)
         openSettings()
-        awaitText("Calendar")
+        awaitText(ACCOUNT)
         composeRule.onNodeWithText("Add alerts to my calendar").assertIsOn()
         composeRule.onNodeWithText("Home").assertIsDisplayed()
     }
@@ -211,7 +211,7 @@ class CalendarChannelTest {
         answer(ALLOW_ID)
         awaitText("Choose a calendar")
         composeRule.onNodeWithText("Home").performClick()
-        awaitText("Calendar")
+        awaitText(ACCOUNT)
         composeRule.onNodeWithContentDescription("Back").performClick()
 
         deleteCalendar(home)
