@@ -66,4 +66,27 @@
     <string name="alerts_explanation_text">Custom Notifier shows one notification before a product runs out, so you can buy more in time. Without it you get no alerts.</string>
     <string name="alerts_explanation_continue">Continue</string>
     <string name="alerts_explanation_not_now">Not now</string>
+    <string name="settings_action">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_calendar_section">Calendar</string>
+    <string name="settings_calendar_switch">Add alerts to my calendar</string>
+    <string name="settings_calendar_switch_help">Each alert also appears as an all-day event in the calendar you choose.</string>
+    <string name="settings_calendar_row">Calendar</string>
+    <string name="settings_calendar_unavailable">The chosen calendar is no longer available. Choose another one.</string>
+    <string name="settings_access_removed">Calendar access was removed. Alerts are not added to your calendar.</string>
+    <string name="settings_access_allow">Allow</string>
+    <string name="settings_explanation_title">Allow calendar access?</string>
+    <string name="settings_explanation_text">Custom Notifier uses calendar access only to list your calendars and to add one all-day event for each alert.</string>
+    <string name="settings_explanation_continue">Continue</string>
+    <string name="settings_explanation_not_now">Not now</string>
+    <string name="settings_denied_title">Calendar access is off</string>
+    <string name="settings_denied_text">To add alerts to your calendar, allow calendar access for Custom Notifier in the system settings.</string>
+    <string name="settings_denied_open">Open settings</string>
+    <string name="settings_denied_cancel">Cancel</string>
+    <string name="settings_chooser_title">Choose a calendar</string>
+    <string name="settings_chooser_cancel">Cancel</string>
+    <string name="settings_no_calendar_title">No calendar available</string>
+    <string name="settings_no_calendar_text">There is no calendar on this device that Custom Notifier can add events to. Add an account in your calendar app, then try again.</string>
+    <string name="settings_no_calendar_ok">OK</string>
 </resources>

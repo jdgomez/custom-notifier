@@ -1,8 +1,5 @@
 package dev.jdgomez.customnotifier.productlist
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -18,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -55,6 +53,7 @@ import dev.jdgomez.customnotifier.alerts.NotificationAccessState
 import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.AppIcons
+import dev.jdgomez.customnotifier.ui.findActivity
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -64,6 +63,7 @@ import java.time.format.FormatStyle
 fun ProductListRoute(
     onAddProduct: () -> Unit,
     onEditProduct: (ProductId) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     askForNotifications: Boolean = false,
     onConsumeAskForNotifications: () -> Unit = {},
@@ -99,6 +99,7 @@ fun ProductListRoute(
         onAddProduct,
         onEditProduct,
         modifier,
+        onOpenSettings = onOpenSettings,
         onTurnOnAlerts = {
             val access = viewModel.refreshAccess()
             if (access is NotificationAccessState.PermissionMissing && access.canAsk) {
@@ -118,13 +119,6 @@ fun ProductListRoute(
 
 private const val PERMISSION = NotificationAccess.PERMISSION
 
-private tailrec fun Context.findActivity(): Activity? =
-    when (this) {
-        is Activity -> this
-        is ContextWrapper -> baseContext.findActivity()
-        else -> null
-    }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListScreen(
@@ -133,10 +127,20 @@ fun ProductListScreen(
     onEditProduct: (ProductId) -> Unit,
     modifier: Modifier = Modifier,
     onTurnOnAlerts: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(AppIcons.Settings, contentDescription = stringResource(R.string.settings_action))
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddProduct,

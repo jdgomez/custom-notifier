@@ -15,12 +15,15 @@ import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.productform.ProductFormRoute
 import dev.jdgomez.customnotifier.productform.ProductFormViewModel
 import dev.jdgomez.customnotifier.productlist.ProductListRoute
+import dev.jdgomez.customnotifier.settings.SettingsRoute
 
 /** The screens of the app. */
 sealed interface Destination {
     data object ProductList : Destination
 
     data object NewProduct : Destination
+
+    data object Settings : Destination
 
     data class EditProduct(
         val id: ProductId,
@@ -63,10 +66,12 @@ fun AppNavigation(model: NavigationViewModel = viewModel()) {
                     ProductListRoute(
                         onAddProduct = { model.push(Destination.NewProduct) },
                         onEditProduct = { model.push(Destination.EditProduct(it)) },
+                        onOpenSettings = { model.push(Destination.Settings) },
                         askForNotifications = model.askForNotifications,
                         onConsumeAskForNotifications = { model.askForNotifications = false },
                     )
                 }
+                entry<Destination.Settings> { SettingsRoute(onClose = model::pop) }
                 entry<Destination.NewProduct> { ProductFormRoute(onClose = model::pop, onReturnAfterSave = model::onProductSaved) }
                 entry<Destination.EditProduct> { key ->
                     ProductFormRoute(
