@@ -6,7 +6,7 @@ How the app gets permission to show alerts and keeps the user aware while alerts
 ## Requirements
 
 ### Requirement: Asking after saving a product
-On Android 13 and later, when the user saves a product (new or edited) and the app is not allowed to post notifications, the app SHALL ask for the notification permission once the product list is shown, as long as Android still allows the app to ask. The app SHALL NOT ask at launch or at any other moment. When the user dismisses the system dialog without choosing, the app SHALL ask again on the next save. When the user denied the permission and Android no longer shows the dialog, the app SHALL NOT ask on save anymore. On Android 12 and earlier the app SHALL NOT ask for anything.
+On Android 13 and later, when the user saves a product (new or edited) and the app is not allowed to post notifications, the app SHALL ask for the notification permission once the product list is shown, as long as Android shows its dialog. The app SHALL NOT ask at launch or at any other moment. When the user dismisses the system dialog without choosing, the app SHALL ask again on the next save. Nothing about earlier denials is stored. When the request after a save is denied, or Android answers it without a dialog, nothing else happens: only the disabled-alerts banner shows, and the app never opens the system settings by itself. On Android 12 and earlier the app SHALL NOT ask for anything.
 
 #### Scenario: First product saved
 - **GIVEN** Android 13 or later, the permission never asked, and an empty product list
@@ -70,17 +70,27 @@ While the app cannot show alerts (notification permission not granted, notificat
 - **THEN** the banner is no longer shown
 
 ### Requirement: Turning alerts on from the banner
-Tapping "Turn on" SHALL show the system permission dialog when the permission is not granted and Android still allows asking (with the explanation of "Explanation before asking again" skipped, since the banner already explains it). Otherwise it SHALL open the system notification settings of the app, or the settings of the "Depletion alerts" channel when only the channel is turned off.
+Tapping "Turn on" SHALL, when the notification permission is not granted, always ask for it (with the explanation of "Explanation before asking again" skipped, since the banner already explains it). When the request ends without the permission and Android would not explain again, the app SHALL open the system notification settings of the app. When only notifications of the app or the "Depletion alerts" channel are turned off, it SHALL open the system notification settings of the app, or the settings of the channel when only the channel is turned off.
 
 #### Scenario: Asking from the banner
-- **GIVEN** Android 13 or later, the banner shown, and Android still allows asking
+- **GIVEN** Android 13 or later and the banner shown
 - **WHEN** the user taps "Turn on"
 - **THEN** the system dialog asking to allow notifications appears
 
 #### Scenario: Permission permanently denied
 - **GIVEN** Android 13 or later, the banner shown, and Android no longer shows the permission dialog
 - **WHEN** the user taps "Turn on"
+- **THEN** the request ends without a dialog and the system notification settings of the app are opened
+
+#### Scenario: Denied for good from the banner
+- **GIVEN** Android 13 or later and the banner shown
+- **WHEN** the user taps "Turn on" and denies the system dialog so that Android will not explain again
 - **THEN** the system notification settings of the app are opened
+
+#### Scenario: Silent denial after saving
+- **GIVEN** Android 13 or later and the permission denied for good
+- **WHEN** the user saves a product
+- **THEN** the request ends without a dialog, only the banner is shown, and no system settings are opened
 
 #### Scenario: Only the channel is off
 - **GIVEN** notifications allowed for the app, the "Depletion alerts" channel turned off, and the banner shown

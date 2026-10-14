@@ -122,12 +122,15 @@ class NotificationPermissionTest {
         awaitBanner()
         composeRule.onNodeWithText("Alerts are off. You will not be told before a product runs out.").assertIsDisplayed()
 
-        // Android still allows asking: the banner asks without our own explanation.
+        // The banner always asks, without our own explanation; denying for good leaves nothing for Android to explain,
+        // so the app notification settings open at once.
         composeRule.onNodeWithText("Turn on").performClick()
         answer(DENY_FOR_GOOD_ID)
+        assertTrue(device.wait(Until.gone(By.pkg(application.packageName)), UI_TIMEOUT_MS))
+        device.pressBack()
         awaitBanner()
 
-        // Denied twice: Android no longer shows the dialog, so the banner opens the app notification settings.
+        // Later attempts: Android answers without a dialog and the settings open again.
         composeRule.onNodeWithText("Turn on").performClick()
         assertTrue(device.wait(Until.gone(By.pkg(application.packageName)), UI_TIMEOUT_MS))
         assertFalse(device.hasObject(By.res(ALLOW_ID)))

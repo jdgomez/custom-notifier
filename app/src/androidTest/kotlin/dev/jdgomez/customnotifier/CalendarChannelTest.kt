@@ -170,7 +170,7 @@ class CalendarChannelTest {
     }
 
     @Test
-    fun deniedAgainExplainsThenDeniedForGoodLeadsToTheSystemSettings() {
+    fun deniedAgainExplainsThenDeniedForGoodShowsTheSettingsDialogAtOnce() {
         createCalendar("Home")
         openSettings()
         turnSwitchOn()
@@ -181,7 +181,7 @@ class CalendarChannelTest {
         composeRule.onNodeWithText("Continue").performClick()
         answer(DENY_FOR_GOOD_ID)
 
-        turnSwitchOn()
+        // Android will not ask again: the dialog shows right after the denial, with no further tap.
         awaitText("Calendar access is off")
         composeRule.onNodeWithText("Add alerts to my calendar").assertIsOff()
         composeRule.onNodeWithText("Open settings").performClick()

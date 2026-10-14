@@ -25,8 +25,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,9 +51,6 @@ fun SettingsRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    // The rationale flag before the request, to tell a denial for good from a first one.
-    var explanationBefore by rememberSaveable { mutableStateOf(false) }
-    var leftForSystemSettings by rememberSaveable { mutableStateOf(false) }
     val explanationDue = {
         context.findActivity()?.let { activity ->
             CalendarAccess.PERMISSIONS.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }
@@ -63,16 +58,14 @@ fun SettingsRoute(
     }
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-            viewModel.onPermissionResult(explanationBefore, explanationDue())
+            viewModel.onPermissionResult(explanationDue())
         }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refresh(backFromSystemSettings = leftForSystemSettings)
-        leftForSystemSettings = false
+        viewModel.refresh()
     }
     LaunchedEffect(state.requestPermission) {
         if (!state.requestPermission) return@LaunchedEffect
         viewModel.onPermissionRequested()
-        explanationBefore = explanationDue()
         launcher.launch(CalendarAccess.PERMISSIONS)
     }
     SettingsScreen(
@@ -85,7 +78,6 @@ fun SettingsRoute(
         onChoose = viewModel::choose,
         onOpenSystemSettings = {
             viewModel.dismissDialog()
-            leftForSystemSettings = true
             context.startActivity(viewModel.settingsIntent())
         },
         onDismissDialog = viewModel::dismissDialog,

@@ -31,7 +31,7 @@ No new dependencies. The calendar permissions are new manifest permissions; thei
 - `calendar-channel`: the Settings screen and its entry point, turning the calendar channel on and off, the calendar permission flow, the calendar chooser and its empty state, and how the screen reports lost access or a missing calendar.
 
 ### Modified Capabilities
-- (none)
+- `notification-permission`: no stored "Android no longer allows asking" state; a denied or silent request after a save shows only the banner, and "Turn on" always asks, then opens the notification settings when Android would not explain again (the same stateless rule as the calendar permission, review round 3).
 
 ## Impact
 

@@ -72,33 +72,28 @@ fun ProductListRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var explaining by rememberSaveable { mutableStateOf(false) }
-    // The rationale flag before the request, to tell a second denial from a first one.
-    var explanationBefore by rememberSaveable { mutableStateOf(false) }
-    var leftForSettings by rememberSaveable { mutableStateOf(false) }
+    // Whether the request in flight comes from the banner: only then a denial opens the notification settings.
+    var userInitiated by rememberSaveable { mutableStateOf(false) }
     val explanationDue = { context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, PERMISSION) } == true }
     val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (viewModel.onPermissionResult(granted, explanationBefore, explanationDue())) {
-                leftForSettings = true
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            if (viewModel.onPermissionResult(userInitiated, explanationDue())) {
                 context.startActivity(viewModel.settingsIntent())
             }
         }
-    val request = {
-        explanationBefore = explanationDue()
-        launcher.launch(PERMISSION)
-    }
     // Returning from settings or from the system dialog: the state may have changed.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshAccess(backFromSystemSettings = leftForSettings)
-        leftForSettings = false
-    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
     val currentConsume by rememberUpdatedState(onConsumeAskForNotifications)
     LaunchedEffect(askForNotifications) {
         if (!askForNotifications) return@LaunchedEffect
         currentConsume()
-        val access = viewModel.refreshAccess()
-        if (access is NotificationAccessState.PermissionMissing && access.canAsk) {
-            if (explanationDue()) explaining = true else request()
+        if (viewModel.refreshAccess() == NotificationAccessState.PermissionMissing) {
+            if (explanationDue()) {
+                explaining = true
+            } else {
+                userInitiated = false
+                launcher.launch(PERMISSION)
+            }
         }
     }
     ProductListScreen(
@@ -109,10 +104,10 @@ fun ProductListRoute(
         onOpenSettings = onOpenSettings,
         onTurnOnAlerts = {
             val access = viewModel.refreshAccess()
-            if (access is NotificationAccessState.PermissionMissing && access.canAsk) {
-                request()
+            if (access == NotificationAccessState.PermissionMissing) {
+                userInitiated = true
+                launcher.launch(PERMISSION)
             } else if (access != NotificationAccessState.Allowed) {
-                leftForSettings = true
                 context.startActivity(viewModel.settingsIntent())
             }
         },
@@ -120,7 +115,8 @@ fun ProductListRoute(
     if (explaining) {
         AlertsExplanationDialog(onContinue = {
             explaining = false
-            request()
+            userInitiated = false
+            launcher.launch(PERMISSION)
         }, onNotNow = { explaining = false })
     }
 }

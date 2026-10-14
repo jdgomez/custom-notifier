@@ -28,64 +28,18 @@ class NotificationAccessTest {
     private fun deny() = shadowOf(app).denyPermissions(NotificationAccess.PERMISSION)
 
     @Test
-    fun `never asked, the permission is missing and can be asked`() {
+    fun `permission missing`() {
         deny()
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = true), access.current())
+        assertEquals(NotificationAccessState.PermissionMissing, access.current())
     }
 
     @Test
-    fun `denied once, it can still be asked`() {
-        deny()
-        access.recordDenied(explanationBefore = false, explanationAfter = true)
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = true), access.current())
-    }
-
-    @Test
-    fun `denied a second time, it cannot be asked anymore`() {
-        deny()
-        access.recordDenied(explanationBefore = true, explanationAfter = false)
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = false), access.current())
-    }
-
-    @Test
-    fun `dismissed dialog, it can be asked again`() {
-        deny()
-        access.recordDenied(explanationBefore = false, explanationAfter = false)
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = true), access.current())
-    }
-
-    @Test
-    fun `granted, alerts are allowed and the permanent denial is forgotten`() {
-        deny()
-        access.recordDenied(explanationBefore = true, explanationAfter = false)
+    fun `granted, alerts are allowed and revoking shows the permission missing again`() {
         createChannel()
         grant()
         assertEquals(NotificationAccessState.Allowed, access.current())
         deny()
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = true), access.current())
-    }
-
-    @Test
-    fun `reset to ask every time after a denial for good can be asked again`() {
-        deny()
-        access.recordDenied(explanationBefore = false, explanationAfter = true)
-        access.recordDenied(explanationBefore = true, explanationAfter = false)
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = false), access.current())
-
-        // Back from the system settings after the user reset the permission without granting it.
-        access.clearPermanentDenial()
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = true), access.current())
-    }
-
-    @Test
-    fun `silent denial after returning from the settings unchanged is reported`() {
-        deny()
-        access.recordDenied(explanationBefore = false, explanationAfter = true)
-        access.recordDenied(explanationBefore = true, explanationAfter = false)
-        access.clearPermanentDenial()
-
-        assertEquals(true, access.recordDenied(explanationBefore = false, explanationAfter = false))
-        assertEquals(NotificationAccessState.PermissionMissing(canAsk = false), access.current())
+        assertEquals(NotificationAccessState.PermissionMissing, access.current())
     }
 
     @Test
@@ -105,7 +59,7 @@ class NotificationAccessTest {
 
     @Test
     fun `settings intents target the app or the channel`() {
-        val appIntent = access.settingsIntent(NotificationAccessState.PermissionMissing(canAsk = false))
+        val appIntent = access.settingsIntent(NotificationAccessState.PermissionMissing)
         assertEquals(Settings.ACTION_APP_NOTIFICATION_SETTINGS, appIntent.action)
         assertEquals(app.packageName, appIntent.getStringExtra(Settings.EXTRA_APP_PACKAGE))
         val channelIntent: Intent = access.settingsIntent(NotificationAccessState.ChannelOff)

@@ -37,7 +37,7 @@ The calendar channel SHALL be a single setting for all products: off, or on with
 - **THEN** the row shows "Family" and the channel stays on
 
 ### Requirement: Asking for calendar access
-When the user turns the switch on and the app does not have calendar access, the app SHALL ask for it (read and write calendar, one system dialog). The app SHALL NOT ask for calendar access at launch or at any other moment. When Android reports that the app should explain why it needs access, the app SHALL first show a dialog titled "Allow calendar access?" with the text "Custom Notifier uses calendar access only to list your calendars and to add one all-day event for each alert." and the buttons "Continue" (shows the system dialog) and "Not now" (closes it, switch stays off). When the user denies access, the switch SHALL stay off. When Android no longer shows the system dialog because the user denied it for good, turning the switch on SHALL show a dialog titled "Calendar access is off" with the text "To add alerts to your calendar, allow calendar access for Custom Notifier in the system settings." and the buttons "Open settings" (opens the app's system settings) and "Cancel"; the switch SHALL stay off. There SHALL be no other way to add alerts to a calendar without access. When access is granted, the calendar chooser SHALL open.
+When the user turns the switch on and the app does not have calendar access, the app SHALL ask for it (read and write calendar, one system dialog). The app SHALL NOT ask for calendar access at launch or at any other moment. When Android reports that the app should explain why it needs access, the app SHALL first show a dialog titled "Allow calendar access?" with the text "Custom Notifier uses calendar access only to list your calendars and to add one all-day event for each alert." and the buttons "Continue" (shows the system dialog) and "Not now" (closes it, switch stays off). The app SHALL show the system dialog on every attempt, whatever happened before: nothing about earlier denials is stored, and access counts as granted only when both permissions are granted (a partial grant is not access). When the user denies access, the switch SHALL stay off. When the request ends without access and Android would not explain again (the user denied it for good, or dismissed the first dialog), the app SHALL show at once a dialog titled "Calendar access is off" with the text "To add alerts to your calendar, allow calendar access for Custom Notifier in the system settings." and the buttons "Open settings" (opens the app's system settings) and "Cancel"; the switch SHALL stay off, and on every later attempt, as Android answers without a dialog, the same dialog SHALL show again right after the attempt. When Android would explain again, the switch SHALL just stay off and the next attempt asks again with the explanation first. There SHALL be no other way to add alerts to a calendar without access. When access is granted, the calendar chooser SHALL open.
 
 #### Scenario: First time on
 - **GIVEN** calendar access never asked
@@ -51,8 +51,8 @@ When the user turns the switch on and the app does not have calendar access, the
 
 #### Scenario: Access denied
 - **GIVEN** the system dialog for calendar access
-- **WHEN** the user denies it
-- **THEN** the dialog closes and the switch is off
+- **WHEN** the user denies it and Android would explain again
+- **THEN** the dialog closes, the switch is off and no further dialog is shown
 
 #### Scenario: Asking after an earlier denial
 - **GIVEN** the user denied calendar access once and Android reports that an explanation should be shown
@@ -60,9 +60,24 @@ When the user turns the switch on and the app does not have calendar access, the
 - **THEN** the "Allow calendar access?" dialog is shown, and tapping "Continue" shows the system dialog
 
 #### Scenario: Denied for good
-- **GIVEN** the user denied calendar access and Android no longer shows the system dialog
-- **WHEN** the user turns the switch on
-- **THEN** the "Calendar access is off" dialog is shown, the switch stays off, and "Open settings" opens the app's system settings
+- **GIVEN** the system dialog for calendar access, and the user denies it so that Android will not explain again
+- **WHEN** the request ends
+- **THEN** the "Calendar access is off" dialog is shown at once, the switch stays off, and "Open settings" opens the app's system settings
+
+#### Scenario: Later attempt after a denial for good
+- **GIVEN** the user denied calendar access for good
+- **WHEN** the user turns the switch on again
+- **THEN** Android answers without a system dialog and the "Calendar access is off" dialog is shown right after the attempt
+
+#### Scenario: First dialog dismissed
+- **GIVEN** the system dialog for calendar access shown for the first time
+- **WHEN** the user dismisses it without choosing
+- **THEN** the "Calendar access is off" dialog may be shown, and the next attempt asks again
+
+#### Scenario: Only one permission granted
+- **GIVEN** the system dialog for calendar access
+- **WHEN** only one of the two calendar permissions ends up granted
+- **THEN** it is treated as no access
 
 #### Scenario: No asking at launch
 - **GIVEN** calendar access not granted

@@ -7,7 +7,7 @@
 
 - [x] 2.1 Declare `READ_CALENDAR` and `WRITE_CALENDAR` in the manifest; add `ProviderCalendarGateway` in the new `calendar` package (design decision 2)
 - [x] 2.2 Add the `calendar_channel` table, DAO, `RoomCalendarChannelSettings`, database version 3 with `MIGRATION_2_3`, commit `app/schemas/3.json`; Room tests for the adapter and a migration test from version 2 (design decision 3)
-- [x] 2.3 Add `CalendarAccess` (`Granted`, `Missing(canAsk)`) with the permanent-denial rule; Robolectric tests for every state (design decision 4)
+- [x] 2.3 Add `CalendarAccess` (`Granted`, `Missing`, stateless, nothing stored); Robolectric tests for every state (design decision 4)
 - [x] 2.4 Wire the gateway, settings and access in `AppContainer`
 
 ## 3. Settings screen

@@ -140,7 +140,7 @@ class ProductListViewModelTest {
     @Test
     fun bannerOnlyWithProductsAndWhileAlertsAreOff() =
         runTest {
-            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
             val state = collect(viewModel)
             assertEquals(ProductListState.Empty, state())
@@ -170,57 +170,43 @@ class ProductListViewModelTest {
         }
 
     @Test
-    fun deniedResultIsRecordedAndGrantedIsNot() =
+    fun denialAfterSavingOpensNothing() =
         runTest {
-            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
-            viewModel.onPermissionResult(granted = false, explanationBefore = true, explanationAfter = false)
-            assertEquals(listOf(true to false), access.denials)
-            viewModel.onPermissionResult(granted = true, explanationBefore = true, explanationAfter = false)
-            assertEquals(1, access.denials.size)
+            assertEquals(false, viewModel.onPermissionResult(userInitiated = false, explanationDue = false))
+            assertEquals(false, viewModel.onPermissionResult(userInitiated = false, explanationDue = true))
         }
 
     @Test
-    fun silentDenialIsReportedSoTheScreenOpensTheSettings() =
+    fun turnOnWithASilentDenialOpensTheNotificationSettings() =
         runTest {
-            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
-            assertEquals(false, viewModel.onPermissionResult(granted = false, explanationBefore = true, explanationAfter = true))
-            access.silent = true
-            assertEquals(true, viewModel.onPermissionResult(granted = false, explanationBefore = false, explanationAfter = false))
-            assertEquals(false, viewModel.onPermissionResult(granted = true, explanationBefore = false, explanationAfter = false))
+            assertEquals(true, viewModel.onPermissionResult(userInitiated = true, explanationDue = false))
         }
 
     @Test
-    fun comingBackFromTheSystemSettingsForgetsTheDenial() =
+    fun turnOnWithAnExplanationStillDueOpensNothing() =
         runTest {
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
-            viewModel.refreshAccess()
-            assertEquals(0, access.cleared)
-            viewModel.refreshAccess(backFromSystemSettings = true)
-            assertEquals(1, access.cleared)
+            assertEquals(false, viewModel.onPermissionResult(userInitiated = true, explanationDue = true))
+        }
+
+    @Test
+    fun grantedResultIsReadFromTheAccessAndOpensNothing() =
+        runTest {
+            access.state = NotificationAccessState.Allowed
+            val viewModel = viewModel()
+            assertEquals(false, viewModel.onPermissionResult(userInitiated = true, explanationDue = false))
         }
 }
 
 private class FakeNotificationAccess : NotificationAccess {
     var state: NotificationAccessState = NotificationAccessState.Allowed
-    val denials = mutableListOf<Pair<Boolean, Boolean>>()
-    var silent = false
-    var cleared = 0
 
     override fun current() = state
-
-    override fun recordDenied(
-        explanationBefore: Boolean,
-        explanationAfter: Boolean,
-    ): Boolean {
-        denials += explanationBefore to explanationAfter
-        return silent
-    }
-
-    override fun clearPermanentDenial() {
-        cleared++
-    }
 
     override fun settingsIntent(state: NotificationAccessState) = Intent()
 }
