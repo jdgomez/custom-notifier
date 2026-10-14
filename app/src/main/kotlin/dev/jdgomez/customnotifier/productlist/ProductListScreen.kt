@@ -74,7 +74,7 @@ fun ProductListRoute(
     val context = LocalContext.current
     var explaining by rememberSaveable { mutableStateOf(false) }
     // The rationale flag before the request, to tell a second denial from a first one.
-    var explanationBefore by remember { mutableStateOf(false) }
+    var explanationBefore by rememberSaveable { mutableStateOf(false) }
     val explanationDue = { context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, PERMISSION) } == true }
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
