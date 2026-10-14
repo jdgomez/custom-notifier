@@ -1,5 +1,10 @@
 package dev.jdgomez.customnotifier.productlist
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,10 +24,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -33,9 +44,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
+import dev.jdgomez.customnotifier.alerts.NotificationAccess
+import dev.jdgomez.customnotifier.alerts.NotificationAccessState
 import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.AppIcons
@@ -49,11 +65,65 @@ fun ProductListRoute(
     onAddProduct: () -> Unit,
     onEditProduct: (ProductId) -> Unit,
     modifier: Modifier = Modifier,
+    askForNotifications: Boolean = false,
+    onConsumeAskForNotifications: () -> Unit = {},
     viewModel: ProductListViewModel = viewModel(factory = ProductListViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ProductListScreen(state, onAddProduct, onEditProduct, modifier)
+    val context = LocalContext.current
+    var explaining by rememberSaveable { mutableStateOf(false) }
+    // The rationale flag before the request, to tell a second denial from a first one.
+    var explanationBefore by rememberSaveable { mutableStateOf(false) }
+    val explanationDue = { context.findActivity()?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, PERMISSION) } == true }
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            viewModel.onPermissionResult(granted, explanationBefore, explanationDue())
+        }
+    val request = {
+        explanationBefore = explanationDue()
+        launcher.launch(PERMISSION)
+    }
+    // Returning from settings or from the system dialog: the state may have changed.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
+    val currentConsume by rememberUpdatedState(onConsumeAskForNotifications)
+    LaunchedEffect(askForNotifications) {
+        if (!askForNotifications) return@LaunchedEffect
+        currentConsume()
+        val access = viewModel.refreshAccess()
+        if (access is NotificationAccessState.PermissionMissing && access.canAsk) {
+            if (explanationDue()) explaining = true else request()
+        }
+    }
+    ProductListScreen(
+        state,
+        onAddProduct,
+        onEditProduct,
+        modifier,
+        onTurnOnAlerts = {
+            val access = viewModel.refreshAccess()
+            if (access is NotificationAccessState.PermissionMissing && access.canAsk) {
+                request()
+            } else if (access != NotificationAccessState.Allowed) {
+                context.startActivity(viewModel.settingsIntent())
+            }
+        },
+    )
+    if (explaining) {
+        AlertsExplanationDialog(onContinue = {
+            explaining = false
+            request()
+        }, onNotNow = { explaining = false })
+    }
 }
+
+private const val PERMISSION = NotificationAccess.PERMISSION
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +132,7 @@ fun ProductListScreen(
     onAddProduct: () -> Unit,
     onEditProduct: (ProductId) -> Unit,
     modifier: Modifier = Modifier,
+    onTurnOnAlerts: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -77,7 +148,16 @@ fun ProductListScreen(
         when (state) {
             ProductListState.Loading -> Unit
             ProductListState.Empty -> EmptyState(Modifier.padding(padding))
-            is ProductListState.Products -> ProductList(state, onEditProduct, padding)
+            is ProductListState.Products ->
+                Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+                    if (state.alertsOff) AlertsOffBanner(onTurnOnAlerts)
+                    ProductList(
+                        state,
+                        onEditProduct,
+                        PaddingValues(bottom = padding.calculateBottomPadding()),
+                        Modifier.weight(1f),
+                    )
+                }
         }
     }
 }

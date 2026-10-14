@@ -60,4 +60,10 @@
     <string name="alert_title">Buy %1$s</string>
     <string name="alert_text">Runs out %1$s</string>
     <string name="alert_text_today">Runs out today</string>
+    <string name="alerts_off_text">Alerts are off. You will not be told before a product runs out.</string>
+    <string name="alerts_off_turn_on">Turn on</string>
+    <string name="alerts_explanation_title">Allow alerts?</string>
+    <string name="alerts_explanation_text">Custom Notifier shows one notification before a product runs out, so you can buy more in time. Without it you get no alerts.</string>
+    <string name="alerts_explanation_continue">Continue</string>
+    <string name="alerts_explanation_not_now">Not now</string>
 </resources>

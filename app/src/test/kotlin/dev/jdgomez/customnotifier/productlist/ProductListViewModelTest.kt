@@ -1,5 +1,8 @@
 package dev.jdgomez.customnotifier.productlist
 
+import android.content.Intent
+import dev.jdgomez.customnotifier.alerts.NotificationAccess
+import dev.jdgomez.customnotifier.alerts.NotificationAccessState
 import dev.jdgomez.customnotifier.domain.ProductName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,13 +29,15 @@ class ProductListViewModelTest {
     private val repository = FakeRepository()
     private val clock = MutableClock(start)
     private var zone: ZoneId = ZoneOffset.UTC
+    private val access = FakeNotificationAccess()
+    private var reconciles = 0
 
     @After
     fun resetMain() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel(): ProductListViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        return ProductListViewModel(repository, clock) { zone }
+        return ProductListViewModel(repository, clock, { zone }, access) { reconciles++ }
     }
 
     private fun TestScope.collect(viewModel: ProductListViewModel): () -> ProductListState {
@@ -131,4 +136,63 @@ class ProductListViewModelTest {
             runCurrent()
             assertEquals(ProductListState.Empty, state())
         }
+
+    @Test
+    fun bannerOnlyWithProductsAndWhileAlertsAreOff() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            val viewModel = viewModel()
+            val state = collect(viewModel)
+            assertEquals(ProductListState.Empty, state())
+
+            repository.products.value = listOf(testProduct("Vitamin D", start))
+            runCurrent()
+            assertEquals(true, assertIs<ProductListState.Products>(state()).alertsOff)
+
+            access.state = NotificationAccessState.Allowed
+            viewModel.refreshAccess()
+            runCurrent()
+            assertEquals(false, assertIs<ProductListState.Products>(state()).alertsOff)
+        }
+
+    @Test
+    fun reconcilesOnlyWhenAccessTurnsAllowed() =
+        runTest {
+            access.state = NotificationAccessState.ChannelOff
+            val viewModel = viewModel()
+            viewModel.refreshAccess()
+            assertEquals(0, reconciles)
+            access.state = NotificationAccessState.Allowed
+            viewModel.refreshAccess()
+            assertEquals(1, reconciles)
+            viewModel.refreshAccess()
+            assertEquals(1, reconciles)
+        }
+
+    @Test
+    fun deniedResultIsRecordedAndGrantedIsNot() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            val viewModel = viewModel()
+            viewModel.onPermissionResult(granted = false, explanationBefore = true, explanationAfter = false)
+            assertEquals(listOf(true to false), access.denials)
+            viewModel.onPermissionResult(granted = true, explanationBefore = true, explanationAfter = false)
+            assertEquals(1, access.denials.size)
+        }
+}
+
+private class FakeNotificationAccess : NotificationAccess {
+    var state: NotificationAccessState = NotificationAccessState.Allowed
+    val denials = mutableListOf<Pair<Boolean, Boolean>>()
+
+    override fun current() = state
+
+    override fun recordDenied(
+        explanationBefore: Boolean,
+        explanationAfter: Boolean,
+    ) {
+        denials += explanationBefore to explanationAfter
+    }
+
+    override fun settingsIntent(state: NotificationAccessState) = Intent()
 }

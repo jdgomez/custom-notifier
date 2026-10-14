@@ -1,7 +1,10 @@
 package dev.jdgomez.customnotifier.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -31,6 +34,14 @@ sealed interface Destination {
 class NavigationViewModel : ViewModel() {
     val backStack = mutableStateListOf<Destination>(Destination.ProductList)
 
+    /** Set when a product was saved and the list has not yet asked for the notification permission (one-shot). */
+    var askForNotifications by mutableStateOf(false)
+
+    fun onProductSaved() {
+        askForNotifications = true
+        pop()
+    }
+
     fun push(destination: Destination) {
         backStack.add(destination)
     }
@@ -52,11 +63,17 @@ fun AppNavigation(model: NavigationViewModel = viewModel()) {
                     ProductListRoute(
                         onAddProduct = { model.push(Destination.NewProduct) },
                         onEditProduct = { model.push(Destination.EditProduct(it)) },
+                        askForNotifications = model.askForNotifications,
+                        onConsumeAskForNotifications = { model.askForNotifications = false },
                     )
                 }
-                entry<Destination.NewProduct> { ProductFormRoute(onClose = model::pop) }
+                entry<Destination.NewProduct> { ProductFormRoute(onClose = model::pop, onReturnAfterSave = model::onProductSaved) }
                 entry<Destination.EditProduct> { key ->
-                    ProductFormRoute(onClose = model::pop, viewModel = viewModel(factory = ProductFormViewModel.factory(key.id)))
+                    ProductFormRoute(
+                        onClose = model::pop,
+                        onReturnAfterSave = model::onProductSaved,
+                        viewModel = viewModel(factory = ProductFormViewModel.factory(key.id)),
+                    )
                 }
             },
     )
