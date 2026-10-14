@@ -67,6 +67,7 @@ import java.time.format.FormatStyle
 fun ProductFormRoute(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    onReturnAfterSave: () -> Unit = onClose,
     viewModel: ProductFormViewModel = viewModel(factory = ProductFormViewModel.factory()),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -84,6 +85,7 @@ fun ProductFormRoute(
         onClose,
         modifier,
         viewModel::onStockAction,
+        onReturnAfterSave,
     )
 }
 
@@ -98,15 +100,18 @@ fun ProductFormScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     onStockAction: (StockAction) -> Unit = {},
+    onReturnAfterSave: () -> Unit = onClose,
 ) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val requesters = remember { FieldFocus() }
     val currentOnClose by rememberUpdatedState(onClose)
+    val currentOnSaved by rememberUpdatedState(onReturnAfterSave)
     LaunchedEffect(events) {
         events.collect { event ->
             when (event) {
-                ProductFormEvent.Saved, ProductFormEvent.Closed -> currentOnClose()
+                ProductFormEvent.Saved -> currentOnSaved()
+                ProductFormEvent.Closed -> currentOnClose()
                 is ProductFormEvent.FocusField -> requesters[event.field].requestFocus()
             }
         }

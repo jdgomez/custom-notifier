@@ -1,5 +1,6 @@
 package dev.jdgomez.customnotifier
 
+import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
@@ -18,6 +19,8 @@ import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import dev.jdgomez.customnotifier.alerts.NotificationAccess
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +31,15 @@ class ProductFormTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+    /** Saving a product asks for the notification permission on Android 13 and later; the dialog is not what these tests are about. */
+    @Before
+    fun allowNotifications() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.uiAutomation.grantRuntimePermission(instrumentation.targetContext.packageName, NotificationAccess.PERMISSION)
+        }
+    }
 
     private fun awaitText(
         text: String,

@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.room3.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import dev.jdgomez.customnotifier.alerts.AlarmManagerAlertScheduler
+import dev.jdgomez.customnotifier.alerts.NotificationAccess
 import dev.jdgomez.customnotifier.alerts.NotificationAlertNotifier
+import dev.jdgomez.customnotifier.alerts.PlatformNotificationAccess
 import dev.jdgomez.customnotifier.data.CustomNotifierDatabase
 import dev.jdgomez.customnotifier.data.MIGRATION_1_2
 import dev.jdgomez.customnotifier.data.RoomAlertDeliveries
@@ -44,6 +46,8 @@ class AppContainer(
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val notifier: NotificationAlertNotifier by lazy { NotificationAlertNotifier(appContext) }
+
+    val notificationAccess: NotificationAccess by lazy { PlatformNotificationAccess(appContext) }
 
     private val alertReconciler: AlertReconciler by lazy {
         AlertReconciler(

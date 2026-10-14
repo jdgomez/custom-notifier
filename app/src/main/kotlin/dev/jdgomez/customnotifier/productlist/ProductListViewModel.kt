@@ -1,13 +1,17 @@
 package dev.jdgomez.customnotifier.productlist
 
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import dev.jdgomez.customnotifier.alerts.NotificationAccess
+import dev.jdgomez.customnotifier.alerts.NotificationAccessState
 import dev.jdgomez.customnotifier.customNotifierContainer
 import dev.jdgomez.customnotifier.domain.ProductRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -27,17 +31,49 @@ class ProductListViewModel(
     repository: ProductRepository,
     clock: Clock,
     zone: () -> ZoneId,
+    private val access: NotificationAccess,
+    private val reconcileAlerts: () -> Unit,
 ) : ViewModel() {
+    private val accessState = MutableStateFlow(access.current())
+
     val state: StateFlow<ProductListState> =
-        combine(repository.observeAll(), ticker()) { products, _ -> products.toListState(clock.instant(), zone()) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(0), ProductListState.Loading)
+        combine(repository.observeAll(), ticker(), accessState) { products, _, access ->
+            val list = products.toListState(clock.instant(), zone())
+            if (list is ProductListState.Products) list.copy(alertsOff = access != NotificationAccessState.Allowed) else list
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0), ProductListState.Loading)
+
+    /** Reads the notification access again; alerts that became due while it was off are delivered when it turns on. */
+    fun refreshAccess(): NotificationAccessState {
+        val before = accessState.value
+        val now = access.current()
+        accessState.value = now
+        if (before != NotificationAccessState.Allowed && now == NotificationAccessState.Allowed) reconcileAlerts()
+        return now
+    }
+
+    /** The system dialog was answered; [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
+    fun onPermissionResult(
+        granted: Boolean,
+        explanationBefore: Boolean,
+        explanationAfter: Boolean,
+    ) {
+        if (!granted) access.recordDenied(explanationBefore, explanationAfter)
+        refreshAccess()
+    }
+
+    fun settingsIntent(): Intent = access.settingsIntent(accessState.value)
 
     companion object {
         val Factory: ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     val container = customNotifierContainer()
-                    ProductListViewModel(container.productRepository, container.clock, container.zone)
+                    ProductListViewModel(
+                        container.productRepository,
+                        container.clock,
+                        container.zone,
+                        container.notificationAccess,
+                    ) { container.reconcileAlerts {} }
                 }
             }
     }

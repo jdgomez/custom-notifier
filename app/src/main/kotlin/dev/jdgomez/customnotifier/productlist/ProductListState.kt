@@ -20,6 +20,8 @@ sealed interface ProductListState {
     @Immutable
     data class Products(
         val rows: List<ProductRow>,
+        /** Alerts cannot be shown (permission, app notifications or the channel is off): the banner is shown. */
+        val alertsOff: Boolean = false,
     ) : ProductListState
 }
 

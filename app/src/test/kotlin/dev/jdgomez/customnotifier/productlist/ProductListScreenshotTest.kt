@@ -12,8 +12,10 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dropbox.differ.SimpleImageComparator
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dev.jdgomez.customnotifier.domain.Product
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
@@ -50,11 +52,12 @@ class ProductListScreenshotTest {
         fontScale: Float = 1f,
         products: List<Product> = emptyList(),
         scrollToEnd: Boolean = false,
+        alertsOff: Boolean = false,
     ) {
         composeRule.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-                Screen(products.toListState(NOW, ZoneOffset.UTC), darkTheme)
+                Screen(products.toListState(NOW, ZoneOffset.UTC).withAlertsOff(alertsOff), darkTheme)
             }
         }
         if (scrollToEnd) composeRule.onNode(hasScrollAction()).performScrollToIndex(products.lastIndex)
@@ -77,6 +80,9 @@ class ProductListScreenshotTest {
                 ),
         )
     }
+
+    private fun ProductListState.withAlertsOff(alertsOff: Boolean) =
+        if (this is ProductListState.Products) copy(alertsOff = alertsOff) else this
 
     @Composable
     private fun Screen(
@@ -102,5 +108,38 @@ class ProductListScreenshotTest {
     @Test
     fun rowsLargestFont() {
         capture("rows_font_2", fontScale = 2f, products = products(LONG_NAME))
+    }
+
+    @Test
+    fun alertsOffBanner() = capture("alerts_off", products = products(), alertsOff = true)
+
+    @Test
+    fun alertsOffBannerDark() = capture("alerts_off_dark", darkTheme = true, products = products(), alertsOff = true)
+
+    @Test
+    fun alertsOffBannerLargestFont() = capture("alerts_off_font_2", fontScale = 2f, products = products(LONG_NAME), alertsOff = true)
+
+    @Test
+    @OptIn(ExperimentalRoborazziApi::class)
+    fun explanationDialog() {
+        composeRule.setContent {
+            CustomNotifierTheme {
+                ProductListScreen(
+                    products().toListState(NOW, ZoneOffset.UTC).withAlertsOff(true),
+                    onAddProduct = {},
+                    onEditProduct = {},
+                )
+                AlertsExplanationDialog(onContinue = {}, onNotNow = {})
+            }
+        }
+        composeRule.waitForIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        captureScreenRoboImage(
+            "src/test/screenshots/product_list_explanation.png",
+            RoborazziOptions(
+                compareOptions =
+                    RoborazziOptions.CompareOptions(changeThreshold = 0f, imageComparator = SimpleImageComparator(maxDistance = 0f)),
+            ),
+        )
     }
 }
