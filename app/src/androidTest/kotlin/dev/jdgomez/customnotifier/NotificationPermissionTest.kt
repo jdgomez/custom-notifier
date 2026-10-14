@@ -91,11 +91,16 @@ class NotificationPermissionTest {
             false
         }
 
-    /** Answers the system dialog; waiting through the compose rule keeps the app's own frames running meanwhile. */
+    /**
+     * Answers the system dialog; waiting through the compose rule keeps the app's own frames running meanwhile.
+     * A tap right after the dialog appears can be dropped while its window does not accept input yet, so it is repeated.
+     */
     private fun answer(buttonId: String) {
         composeRule.waitUntil(UI_TIMEOUT_MS) { device.hasObject(By.res(buttonId)) }
-        assertNotNull(device.findObject(By.res(buttonId)), "no system dialog").click()
-        assertTrue(device.wait(Until.gone(By.res(buttonId)), UI_TIMEOUT_MS))
+        composeRule.waitUntil(UI_TIMEOUT_MS) {
+            device.findObject(By.res(buttonId))?.click()
+            device.wait(Until.gone(By.res(buttonId)), CLICK_RETRY_MS)
+        }
     }
 
     @Test
@@ -173,6 +178,7 @@ class NotificationPermissionTest {
         const val DENY_FOR_GOOD_ID = "com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button"
         const val DENY_ID = "com.android.permissioncontroller:id/permission_deny_button"
         const val SHORT_WAIT_MS = 5_000L
+        const val CLICK_RETRY_MS = 2_000L
         const val SECONDS_PER_DAY = 86_400L
     }
 }
