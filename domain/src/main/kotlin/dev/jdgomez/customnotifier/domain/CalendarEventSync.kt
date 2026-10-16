@@ -74,6 +74,8 @@ class CalendarEventSync(
         now: Instant,
         zone: ZoneId,
     ) = lock.withLock {
+        // Nothing to write and nothing to delete: do not even ask the device for calendar access.
+        if (channel is CalendarChannel.Off && records.all().isEmpty()) return@withLock changes.clear(changes.pending())
         val target = target(channel) ?: return@withLock
         val pending = changes.pending()
         val completed =

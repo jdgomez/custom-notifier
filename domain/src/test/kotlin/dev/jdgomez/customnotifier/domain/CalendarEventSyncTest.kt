@@ -25,13 +25,17 @@ class CalendarEventSyncTest {
         val calendars = mutableSetOf(CalendarId(1), CalendarId(2))
         val events = mutableMapOf<Pair<CalendarId, EventId>, AlertEvent>()
         var writes = 0
+        var accessChecks = 0
         private var next = 100L
 
         override suspend fun writableCalendars() = emptyList<DeviceCalendar>()
 
         override suspend fun find(id: CalendarId) = if (access && id in calendars) DeviceCalendar(id, "c", "a") else null
 
-        override suspend fun canWrite() = access
+        override suspend fun canWrite(): Boolean {
+            accessChecks++
+            return access
+        }
 
         override suspend fun create(
             calendar: CalendarId,
@@ -276,6 +280,15 @@ class CalendarEventSyncTest {
             run()
             assertEquals(1, records.map.size)
             assertEquals(1, gateway.events.size)
+        }
+
+    @Test
+    fun `channel off with nothing recorded never asks for calendar access`() =
+        runTest {
+            channel = CalendarChannel.Off
+            repo.save(product("Coffee"))
+            run()
+            assertEquals(0, gateway.accessChecks)
         }
 
     @Test
