@@ -21,7 +21,7 @@ class NotificationAlertNotifier(
 ) : AlertNotifier {
     private val manager = NotificationManagerCompat.from(context)
 
-    /** Creates the channel; idempotent, called when the application starts. */
+    /** Creates the channel, or renames it to the current language; idempotent, called at start and on a language change. */
     fun createChannel() {
         val channel =
             NotificationChannel(

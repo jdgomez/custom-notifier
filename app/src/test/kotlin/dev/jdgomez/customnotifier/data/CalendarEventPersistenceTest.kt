@@ -11,6 +11,7 @@ import dev.jdgomez.customnotifier.domain.CalendarEventRecord
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DepletionDate
 import dev.jdgomez.customnotifier.domain.EventId
+import dev.jdgomez.customnotifier.domain.LanguageTag
 import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.domain.ProductName
 import kotlinx.coroutines.flow.first
@@ -43,13 +44,14 @@ class CalendarEventPersistenceTest {
             }
         return builder
             .setDriver(AndroidSQLiteDriver())
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
             .also { database = it }
     }
 
     private val id = ProductId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-    private val content = AlertEvent(ProductName("Coffee"), DepletionDate(LocalDate.parse("2026-03-11")), LocalDate.parse("2026-03-01"))
+    private val content =
+        AlertEvent(ProductName("Coffee"), DepletionDate(LocalDate.parse("2026-03-11")), LocalDate.parse("2026-03-01"), LanguageTag("en"))
 
     @Test
     fun `stores, replaces, marks as gone and removes a record`() =
@@ -104,6 +106,33 @@ class CalendarEventPersistenceTest {
 
             assertEquals(CalendarChannel.On(CalendarId(7)), RoomCalendarChannelSettings(db.calendarChannelDao()).observe().first())
             assertTrue(RoomCalendarEventRecords(db.calendarEventDao()).all().isEmpty())
+        }
+
+    @Test
+    fun `upgrade from schema 4 keeps the records and marks them as written in no language`() =
+        runBlocking {
+            val path = context.getDatabasePath("upgrade4.db")
+            path.parentFile?.mkdirs()
+            SQLiteDatabase.openOrCreateDatabase(path, null).use { old ->
+                old.execSQL(SCHEMA_3_PRODUCTS)
+                old.execSQL(SCHEMA_3_DELIVERIES)
+                old.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `calendar_channel` (`id` INTEGER NOT NULL, `calendar_id` INTEGER, PRIMARY KEY(`id`))",
+                )
+                old.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `calendar_event` (`product_id` TEXT NOT NULL, `calendar_id` INTEGER NOT NULL, " +
+                        "`event_id` INTEGER, `title_name` TEXT NOT NULL, `depletion_date` TEXT NOT NULL, `event_date` TEXT NOT NULL, " +
+                        "PRIMARY KEY(`product_id`))",
+                )
+                old.execSQL("INSERT INTO calendar_event VALUES ('${id.value}', 3, 42, 'Coffee', '2026-03-11', '2026-03-01')")
+                old.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT)")
+                old.execSQL("INSERT INTO room_master_table (id, identity_hash) VALUES (42, 'f31591ddb983ae8fe04c3855cca2d710')")
+                old.version = 4
+            }
+
+            val records = RoomCalendarEventRecords(open("upgrade4.db").calendarEventDao()).all()
+
+            assertEquals(listOf(CalendarEventRecord(id, CalendarId(3), EventId(42), content.copy(language = LanguageTag("")))), records)
         }
 
     private companion object {

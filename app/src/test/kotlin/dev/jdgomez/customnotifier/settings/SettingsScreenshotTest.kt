@@ -14,6 +14,7 @@ import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
+import dev.jdgomez.customnotifier.referencePath
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +31,7 @@ private val ON = SettingsState(channelOn = true, calendarRow = CalendarRow.Chose
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "en-rUS-w360dp-h800dp-xhdpi")
 @OptIn(ExperimentalRoborazziApi::class)
-class SettingsScreenshotTest {
+open class SettingsScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -56,7 +57,7 @@ class SettingsScreenshotTest {
         }
         shadowOf(Looper.getMainLooper()).idle()
         captureScreenRoboImage(
-            "src/test/screenshots/settings_$name.png",
+            referencePath("settings_$name", darkTheme),
             RoborazziOptions(
                 compareOptions =
                     RoborazziOptions.CompareOptions(changeThreshold = 0f, imageComparator = SimpleImageComparator(maxDistance = 0f)),
@@ -127,3 +128,6 @@ class SettingsScreenshotTest {
     @Test
     fun deniedForGoodDark() = capture("denied_for_good_dark", SettingsState(dialog = SettingsDialog.DeniedForGood), darkTheme = true)
 }
+
+@Config(qualifiers = "es-rES-w360dp-h800dp-xhdpi")
+class SettingsScreenshotSpanishTest : SettingsScreenshotTest()

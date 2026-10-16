@@ -43,6 +43,13 @@ android {
         }
     }
 
+    // Calendar event texts are built in a language other than the device's, so every language must stay in the base module.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     lint {
         warningsAsErrors = true
         abortOnError = true

@@ -22,11 +22,21 @@ value class EventId(
     val value: Long,
 )
 
-/** The content wanted in the calendar for one product: an all-day event on [date], the product's alert date. */
+/** A language as a BCP 47 tag, for example "en" or "es-MX". */
+@JvmInline
+value class LanguageTag(
+    val value: String,
+)
+
+/**
+ * The content wanted in the calendar for one product: an all-day event on [date], the product's alert date, with its texts
+ * written in [language].
+ */
 data class AlertEvent(
     val productName: ProductName,
     val depletionDate: DepletionDate,
     val date: LocalDate,
+    val language: LanguageTag,
 )
 
 /** Whether alerts also go to a calendar: for the whole app, off or on with exactly one chosen calendar. */

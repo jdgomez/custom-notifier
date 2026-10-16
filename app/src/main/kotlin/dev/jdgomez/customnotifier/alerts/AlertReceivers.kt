@@ -19,7 +19,7 @@ class AlertAlarmReceiver : BroadcastReceiver() {
     ) = reconcile(context)
 }
 
-/** Device boot, app update, time zone and clock changes: the alarms are rebuilt and missed alerts delivered. */
+/** Device boot, app update, time zone, clock and language changes: the alarms are rebuilt and missed alerts delivered. */
 class SystemEventReceiver : BroadcastReceiver() {
     override fun onReceive(
         context: Context,
@@ -35,6 +35,7 @@ class SystemEventReceiver : BroadcastReceiver() {
                 Intent.ACTION_MY_PACKAGE_REPLACED,
                 Intent.ACTION_TIMEZONE_CHANGED,
                 Intent.ACTION_TIME_CHANGED,
+                Intent.ACTION_LOCALE_CHANGED,
             )
     }
 }

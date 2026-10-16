@@ -6,10 +6,10 @@ import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
-/** Schema version 4, exported to `app/schemas/`. A schema change needs a migration; data is never dropped. */
+/** Schema version 5, exported to `app/schemas/`. A schema change needs a migration; data is never dropped. */
 @Database(
     entities = [ProductEntity::class, AlertDeliveryEntity::class, CalendarChannelEntity::class, CalendarEventEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class CustomNotifierDatabase : RoomDatabase() {
@@ -52,5 +52,13 @@ val MIGRATION_3_4: Migration =
                     "`event_id` INTEGER, `title_name` TEXT NOT NULL, `depletion_date` TEXT NOT NULL, `event_date` TEXT NOT NULL, " +
                     "PRIMARY KEY(`product_id`))",
             )
+        }
+    }
+
+/** Version 4 -> 5: records the language an alert event was written in; '' differs from any tag, so each event is rewritten once. */
+val MIGRATION_4_5: Migration =
+    object : Migration(4, 5) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            connection.execSQL("ALTER TABLE `calendar_event` ADD COLUMN `language` TEXT NOT NULL DEFAULT ''")
         }
     }

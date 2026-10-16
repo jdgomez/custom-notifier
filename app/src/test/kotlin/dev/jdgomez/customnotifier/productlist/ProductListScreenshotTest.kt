@@ -18,6 +18,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dev.jdgomez.customnotifier.calendar.CalendarProblem
 import dev.jdgomez.customnotifier.domain.Product
+import dev.jdgomez.customnotifier.referencePath
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +44,7 @@ private fun products(firstName: String = "Detergent") =
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "en-rUS-w360dp-h800dp-xhdpi")
-class ProductListScreenshotTest {
+open class ProductListScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -70,7 +71,7 @@ class ProductListScreenshotTest {
         composeRule.runOnUiThread { root.invalidate() }
         shadowOf(Looper.getMainLooper()).idle()
         composeRule.onRoot().captureRoboImage(
-            filePath = "src/test/screenshots/product_list_$name.png",
+            filePath = referencePath("product_list_$name", darkTheme),
             roborazziOptions =
                 RoborazziOptions(
                     // maxDistance = 0 makes any color change on any pixel a failure.
@@ -188,7 +189,7 @@ class ProductListScreenshotTest {
         composeRule.waitForIdle()
         shadowOf(Looper.getMainLooper()).idle()
         captureScreenRoboImage(
-            "src/test/screenshots/product_list_explanation.png",
+            referencePath("product_list_explanation"),
             RoborazziOptions(
                 compareOptions =
                     RoborazziOptions.CompareOptions(changeThreshold = 0f, imageComparator = SimpleImageComparator(maxDistance = 0f)),
@@ -196,3 +197,6 @@ class ProductListScreenshotTest {
         )
     }
 }
+
+@Config(qualifiers = "es-rES-w360dp-h800dp-xhdpi")
+class ProductListScreenshotSpanishTest : ProductListScreenshotTest()

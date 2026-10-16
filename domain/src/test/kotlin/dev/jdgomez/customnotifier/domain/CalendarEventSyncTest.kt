@@ -140,7 +140,9 @@ class CalendarEventSyncTest {
         Rule(LeadTime(10)),
     )
 
-    private suspend fun run() = sync.sync(store.state.value, channel, now, madrid)
+    private var language = LanguageTag("en")
+
+    private suspend fun run() = sync.sync(store.state.value, channel, now, madrid, language)
 
     @Test
     fun `event on the alert date with the product texts`() =
@@ -180,6 +182,42 @@ class CalendarEventSyncTest {
             repo.save(coffee.restock(1, now).rename(ProductName("Espresso")))
             run()
             assertEquals(listOf("Espresso" to "2026-03-31"), gateway.titles(home))
+        }
+
+    @Test
+    fun `a language change rewrites the events written in the other language`() =
+        runTest {
+            repo.save(product("Coffee"))
+            run()
+            val writes = gateway.writes
+            language = LanguageTag("es")
+            run()
+            assertEquals(writes + 1, gateway.writes)
+            assertEquals(listOf(LanguageTag("es")), gateway.events.values.map { it.language })
+            assertEquals(
+                LanguageTag("es"),
+                records.map.values
+                    .single()
+                    .content.language,
+            )
+            run()
+            assertEquals(writes + 1, gateway.writes)
+        }
+
+    @Test
+    fun `a language change does not recreate an event deleted outside`() =
+        runTest {
+            repo.save(product("Coffee"))
+            run()
+            gateway.events.clear()
+            language = LanguageTag("es")
+            run()
+            assertTrue(gateway.events.isEmpty())
+            assertNull(
+                records.map.values
+                    .single()
+                    .eventId,
+            )
         }
 
     @Test
@@ -385,7 +423,7 @@ class CalendarEventSyncTest {
                     object : ProductRepository by store {
                         override suspend fun save(product: Product) {
                             // A sync that already read the old list runs while the write is stored.
-                            sync.sync(listOf(coffee), channel, now, madrid)
+                            sync.sync(listOf(coffee), channel, now, madrid, language)
                             store.save(product)
                         }
                     },

@@ -1,5 +1,6 @@
 package dev.jdgomez.customnotifier.productform
 
+import android.content.Context
 import android.os.Looper
 import android.view.View
 import androidx.compose.material3.LocalRippleConfiguration
@@ -15,18 +16,21 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.Density
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dropbox.differ.SimpleImageComparator
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import dev.jdgomez.customnotifier.R
 import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.domain.Quantity
 import dev.jdgomez.customnotifier.productlist.FakeRepository
 import dev.jdgomez.customnotifier.productlist.MutableClock
 import dev.jdgomez.customnotifier.productlist.RowStatus
 import dev.jdgomez.customnotifier.productlist.testProduct
+import dev.jdgomez.customnotifier.referencePath
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Rule
@@ -80,7 +84,7 @@ private val WITH_ERRORS =
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "en-rUS-w360dp-h800dp-xhdpi")
-class ProductFormScreenshotTest {
+open class ProductFormScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -90,6 +94,8 @@ class ProductFormScreenshotTest {
             compareOptions =
                 RoborazziOptions.CompareOptions(changeThreshold = 0f, imageComparator = SimpleImageComparator(maxDistance = 0f)),
         )
+
+    private fun text(id: Int): String = ApplicationProvider.getApplicationContext<Context>().getString(id)
 
     private fun settle() {
         composeRule.waitForIdle()
@@ -112,7 +118,7 @@ class ProductFormScreenshotTest {
             }
         }
         settle()
-        composeRule.onRoot().captureRoboImage("src/test/screenshots/product_form_$name.png", roborazziOptions = options)
+        composeRule.onRoot().captureRoboImage(referencePath("product_form_$name", darkTheme), roborazziOptions = options)
     }
 
     /** Shows the form without the press ripple: the click that opens a dialog would leave a frame that differs between runs. */
@@ -156,10 +162,10 @@ class ProductFormScreenshotTest {
         val viewModel = ProductFormViewModel(repository, MutableClock(Instant.parse("2026-02-20T10:00:00Z")), product.id) { ZoneOffset.UTC }
         setRouteWithoutRipple(viewModel)
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Delete product").performScrollTo().performClick()
+        composeRule.onNodeWithText(text(R.string.product_form_delete)).performScrollTo().performClick()
         composeRule.waitForIdle()
         shadowOf(Looper.getMainLooper()).idle()
-        captureScreenRoboImage("src/test/screenshots/product_form_delete.png", options)
+        captureScreenRoboImage(referencePath("product_form_delete"), options)
     }
 
     @Test
@@ -168,10 +174,10 @@ class ProductFormScreenshotTest {
         val viewModel = ProductFormViewModel(FakeRepository(), MutableClock(Instant.parse("2026-02-20T10:00:00Z"))) { ZoneOffset.UTC }
         setRouteWithoutRipple(viewModel)
         composeRule.onNodeWithTag("Name").performTextReplacement("Vitamin D")
-        composeRule.onNodeWithContentDescription("Navigate up").performClick()
+        composeRule.onNodeWithContentDescription(text(R.string.product_form_navigate_up)).performClick()
         composeRule.waitForIdle()
         shadowOf(Looper.getMainLooper()).idle()
-        captureScreenRoboImage("src/test/screenshots/product_form_discard.png", options)
+        captureScreenRoboImage(referencePath("product_form_discard"), options)
     }
 
     /** Opens the edit form of a product holding 5 pills, taps [open] and captures the whole screen with the dialog on top. */
@@ -202,7 +208,7 @@ class ProductFormScreenshotTest {
         if (units != null) composeRule.onNodeWithTag("adjust_units").performTextInput(units)
         composeRule.waitForIdle()
         shadowOf(Looper.getMainLooper()).idle()
-        captureScreenRoboImage("src/test/screenshots/product_form_$name.png", options)
+        captureScreenRoboImage(referencePath("product_form_$name", darkTheme), options)
     }
 
     @Test
@@ -231,3 +237,6 @@ class ProductFormScreenshotTest {
     @Test
     fun adjustDialogLargestFont() = captureStockDialog("adjust_font_2", open = "adjust", fontScale = 2f, units = "3")
 }
+
+@Config(qualifiers = "es-rES-w360dp-h800dp-xhdpi")
+class ProductFormScreenshotSpanishTest : ProductFormScreenshotTest()
