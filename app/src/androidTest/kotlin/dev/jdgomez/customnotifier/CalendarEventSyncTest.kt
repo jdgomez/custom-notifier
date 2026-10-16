@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.ContentUris
 import android.content.ContentValues
 import android.net.Uri
+import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.provider.CalendarContract
 import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
@@ -24,7 +26,6 @@ import dev.jdgomez.customnotifier.domain.Stock
 import dev.jdgomez.customnotifier.domain.UnitLabel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,8 +51,15 @@ class CalendarEventSyncTest {
 
     @Before
     fun prepare() {
-        CALENDAR_PERMISSIONS.forEach { instrumentation.uiAutomation.grantRuntimePermission(application.packageName, it) }
-        assumeTrue("the device already has a writable calendar", !deviceHasWritableCalendar())
+        // `pm grant` through the shell works on every API level, unlike UiAutomation.grantRuntimePermission (API 28).
+        CALENDAR_PERMISSIONS.forEach {
+            ParcelFileDescriptor
+                .AutoCloseInputStream(
+                    instrumentation.uiAutomation.executeShellCommand("pm grant ${application.packageName} $it"),
+                ).use { out ->
+                    out.readBytes()
+                }
+        }
         calendar = createCalendar()
     }
 
@@ -183,19 +191,9 @@ class CalendarEventSyncTest {
             assertNotNull(resolver.insert(syncAdapterUri(), values)).lastPathSegment!!.toLong()
         }
 
-    private fun deviceHasWritableCalendar() =
-        withShellPermissions {
-            resolver
-                .query(
-                    Calendars.CONTENT_URI,
-                    arrayOf(Calendars._ID),
-                    "${Calendars.CALENDAR_ACCESS_LEVEL} >= ${Calendars.CAL_ACCESS_CONTRIBUTOR}",
-                    null,
-                    null,
-                )?.use { it.count > 0 } == true
-        }
-
+    // Adopting shell permissions needs API 29; below it the app's own, granted permissions are enough for a local calendar.
     private fun <T> withShellPermissions(block: () -> T): T {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return block()
         val automation = instrumentation.uiAutomation
         automation.adoptShellPermissionIdentity(*CALENDAR_PERMISSIONS)
         try {
