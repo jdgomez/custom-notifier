@@ -14,8 +14,6 @@ import dev.jdgomez.customnotifier.domain.AlertNotifier
 import dev.jdgomez.customnotifier.domain.DepletionDate
 import dev.jdgomez.customnotifier.domain.Product
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 /** [AlertNotifier] posting one notification per product on the "Depletion alerts" channel. */
 class NotificationAlertNotifier(
@@ -47,8 +45,7 @@ class NotificationAlertNotifier(
             if (depletionDate.date == today) {
                 context.getString(R.string.alert_text_today)
             } else {
-                val format = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(context.resources.configuration.locales[0])
-                context.getString(R.string.alert_text, depletionDate.date.format(format))
+                context.getString(R.string.alert_text, context.mediumDate(depletionDate.date))
             }
         val open =
             PendingIntent.getActivity(

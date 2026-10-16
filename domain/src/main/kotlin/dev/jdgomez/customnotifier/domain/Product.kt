@@ -33,7 +33,7 @@ data class Product(
     ): NextAlert {
         val depletionDate = depletionDateIn(zone).date
         if (now.atZone(zone).toLocalDate() > depletionDate) return NextAlert.None
-        val alertAt = ZonedDateTime.of(depletionDate.minusDays(rule.leadTime.days.toLong()), ALERT_TIME, zone)
+        val alertAt = ZonedDateTime.of(alertDateIn(zone), ALERT_TIME, zone)
         return if (now < alertAt.toInstant()) NextAlert.Scheduled(alertAt) else NextAlert.Due
     }
 

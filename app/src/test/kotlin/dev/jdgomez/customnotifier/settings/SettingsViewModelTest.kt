@@ -3,11 +3,13 @@ package dev.jdgomez.customnotifier.settings
 import android.content.Intent
 import dev.jdgomez.customnotifier.calendar.CalendarAccess
 import dev.jdgomez.customnotifier.calendar.CalendarAccessState
+import dev.jdgomez.customnotifier.domain.AlertEvent
 import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
+import dev.jdgomez.customnotifier.domain.EventId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,6 +91,29 @@ private class FakeGateway(
         }
         return answer
     }
+
+    override suspend fun canWrite() = true
+
+    override suspend fun create(
+        calendar: CalendarId,
+        event: AlertEvent,
+    ): EventId? = null
+
+    override suspend fun exists(
+        calendar: CalendarId,
+        id: EventId,
+    ) = false
+
+    override suspend fun update(
+        calendar: CalendarId,
+        id: EventId,
+        event: AlertEvent,
+    ) = false
+
+    override suspend fun delete(
+        calendar: CalendarId,
+        id: EventId,
+    ) = Unit
 }
 
 private class FakeAccess(
@@ -111,7 +136,9 @@ class SettingsViewModelTest {
     @After
     fun resetMain() = Dispatchers.resetMain()
 
-    private fun viewModel() = SettingsViewModel(settings, gateway, access)
+    private var syncs = 0
+
+    private fun viewModel() = SettingsViewModel(settings, gateway, access) { syncs++ }
 
     private fun SettingsViewModel.chooser() = state.value.dialog as SettingsDialog.Chooser
 
@@ -142,6 +169,17 @@ class SettingsViewModelTest {
 
         assertEquals(listOf(HOME, FAMILY), viewModel.chooser().calendars)
         assertFalse(viewModel.state.value.channelOn)
+    }
+
+    @Test
+    fun `access granted from the app synchronizes the calendar once, a denial does not`() {
+        val viewModel = viewModel()
+        viewModel.ask(false)
+        viewModel.onPermissionResult(explanationDue = true)
+        assertEquals(0, syncs)
+        access.state = CalendarAccessState.Granted
+        viewModel.onPermissionResult(explanationDue = false)
+        assertEquals(1, syncs)
     }
 
     @Test

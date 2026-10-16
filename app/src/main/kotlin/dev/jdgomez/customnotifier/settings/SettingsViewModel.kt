@@ -36,6 +36,7 @@ class SettingsViewModel(
     private val settings: CalendarChannelSettings,
     private val gateway: CalendarGateway,
     private val access: CalendarAccess,
+    private val onAccessGranted: () -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = mutableState.asStateFlow()
@@ -93,7 +94,10 @@ class SettingsViewModel(
     fun onPermissionResult(explanationDue: Boolean) {
         refresh()
         when {
-            access.current() == CalendarAccessState.Granted -> openChooser(onlyIfUnusable = true)
+            access.current() == CalendarAccessState.Granted -> {
+                onAccessGranted()
+                openChooser(onlyIfUnusable = true)
+            }
             !explanationDue -> mutableState.update { it.copy(dialog = SettingsDialog.DeniedForGood) }
         }
     }
@@ -177,7 +181,12 @@ class SettingsViewModel(
             viewModelFactory {
                 initializer {
                     val container = customNotifierContainer()
-                    SettingsViewModel(container.calendarChannelSettings, container.calendarGateway, container.calendarAccess)
+                    SettingsViewModel(
+                        container.calendarChannelSettings,
+                        container.calendarGateway,
+                        container.calendarAccess,
+                        container::syncCalendar,
+                    )
                 }
             }
     }

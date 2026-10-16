@@ -77,6 +77,7 @@ When the user opens the app, they see the estimated stock of each product, compa
 | Adjustment | Manual correction of stock by the user (+/- N units). Triggers recalculation of the depletion date and the alert. |
 | Restock | Adding one package size worth of units to stock. Can be applied repeatedly (+1, +2, +3 packages). |
 | Device calendar | A calendar on the device that can receive alert events. |
+| Alert event | The all-day calendar event the app keeps in the chosen device calendar for a product's next alert: at most one per product, on the alert date. |
 | Next alert | In-app preview of the date on which a product's next alert will fire. |
 | Goal | A product never runs out at home; the user has enough lead time to plan the purchase themselves. |
 

@@ -13,16 +13,25 @@ import dev.jdgomez.customnotifier.calendar.ProviderCalendarGateway
 import dev.jdgomez.customnotifier.data.CustomNotifierDatabase
 import dev.jdgomez.customnotifier.data.MIGRATION_1_2
 import dev.jdgomez.customnotifier.data.MIGRATION_2_3
+import dev.jdgomez.customnotifier.data.MIGRATION_3_4
 import dev.jdgomez.customnotifier.data.RoomAlertDeliveries
 import dev.jdgomez.customnotifier.data.RoomCalendarChannelSettings
+import dev.jdgomez.customnotifier.data.RoomCalendarEventRecords
 import dev.jdgomez.customnotifier.data.RoomProductRepository
 import dev.jdgomez.customnotifier.domain.AlertReconciler
+import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
+import dev.jdgomez.customnotifier.domain.CalendarEventSync
 import dev.jdgomez.customnotifier.domain.CalendarGateway
+import dev.jdgomez.customnotifier.domain.Product
+import dev.jdgomez.customnotifier.domain.ProductChanges
 import dev.jdgomez.customnotifier.domain.ProductRepository
+import dev.jdgomez.customnotifier.domain.TrackingProductRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.ZoneId
@@ -44,11 +53,16 @@ class AppContainer(
         Room
             .databaseBuilder<CustomNotifierDatabase>(context, DATABASE_NAME)
             .setDriver(AndroidSQLiteDriver())
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 
-    val productRepository: ProductRepository by lazy { RoomProductRepository(database.productDao()) }
+    private val productChanges = ProductChanges()
+
+    /** The stored products; every save or delete is noted for the calendar sync, which recreates only the events of changed products. */
+    val productRepository: ProductRepository by lazy {
+        TrackingProductRepository(RoomProductRepository(database.productDao()), productChanges)
+    }
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -56,7 +70,7 @@ class AppContainer(
 
     val notificationAccess: NotificationAccess by lazy { PlatformNotificationAccess(appContext) }
 
-    val calendarGateway: CalendarGateway by lazy { ProviderCalendarGateway(appContext.contentResolver) }
+    val calendarGateway: CalendarGateway by lazy { ProviderCalendarGateway(appContext) }
 
     val calendarChannelSettings: CalendarChannelSettings by lazy { RoomCalendarChannelSettings(database.calendarChannelDao()) }
 
@@ -73,21 +87,44 @@ class AppContainer(
         )
     }
 
-    /** Reconciles the stored products now, then calls [onDone]; used by the broadcast receivers. */
+    private val calendarEventSync: CalendarEventSync by lazy {
+        CalendarEventSync(calendarGateway, RoomCalendarEventRecords(database.calendarEventDao()), productChanges)
+    }
+
+    private suspend fun syncCalendar(
+        products: List<Product>,
+        channel: CalendarChannel,
+    ) = calendarEventSync.sync(products, channel, clock.instant(), zone())
+
+    /** Synchronizes the alert events with the stored products and channel now, for example once calendar access is granted. */
+    fun syncCalendar() {
+        applicationScope.launch { syncStoredCalendar() }
+    }
+
+    private suspend fun syncStoredCalendar() =
+        syncCalendar(productRepository.observeAll().first(), calendarChannelSettings.observe().first())
+
+    /** Reconciles the stored products and the alert events now, then calls [onDone]; used by the broadcast receivers. */
     fun reconcileAlerts(onDone: () -> Unit) {
         applicationScope.launch {
             try {
                 alertReconciler.reconcile()
+                syncStoredCalendar()
             } finally {
                 onDone()
             }
         }
     }
 
-    /** Creates the notification channel and reconciles on every product change, from now on. */
+    /** Creates the notification channel; reconciles the alarms and the alert events on every product or channel change, from now on. */
     fun startAlerts() {
         notifier.createChannel()
-        applicationScope.launch { productRepository.observeAll().collect { alertReconciler.reconcile(it) } }
+        applicationScope.launch {
+            combine(productRepository.observeAll(), calendarChannelSettings.observe(), ::Pair).collect { (products, channel) ->
+                alertReconciler.reconcile(products)
+                syncCalendar(products, channel)
+            }
+        }
     }
 
     private companion object {

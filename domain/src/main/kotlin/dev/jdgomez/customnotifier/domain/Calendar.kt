@@ -1,6 +1,7 @@
 package dev.jdgomez.customnotifier.domain
 
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 /** The identity of a [DeviceCalendar], as given by the device's calendar provider. */
 @JvmInline
@@ -13,6 +14,19 @@ data class DeviceCalendar(
     val id: CalendarId,
     val name: String,
     val accountName: String,
+)
+
+/** The identity of an event, as given by the device's calendar provider. */
+@JvmInline
+value class EventId(
+    val value: Long,
+)
+
+/** The content wanted in the calendar for one product: an all-day event on [date], the product's alert date. */
+data class AlertEvent(
+    val productName: ProductName,
+    val depletionDate: DepletionDate,
+    val date: LocalDate,
 )
 
 /** Whether alerts also go to a calendar: for the whole app, off or on with exactly one chosen calendar. */
@@ -31,6 +45,34 @@ interface CalendarGateway {
 
     /** The calendar [id], or null when it is gone or no longer writable. */
     suspend fun find(id: CalendarId): DeviceCalendar?
+
+    /** Whether calendar access is granted, so that the event operations can work. */
+    suspend fun canWrite(): Boolean
+
+    /** Creates the all-day event for [event] in [calendar]; null when it could not be written. */
+    suspend fun create(
+        calendar: CalendarId,
+        event: AlertEvent,
+    ): EventId?
+
+    /** Whether the event [id] still exists, not deleted, in [calendar]. */
+    suspend fun exists(
+        calendar: CalendarId,
+        id: EventId,
+    ): Boolean
+
+    /** Rewrites the event [id] to [event]; false, touching nothing, when it is gone. */
+    suspend fun update(
+        calendar: CalendarId,
+        id: EventId,
+        event: AlertEvent,
+    ): Boolean
+
+    /** Deletes the event [id] from [calendar]; does nothing when it is gone. */
+    suspend fun delete(
+        calendar: CalendarId,
+        id: EventId,
+    )
 }
 
 /** Port to the stored calendar channel setting. */

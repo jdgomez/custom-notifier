@@ -59,6 +59,7 @@
     <string name="alert_channel_name">Depletion alerts</string>
     <string name="alert_title">Buy %1$s</string>
     <string name="alert_text">Runs out %1$s</string>
+    <string name="calendar_event_description">Runs out %1$s. Added by Custom Notifier.</string>
     <string name="alert_text_today">Runs out today</string>
     <string name="alerts_off_text">Alerts are off. You will not be told before a product runs out.</string>
     <string name="alerts_off_turn_on">Turn on</string>

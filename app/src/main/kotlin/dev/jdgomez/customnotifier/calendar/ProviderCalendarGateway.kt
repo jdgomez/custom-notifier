@@ -1,22 +1,84 @@
 package dev.jdgomez.customnotifier.calendar
 
-import android.content.ContentResolver
-import android.database.Cursor
+import android.content.ContentUris
+import android.content.Context
 import android.provider.CalendarContract.Calendars
+import android.provider.CalendarContract.Events
+import dev.jdgomez.customnotifier.domain.AlertEvent
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
+import dev.jdgomez.customnotifier.domain.EventId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** [CalendarGateway] over the Calendar Provider: visible, synced calendars the app may write events to. */
 class ProviderCalendarGateway(
-    private val resolver: ContentResolver,
+    private val context: Context,
+    private val access: CalendarAccess = PlatformCalendarAccess(context),
 ) : CalendarGateway {
+    private val resolver = context.contentResolver
+
     override suspend fun writableCalendars(): List<DeviceCalendar> = query(WRITABLE, emptyArray())
 
     override suspend fun find(id: CalendarId): DeviceCalendar? =
         query("$WRITABLE AND ${Calendars._ID} = ?", arrayOf(id.value.toString())).firstOrNull()
+
+    override suspend fun canWrite(): Boolean = access.current() == CalendarAccessState.Granted
+
+    override suspend fun create(
+        calendar: CalendarId,
+        event: AlertEvent,
+    ): EventId? =
+        io(null) {
+            val values = context.eventValues(event).apply { put(Events.CALENDAR_ID, calendar.value) }
+            resolver.insert(Events.CONTENT_URI, values)?.let { EventId(ContentUris.parseId(it)) }
+        }
+
+    override suspend fun exists(
+        calendar: CalendarId,
+        id: EventId,
+    ): Boolean = io(false) { present(calendar, id) }
+
+    // An event that is not found is never touched: it may have been deleted by the user.
+    override suspend fun update(
+        calendar: CalendarId,
+        id: EventId,
+        event: AlertEvent,
+    ): Boolean = io(false) { present(calendar, id) && resolver.update(eventUri(id), context.eventValues(event), null, null) > 0 }
+
+    override suspend fun delete(
+        calendar: CalendarId,
+        id: EventId,
+    ) = io(Unit) {
+        if (present(calendar, id)) resolver.delete(eventUri(id), null, null)
+    }
+
+    private fun present(
+        calendar: CalendarId,
+        id: EventId,
+    ): Boolean =
+        resolver
+            .query(
+                Events.CONTENT_URI,
+                arrayOf(Events._ID),
+                "${Events._ID} = ? AND ${Events.CALENDAR_ID} = ? AND ${Events.DELETED} = 0",
+                arrayOf(id.value.toString(), calendar.value.toString()),
+                null,
+            )?.use { it.moveToFirst() } ?: false
+
+    // A revoked permission surfaces as a SecurityException: it means "no access", so nothing is written.
+    private suspend fun <T> io(
+        fallback: T,
+        block: () -> T,
+    ): T =
+        withContext(Dispatchers.IO) {
+            try {
+                block()
+            } catch (_: SecurityException) {
+                fallback
+            }
+        }
 
     // A revoked permission surfaces as a SecurityException: the caller checks access separately, so it means "no calendar".
     private suspend fun query(
@@ -37,11 +99,6 @@ class ProviderCalendarGateway(
             } catch (_: SecurityException) {
                 emptyList()
             }
-        }
-
-    private fun Cursor.toCalendars(): List<DeviceCalendar> =
-        buildList {
-            while (moveToNext()) add(DeviceCalendar(CalendarId(getLong(0)), getString(1).orEmpty(), getString(2).orEmpty()))
         }
 
     private companion object {
