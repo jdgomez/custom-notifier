@@ -40,6 +40,22 @@ private class FakeSettings(
     }
 }
 
+/** Stores a set value but lets the observers see it only when [publish] is called, as Room does a moment later. */
+private class SlowSettings : CalendarChannelSettings {
+    val channel = MutableStateFlow<CalendarChannel>(CalendarChannel.Off)
+    var stored: CalendarChannel = CalendarChannel.Off
+
+    override fun observe(): Flow<CalendarChannel> = channel
+
+    override suspend fun set(channel: CalendarChannel) {
+        stored = channel
+    }
+
+    fun publish() {
+        channel.value = stored
+    }
+}
+
 private class FakeGateway(
     var calendars: List<DeviceCalendar> = listOf(HOME, FAMILY),
 ) : CalendarGateway {
@@ -48,6 +64,9 @@ private class FakeGateway(
 
     /** When set, the next [writableCalendars] waits for it and answers with the calendars as they were when it started. */
     var holdNextList: CompletableDeferred<Unit>? = null
+
+    /** When set, [find] throws it once. */
+    var failNextFind: Exception? = null
 
     override suspend fun writableCalendars(): List<DeviceCalendar> {
         val answer = calendars
@@ -59,6 +78,10 @@ private class FakeGateway(
     }
 
     override suspend fun find(id: CalendarId): DeviceCalendar? {
+        failNextFind?.let {
+            failNextFind = null
+            throw it
+        }
         val answer = calendars.firstOrNull { it.id == id }
         holdNextFind?.let {
             holdNextFind = null
@@ -470,16 +493,58 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `events are handled in order whatever their speed`() {
+    fun `a newer chooser request wins over an older one that was still loading`() {
         access.state = CalendarAccessState.Granted
         val viewModel = viewModel()
         val gate = CompletableDeferred<Unit>()
         gateway.holdNextList = gate
         viewModel.openChooser()
-        viewModel.dismissDialog()
+        gateway.calendars = listOf(FAMILY)
         viewModel.openChooser()
         gate.complete(Unit)
 
-        assertEquals(listOf(HOME, FAMILY), viewModel.chooser().calendars)
+        assertEquals(listOf(FAMILY), viewModel.chooser().calendars)
+    }
+
+    @Test
+    fun `a failing gateway leaves the screen usable for the next event`() {
+        access.state = CalendarAccessState.Granted
+        settings.channel.value = CalendarChannel.On(HOME.id)
+        val viewModel = viewModel()
+        gateway.failNextFind = IllegalStateException("provider down")
+        viewModel.refresh()
+        viewModel.refresh()
+
+        assertEquals(CalendarRow.Chosen(HOME), viewModel.state.value.calendarRow)
+        viewModel.openChooser()
+        assertEquals(HOME.id, viewModel.chooser().selected)
+    }
+
+    @Test
+    fun `the chooser right after a choice shows the new choice even before the store reports it`() {
+        val slow = SlowSettings()
+        access.state = CalendarAccessState.Granted
+        val viewModel = SettingsViewModel(slow, gateway, access)
+        viewModel.choose(HOME)
+        viewModel.openChooser()
+
+        assertEquals(HOME.id, viewModel.chooser().selected)
+        assertEquals(CalendarRow.Chosen(HOME), viewModel.state.value.calendarRow)
+    }
+
+    @Test
+    fun `the request is consumed at once so a recreation cannot launch a second one`() {
+        access.state = CalendarAccessState.Granted
+        val viewModel = viewModel()
+        val gate = CompletableDeferred<Unit>()
+        gateway.holdNextList = gate
+        viewModel.openChooser()
+        viewModel.continueFromExplanation()
+        assertTrue(viewModel.state.value.requestPermission)
+
+        viewModel.onPermissionRequested()
+        assertFalse(viewModel.state.value.requestPermission)
+        gate.complete(Unit)
+        assertFalse(viewModel.state.value.requestPermission)
     }
 }

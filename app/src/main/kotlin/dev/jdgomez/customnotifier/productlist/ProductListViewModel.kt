@@ -49,6 +49,8 @@ class ProductListViewModel(
         val before = accessState.value
         val now = access.current()
         accessState.value = now
+        // Nothing is left to ask for, so a request that never reported back cannot keep the next one from starting.
+        if (now != NotificationAccessState.PermissionMissing) inFlight = null
         if (before != NotificationAccessState.Allowed && now == NotificationAccessState.Allowed) reconcileAlerts()
         return now
     }

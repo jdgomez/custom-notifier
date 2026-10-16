@@ -222,6 +222,17 @@ class ProductListViewModelTest {
         }
 
     @Test
+    fun aRequestThatNeverReportedBackDoesNotBlockTheNextOnceAccessIsThere() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            val viewModel = viewModel()
+            assertEquals(true, viewModel.startRequest(userInitiated = false))
+            access.state = NotificationAccessState.Allowed
+            viewModel.refreshAccess()
+            assertEquals(true, viewModel.startRequest(userInitiated = false))
+        }
+
+    @Test
     fun aResultWithNoRequestOfTheViewModelOpensNothing() =
         runTest {
             access.state = NotificationAccessState.PermissionMissing

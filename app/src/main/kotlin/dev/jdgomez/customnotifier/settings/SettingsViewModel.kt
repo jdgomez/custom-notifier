@@ -13,51 +13,22 @@ import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** What happened on the Settings screen, processed strictly in order by the one consumer of [SettingsViewModel]. */
-private sealed interface SettingsEvent {
-    data class ChannelChanged(
-        val channel: CalendarChannel,
-    ) : SettingsEvent
-
-    data object Refresh : SettingsEvent
-
-    data object TurnOff : SettingsEvent
-
-    data class Ask(
-        val explanationDue: Boolean,
-    ) : SettingsEvent
-
-    data object Continue : SettingsEvent
-
-    data object PermissionRequested : SettingsEvent
-
-    data class PermissionResult(
-        val explanationDue: Boolean,
-    ) : SettingsEvent
-
-    data class OpenChooser(
-        val onlyIfUnusable: Boolean,
-    ) : SettingsEvent
-
-    data class Choose(
-        val calendar: DeviceCalendar,
-    ) : SettingsEvent
-
-    data object Dismiss : SettingsEvent
-}
-
 /**
  * The Settings screen: the calendar channel switch, the chosen calendar and the calendar access flow. Turning the switch on never
  * stores the channel by itself: only choosing a calendar does.
+ *
+ * Events that need no I/O update the state at once on the main thread. The gateway reads run in two jobs, each of which a newer
+ * request supersedes: the one that recomputes the calendar row and the one that opens a dialog.
  */
-@Suppress("TooManyFunctions") // One function per user action of the screen, plus the event handlers.
+@Suppress("TooManyFunctions") // One function per user action of the screen.
 class SettingsViewModel(
     private val settings: CalendarChannelSettings,
     private val gateway: CalendarGateway,
@@ -66,69 +37,107 @@ class SettingsViewModel(
     private val mutableState = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = mutableState.asStateFlow()
 
-    // Every UI event and every change of the stored channel goes through this queue and is handled by one coroutine, in order:
-    // that coroutine is the only code that writes the state, and each handler reads the access and the calendars when it runs.
-    private val events = Channel<SettingsEvent>(Channel.UNLIMITED)
     private var channel: CalendarChannel = CalendarChannel.Off
+    private var rowJob: Job? = null
+    private var dialogJob: Job? = null
 
     init {
         viewModelScope.launch {
-            for (event in events) handle(event)
-        }
-        viewModelScope.launch {
-            settings.observe().collect { events.trySend(SettingsEvent.ChannelChanged(it)) }
+            settings.observe().collect {
+                channel = it
+                refresh()
+            }
         }
     }
 
     /** Checks calendar access and the chosen calendar again; the screen calls it whenever it becomes visible. */
-    fun refresh() = send(SettingsEvent.Refresh)
+    fun refresh() {
+        rowJob = relaunch(rowJob) { recompute() }
+    }
 
-    fun turnOff() = send(SettingsEvent.TurnOff)
+    fun turnOff() {
+        viewModelScope.launch {
+            settings.set(CalendarChannel.Off)
+            channel = CalendarChannel.Off
+            refresh()
+        }
+    }
 
     /**
      * The switch turned on, or the "Allow" button: always asks Android, after the explanation when [explanationDue] (Android's
      * rationale flag, known only to the screen); opens the chooser instead when access is there and no usable calendar is chosen.
      */
-    fun ask(explanationDue: Boolean) = send(SettingsEvent.Ask(explanationDue))
+    fun ask(explanationDue: Boolean) {
+        when (access.current()) {
+            CalendarAccessState.Granted -> openChooser(onlyIfUnusable = true)
+            CalendarAccessState.Missing ->
+                mutableState.update {
+                    if (explanationDue) it.copy(dialog = SettingsDialog.Explanation) else it.copy(requestPermission = true)
+                }
+        }
+    }
 
-    fun continueFromExplanation() = send(SettingsEvent.Continue)
+    fun continueFromExplanation() = mutableState.update { it.copy(dialog = null, requestPermission = true) }
 
-    fun onPermissionRequested() = send(SettingsEvent.PermissionRequested)
+    /** The screen is launching the system dialog: the request is consumed in the same step, so a recreation cannot launch it again. */
+    fun onPermissionRequested() = mutableState.update { it.copy(requestPermission = false) }
 
     /**
      * The system dialog was answered or interrupted; [explanationDue] is the rationale flag after the request. The result map is
      * not trusted: the access is read again, so a cancelled request or a partial grant counts as not granted. Not granted with no
      * explanation due means Android will not ask again (or the dialog was dismissed): the settings dialog shows at once.
      */
-    fun onPermissionResult(explanationDue: Boolean) = send(SettingsEvent.PermissionResult(explanationDue))
-
-    /** Opens the chooser; with [onlyIfUnusable], only when no usable calendar is chosen. */
-    fun openChooser(onlyIfUnusable: Boolean = false) = send(SettingsEvent.OpenChooser(onlyIfUnusable))
-
-    /** Stores the choice only while calendar access is there and the calendar still exists; otherwise the screen is brought up to date. */
-    fun choose(calendar: DeviceCalendar) = send(SettingsEvent.Choose(calendar))
-
-    fun dismissDialog() = send(SettingsEvent.Dismiss)
-
-    private fun send(event: SettingsEvent) {
-        events.trySend(event)
+    fun onPermissionResult(explanationDue: Boolean) {
+        refresh()
+        when {
+            access.current() == CalendarAccessState.Granted -> openChooser(onlyIfUnusable = true)
+            !explanationDue -> mutableState.update { it.copy(dialog = SettingsDialog.DeniedForGood) }
+        }
     }
 
-    private suspend fun handle(event: SettingsEvent) {
-        when (event) {
-            is SettingsEvent.ChannelChanged -> {
-                channel = event.channel
-                recompute()
+    /** Opens the chooser; with [onlyIfUnusable], only when no usable calendar is chosen. */
+    fun openChooser(onlyIfUnusable: Boolean = false) {
+        dialogJob = relaunch(dialogJob) { showChooser(onlyIfUnusable) }
+    }
+
+    /** Stores the choice only while calendar access is there and the calendar still exists; otherwise the screen is brought up to date. */
+    fun choose(calendar: DeviceCalendar) {
+        mutableState.update { it.copy(dialog = null) }
+        dialogJob =
+            relaunch(dialogJob) {
+                when {
+                    access.current() != CalendarAccessState.Granted -> Unit
+                    gateway.find(calendar.id) == null -> showChooser(onlyIfUnusable = false)
+                    else -> {
+                        settings.set(CalendarChannel.On(calendar.id))
+                        // The chosen value is used as it is: the stored channel reaches [channel] later and must not be re-read.
+                        channel = CalendarChannel.On(calendar.id)
+                    }
+                }
+                refresh()
             }
-            SettingsEvent.Refresh -> recompute()
-            SettingsEvent.TurnOff -> settings.set(CalendarChannel.Off)
-            is SettingsEvent.Ask -> onAsk(event.explanationDue)
-            SettingsEvent.Continue -> mutableState.update { it.copy(dialog = null, requestPermission = true) }
-            SettingsEvent.PermissionRequested -> mutableState.update { it.copy(requestPermission = false) }
-            is SettingsEvent.PermissionResult -> onResult(event.explanationDue)
-            is SettingsEvent.OpenChooser -> showChooser(event.onlyIfUnusable)
-            is SettingsEvent.Choose -> onChoose(event.calendar)
-            SettingsEvent.Dismiss -> mutableState.update { it.copy(dialog = null) }
+    }
+
+    fun dismissDialog() {
+        dialogJob?.cancel()
+        mutableState.update { it.copy(dialog = null) }
+    }
+
+    /** Cancels [previous] and runs [block]; a failure of the gateway or the store leaves the screen as it is instead of crashing. */
+    @Suppress("TooGenericExceptionCaught") // Any failure of an adapter must leave the screen usable.
+    private fun relaunch(
+        previous: Job?,
+        block: suspend () -> Unit,
+    ): Job {
+        previous?.cancel()
+        return viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                mutableState.update { it.copy(dialog = null) }
+            }
         }
     }
 
@@ -144,25 +153,6 @@ class SettingsViewModel(
         mutableState.update { it.copy(channelOn = chosen != null, calendarRow = row, accessRemoved = chosen != null && !granted) }
     }
 
-    private suspend fun onAsk(explanationDue: Boolean) {
-        when (access.current()) {
-            CalendarAccessState.Granted -> showChooser(onlyIfUnusable = true)
-            CalendarAccessState.Missing ->
-                mutableState.update {
-                    if (explanationDue) it.copy(dialog = SettingsDialog.Explanation) else it.copy(requestPermission = true)
-                }
-        }
-    }
-
-    private suspend fun onResult(explanationDue: Boolean) {
-        val granted = access.current() == CalendarAccessState.Granted
-        recompute()
-        when {
-            granted -> showChooser(onlyIfUnusable = true)
-            !explanationDue -> mutableState.update { it.copy(dialog = SettingsDialog.DeniedForGood) }
-        }
-    }
-
     private suspend fun showChooser(onlyIfUnusable: Boolean) {
         val chosen = channel as? CalendarChannel.On
         if (onlyIfUnusable && chosen != null && gateway.find(chosen.calendarId) != null) return
@@ -170,15 +160,6 @@ class SettingsViewModel(
         val dialog =
             if (calendars.isEmpty()) SettingsDialog.NoCalendar else SettingsDialog.Chooser(calendars, chosen?.calendarId)
         mutableState.update { it.copy(dialog = dialog) }
-    }
-
-    private suspend fun onChoose(calendar: DeviceCalendar) {
-        mutableState.update { it.copy(dialog = null) }
-        when {
-            access.current() != CalendarAccessState.Granted -> recompute()
-            gateway.find(calendar.id) == null -> showChooser(onlyIfUnusable = false)
-            else -> settings.set(CalendarChannel.On(calendar.id))
-        }
     }
 
     fun settingsIntent(): Intent = access.settingsIntent()
