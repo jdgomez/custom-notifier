@@ -15,7 +15,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -85,6 +87,32 @@ class AlertAdaptersTest {
         assertEquals(NotificationAlertNotifier.CHANNEL_ID, notification.channelId)
         assertTrue(notification.flags and Notification.FLAG_AUTO_CANCEL != 0)
         assertNotNull(notification.contentIntent)
+    }
+
+    @Test
+    @Config(qualifiers = "es")
+    fun `posts the notification in Spanish`() {
+        val product = testProduct("Café", Instant.parse("2026-03-01T12:00:00Z"))
+        notifier.createChannel()
+
+        notifier.notify(product, DepletionDate(LocalDate.parse("2026-03-11")), LocalDate.parse("2026-03-05"))
+
+        assertEquals("Alertas de agotamiento", notificationManager.getNotificationChannel(NotificationAlertNotifier.CHANNEL_ID).name)
+        val notification = shadowOf(notificationManager).getNotification(product.id.value.toString(), 0)
+        assertEquals("Comprar Café", notification.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals("Se agota el 11 mar 2026", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+    }
+
+    @Test
+    fun `a language change renames the channel`() {
+        notifier.createChannel()
+        assertEquals("Depletion alerts", notificationManager.getNotificationChannel(NotificationAlertNotifier.CHANNEL_ID).name)
+
+        RuntimeEnvironment.setQualifiers("es")
+        app.sendBroadcast(Intent(Intent.ACTION_LOCALE_CHANGED))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        awaitUntil { notificationManager.getNotificationChannel(NotificationAlertNotifier.CHANNEL_ID).name == "Alertas de agotamiento" }
     }
 
     @Test

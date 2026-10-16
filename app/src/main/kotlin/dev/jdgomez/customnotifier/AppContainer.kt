@@ -14,6 +14,7 @@ import dev.jdgomez.customnotifier.data.CustomNotifierDatabase
 import dev.jdgomez.customnotifier.data.MIGRATION_1_2
 import dev.jdgomez.customnotifier.data.MIGRATION_2_3
 import dev.jdgomez.customnotifier.data.MIGRATION_3_4
+import dev.jdgomez.customnotifier.data.MIGRATION_4_5
 import dev.jdgomez.customnotifier.data.RoomAlertDeliveries
 import dev.jdgomez.customnotifier.data.RoomCalendarChannelSettings
 import dev.jdgomez.customnotifier.data.RoomCalendarEventRecords
@@ -23,6 +24,7 @@ import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
 import dev.jdgomez.customnotifier.domain.CalendarEventSync
 import dev.jdgomez.customnotifier.domain.CalendarGateway
+import dev.jdgomez.customnotifier.domain.LanguageTag
 import dev.jdgomez.customnotifier.domain.Product
 import dev.jdgomez.customnotifier.domain.ProductChanges
 import dev.jdgomez.customnotifier.domain.ProductRepository
@@ -41,12 +43,18 @@ import java.time.ZoneId
  * Manual dependency injection: the application-wide dependencies, built lazily (ADR 0015).
  *
  * [clock] gives the current instant and [zone] the device's current time zone, read on every use so a
- * zone change is picked up; both can be replaced in tests.
+ * zone change is picked up; both can be replaced in tests. [language] is the app language, read on every use too.
  */
 class AppContainer(
     context: Context,
     val clock: Clock = Clock.systemUTC(),
     val zone: () -> ZoneId = ZoneId::systemDefault,
+    private val language: () -> LanguageTag = {
+        LanguageTag(
+            context.applicationContext.resources.configuration.locales[0]
+                .toLanguageTag(),
+        )
+    },
 ) {
     private val appContext = context.applicationContext
 
@@ -54,7 +62,7 @@ class AppContainer(
         Room
             .databaseBuilder<CustomNotifierDatabase>(context, DATABASE_NAME)
             .setDriver(AndroidSQLiteDriver())
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
     }
 
@@ -95,7 +103,7 @@ class AppContainer(
     private suspend fun syncCalendar(
         products: List<Product>,
         channel: CalendarChannel,
-    ) = calendarEventSync.sync(products, channel, clock.instant(), zone())
+    ) = calendarEventSync.sync(products, channel, clock.instant(), zone(), language())
 
     /** Synchronizes the alert events with the stored products and channel now, for example once calendar access is granted. */
     fun syncCalendar() {
@@ -105,10 +113,14 @@ class AppContainer(
     private suspend fun syncStoredCalendar() =
         syncCalendar(productRepository.observeAll().first(), calendarChannelSettings.observe().first())
 
-    /** Reconciles the stored products and the alert events now, then calls [onDone]; used by the broadcast receivers. */
+    /**
+     * Renames the notification channel to the current language, reconciles the stored products and the alert events now, then
+     * calls [onDone]; used by the broadcast receivers.
+     */
     fun reconcileAlerts(onDone: () -> Unit) {
         applicationScope.launch {
             try {
+                notifier.createChannel()
                 alertReconciler.reconcile()
                 syncStoredCalendar()
             } finally {

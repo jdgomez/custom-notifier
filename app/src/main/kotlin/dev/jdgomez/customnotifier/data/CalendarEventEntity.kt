@@ -19,6 +19,7 @@ data class CalendarEventEntity(
     @ColumnInfo(name = "title_name") val titleName: String,
     @ColumnInfo(name = "depletion_date") val depletionDate: String,
     @ColumnInfo(name = "event_date") val eventDate: String,
+    @ColumnInfo(name = "language", defaultValue = "") val language: String,
 )
 
 @Dao

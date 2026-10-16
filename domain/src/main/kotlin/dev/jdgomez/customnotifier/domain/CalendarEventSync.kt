@@ -71,7 +71,8 @@ class TrackingProductRepository(
 
 /**
  * Keeps one alert event per product with a next alert in the chosen calendar. Idempotent: it writes only what differs, and
- * recreates an event the user deleted only for a product the user changed ([ProductChanges]).
+ * recreates an event the user deleted only for a product the user changed ([ProductChanges]). The texts of an event are in the
+ * language given to [sync]: an event written in another language differs, so it is rewritten, never recreated.
  */
 class CalendarEventSync(
     private val gateway: CalendarGateway,
@@ -85,9 +86,10 @@ class CalendarEventSync(
         channel: CalendarChannel,
         now: Instant,
         zone: ZoneId,
+        language: LanguageTag,
     ) = lock.withLock {
         try {
-            run(products, channel, now, zone)
+            run(products, channel, now, zone, language)
         } catch (_: CalendarUnavailableException) {
             // No access, or the provider is not there right now: nothing changed, the next synchronization retries.
         } catch (e: CancellationException) {
@@ -102,6 +104,7 @@ class CalendarEventSync(
         channel: CalendarChannel,
         now: Instant,
         zone: ZoneId,
+        language: LanguageTag,
     ) {
         // Nothing to write and nothing to delete: do not even ask the device for calendar access.
         if (channel is CalendarChannel.Off && records.all().isEmpty()) return changes.clear(changes.pending())
@@ -110,7 +113,7 @@ class CalendarEventSync(
         val completed =
             when (target) {
                 Target.None -> removeAll()
-                is Target.Calendar -> syncAll(products, target.id, pending, now, zone)
+                is Target.Calendar -> syncAll(products, target.id, pending, now, zone, language)
             }
         if (completed) changes.clear(pending)
     }
@@ -148,11 +151,12 @@ class CalendarEventSync(
         pending: Map<ProductId, Long>,
         now: Instant,
         zone: ZoneId,
+        language: LanguageTag,
     ): Boolean {
         val wanted =
             products
                 .filter { it.nextAlertAt(now, zone) != NextAlert.None }
-                .associate { it.id to AlertEvent(it.name, it.depletionDateIn(zone), it.alertDateIn(zone)) }
+                .associate { it.id to AlertEvent(it.name, it.depletionDateIn(zone), it.alertDateIn(zone), language) }
         val existing = records.all()
         existing.filter { it.calendarId != calendar || it.productId !in wanted }.forEach { discard(it) }
         val kept = existing.filter { it.calendarId == calendar && it.productId in wanted }.associateBy { it.productId }

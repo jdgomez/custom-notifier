@@ -6,6 +6,7 @@ import dev.jdgomez.customnotifier.domain.CalendarEventRecords
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DepletionDate
 import dev.jdgomez.customnotifier.domain.EventId
+import dev.jdgomez.customnotifier.domain.LanguageTag
 import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.domain.ProductName
 import java.time.LocalDate
@@ -21,7 +22,12 @@ class RoomCalendarEventRecords(
                 ProductId(UUID.fromString(it.productId)),
                 CalendarId(it.calendarId),
                 it.eventId?.let(::EventId),
-                AlertEvent(ProductName(it.titleName), DepletionDate(LocalDate.parse(it.depletionDate)), LocalDate.parse(it.eventDate)),
+                AlertEvent(
+                    ProductName(it.titleName),
+                    DepletionDate(LocalDate.parse(it.depletionDate)),
+                    LocalDate.parse(it.eventDate),
+                    LanguageTag(it.language),
+                ),
             )
         }
 
@@ -35,6 +41,7 @@ class RoomCalendarEventRecords(
                 record.content.depletionDate.date
                     .toString(),
                 record.content.date.toString(),
+                record.content.language.value,
             ),
         )
 
