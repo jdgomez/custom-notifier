@@ -26,6 +26,7 @@ class CalendarEventSyncTest {
         val events = mutableMapOf<Pair<CalendarId, EventId>, AlertEvent>()
         var writes = 0
         var accessChecks = 0
+        var failure: Exception? = null
         private var next = 100L
 
         override suspend fun writableCalendars() = emptyList<DeviceCalendar>()
@@ -33,6 +34,7 @@ class CalendarEventSyncTest {
         override suspend fun find(id: CalendarId) = if (access && id in calendars) DeviceCalendar(id, "c", "a") else null
 
         override suspend fun canWrite(): Boolean {
+            failure?.let { if (it !is CalendarUnavailableException) throw it }
             accessChecks++
             return access
         }
@@ -41,6 +43,7 @@ class CalendarEventSyncTest {
             calendar: CalendarId,
             event: AlertEvent,
         ): EventId? {
+            failure?.let { throw it }
             if (!access) return null
             writes++
             return EventId(next++).also { events[calendar to it] = event }
@@ -49,13 +52,17 @@ class CalendarEventSyncTest {
         override suspend fun exists(
             calendar: CalendarId,
             id: EventId,
-        ) = (calendar to id) in events
+        ): Boolean {
+            failure?.let { throw it }
+            return (calendar to id) in events
+        }
 
         override suspend fun update(
             calendar: CalendarId,
             id: EventId,
             event: AlertEvent,
         ): Boolean {
+            failure?.let { throw it }
             if ((calendar to id) !in events) return false
             writes++
             events[calendar to id] = event
@@ -66,6 +73,7 @@ class CalendarEventSyncTest {
             calendar: CalendarId,
             id: EventId,
         ) {
+            failure?.let { throw it }
             if (events.remove(calendar to id) != null) writes++
         }
 
@@ -301,5 +309,90 @@ class CalendarEventSyncTest {
             run()
             assertEquals(writes, gateway.writes)
             assertNull(records.map.values.firstOrNull { it.eventId == null })
+        }
+
+    @Test
+    fun `access lost in the middle of a sync keeps the records and the event comes back`() =
+        runTest {
+            val coffee = product("Coffee")
+            repo.save(coffee)
+            run()
+            repo.save(coffee.restock(1, now))
+            gateway.failure = CalendarUnavailableException()
+            run()
+            assertEquals(1, records.map.size)
+            assertEquals(
+                EventId(100),
+                records.map.values
+                    .single()
+                    .eventId,
+            )
+            gateway.failure = null
+            run()
+            assertEquals(listOf("Coffee" to "2026-03-31"), gateway.titles(home))
+        }
+
+    @Test
+    fun `an unavailable provider never makes the event look deleted`() =
+        runTest {
+            val coffee = product("Coffee")
+            repo.save(coffee)
+            run()
+            gateway.failure = CalendarUnavailableException()
+            run()
+            run()
+            gateway.failure = null
+            repo.save(coffee)
+            run()
+            assertEquals(1, gateway.events.size)
+            assertEquals(1, gateway.writes)
+        }
+
+    @Test
+    fun `an unexpected failure of the calendar side never reaches the caller and keeps the records`() =
+        runTest {
+            repo.save(product("Coffee"))
+            run()
+            gateway.failure = IllegalStateException("provider exploded")
+            run()
+            assertEquals(1, records.map.size)
+        }
+
+    @Test
+    fun `a change recorded while a sync was running is not lost`() {
+        val id = ProductId(UUID.randomUUID())
+        val seen =
+            changes.run {
+                record(id)
+                pending()
+            }
+        changes.record(id)
+        changes.clear(seen)
+        assertEquals(setOf(id), changes.pending().keys)
+        changes.clear(changes.pending())
+        assertTrue(changes.pending().isEmpty())
+    }
+
+    @Test
+    fun `a sync that started from the old list does not consume the change of a save in flight`() =
+        runTest {
+            val coffee = product("Coffee")
+            repo.save(coffee)
+            run()
+            gateway.events.clear()
+            val raced =
+                TrackingProductRepository(
+                    object : ProductRepository by store {
+                        override suspend fun save(product: Product) {
+                            // A sync that already read the old list runs while the write is stored.
+                            sync.sync(listOf(coffee), channel, now, madrid)
+                            store.save(product)
+                        }
+                    },
+                    changes,
+                )
+            raced.save(coffee.restock(1, now))
+            run()
+            assertEquals(listOf("Coffee" to "2026-03-31"), gateway.titles(home))
         }
 }

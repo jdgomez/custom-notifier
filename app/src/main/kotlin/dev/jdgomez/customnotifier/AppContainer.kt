@@ -31,6 +31,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Clock
@@ -116,14 +117,17 @@ class AppContainer(
         }
     }
 
-    /** Creates the notification channel; reconciles the alarms and the alert events on every product or channel change, from now on. */
+    /**
+     * Creates the notification channel; from now on reconciles the alarms on every product change and the alert events on every
+     * product or channel change. Two collectors: slow or failing calendar work never delays or stops the alarms.
+     */
     fun startAlerts() {
         notifier.createChannel()
+        applicationScope.launch { productRepository.observeAll().collect { alertReconciler.reconcile(it) } }
         applicationScope.launch {
-            combine(productRepository.observeAll(), calendarChannelSettings.observe(), ::Pair).collect { (products, channel) ->
-                alertReconciler.reconcile(products)
-                syncCalendar(products, channel)
-            }
+            combine(productRepository.observeAll(), calendarChannelSettings.observe(), ::Pair)
+                .conflate()
+                .collect { (products, channel) -> syncCalendar(products, channel) }
         }
     }
 

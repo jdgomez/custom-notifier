@@ -94,10 +94,7 @@ class SettingsViewModel(
     fun onPermissionResult(explanationDue: Boolean) {
         refresh()
         when {
-            access.current() == CalendarAccessState.Granted -> {
-                onAccessGranted()
-                openChooser(onlyIfUnusable = true)
-            }
+            access.current() == CalendarAccessState.Granted -> openChooser(onlyIfUnusable = true)
             !explanationDue -> mutableState.update { it.copy(dialog = SettingsDialog.DeniedForGood) }
         }
     }
@@ -156,11 +153,15 @@ class SettingsViewModel(
                 ChannelCheck.Broken(CalendarProblem.CalendarGone) -> CalendarRow.Unavailable
                 else -> null
             }
+        // Access that was missing while the channel is on and is back, however the user granted it: the events can be written now.
+        val accessRemoved = check == ChannelCheck.Broken(CalendarProblem.AccessRemoved)
+        val accessBack = mutableState.value.accessRemoved && (check is ChannelCheck.Working || check == ChannelCheck.Broken(CalendarProblem.CalendarGone))
+        if (accessBack) onAccessGranted()
         mutableState.update {
             it.copy(
                 channelOn = check != ChannelCheck.Off,
                 calendarRow = row,
-                accessRemoved = check == ChannelCheck.Broken(CalendarProblem.AccessRemoved),
+                accessRemoved = accessRemoved,
             )
         }
     }

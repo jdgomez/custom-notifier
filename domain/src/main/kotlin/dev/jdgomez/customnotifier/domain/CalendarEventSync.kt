@@ -1,5 +1,6 @@
 package dev.jdgomez.customnotifier.domain
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
@@ -26,22 +27,31 @@ interface CalendarEventRecords {
     suspend fun remove(productId: ProductId)
 }
 
-/** The products the user saved or deleted since the last calendar synchronization handled them. */
+/**
+ * The products the user saved or deleted that no synchronization has handled yet. Each id carries a version that grows with
+ * every [record], so a synchronization clears only what it saw: a change recorded meanwhile survives for the next one.
+ */
 class ProductChanges {
-    private val ids: MutableSet<ProductId> = ConcurrentHashMap.newKeySet()
+    private val versions = ConcurrentHashMap<ProductId, Long>()
 
     fun record(id: ProductId) {
-        ids += id
+        versions.merge(id, 1L, Long::plus)
     }
 
-    fun pending(): Set<ProductId> = ids.toSet()
+    /** The pending ids with their versions, to be passed back to [clear]. */
+    fun pending(): Map<ProductId, Long> = versions.toMap()
 
-    fun clear(handled: Set<ProductId>) {
-        ids -= handled
+    /** Forgets the [handled] changes, except those recorded again since [pending] returned them. */
+    fun clear(handled: Map<ProductId, Long>) {
+        handled.forEach { (id, version) -> versions.remove(id, version) }
     }
 }
 
-/** A [ProductRepository] that notes every saved or deleted product in [changes] before delegating to [delegate]. */
+/**
+ * A [ProductRepository] that notes every saved or deleted product in [changes] before and after delegating to [delegate]: the
+ * first note covers a synchronization that runs once the write is stored, the second one outlives a synchronization that
+ * started from the earlier list and cleared the first note.
+ */
 class TrackingProductRepository(
     private val delegate: ProductRepository,
     private val changes: ProductChanges,
@@ -49,11 +59,13 @@ class TrackingProductRepository(
     override suspend fun save(product: Product) {
         changes.record(product.id)
         delegate.save(product)
+        changes.record(product.id)
     }
 
     override suspend fun delete(id: ProductId) {
         changes.record(id)
         delegate.delete(id)
+        changes.record(id)
     }
 }
 
@@ -74,9 +86,26 @@ class CalendarEventSync(
         now: Instant,
         zone: ZoneId,
     ) = lock.withLock {
+        try {
+            run(products, channel, now, zone)
+        } catch (_: CalendarUnavailableException) {
+            // No access, or the provider is not there right now: nothing changed, the next synchronization retries.
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Any failure of the calendar side must never reach the caller: alarms and the app go on.
+        }
+    }
+
+    private suspend fun run(
+        products: List<Product>,
+        channel: CalendarChannel,
+        now: Instant,
+        zone: ZoneId,
+    ) {
         // Nothing to write and nothing to delete: do not even ask the device for calendar access.
-        if (channel is CalendarChannel.Off && records.all().isEmpty()) return@withLock changes.clear(changes.pending())
-        val target = target(channel) ?: return@withLock
+        if (channel is CalendarChannel.Off && records.all().isEmpty()) return changes.clear(changes.pending())
+        val target = target(channel) ?: return
         val pending = changes.pending()
         val completed =
             when (target) {
@@ -116,7 +145,7 @@ class CalendarEventSync(
     private suspend fun syncAll(
         products: List<Product>,
         calendar: CalendarId,
-        pending: Set<ProductId>,
+        pending: Map<ProductId, Long>,
         now: Instant,
         zone: ZoneId,
     ): Boolean {
@@ -127,7 +156,7 @@ class CalendarEventSync(
         val existing = records.all()
         existing.filter { it.calendarId != calendar || it.productId !in wanted }.forEach { discard(it) }
         val kept = existing.filter { it.calendarId == calendar && it.productId in wanted }.associateBy { it.productId }
-        return wanted.all { (id, content) -> syncOne(id, content, kept[id], calendar, id in pending) }
+        return wanted.all { (id, content) -> syncOne(id, content, kept[id], calendar, id in pending.keys) }
     }
 
     /** False when the event could not be created and the whole sync must stop. */

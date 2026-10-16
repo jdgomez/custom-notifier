@@ -38,6 +38,9 @@ sealed interface CalendarChannel {
     ) : CalendarChannel
 }
 
+/** Thrown by the event operations of [CalendarGateway] when calendar access is lost or the provider is not available. */
+class CalendarUnavailableException : RuntimeException("calendar access or provider unavailable")
+
 /** Port to the calendars of the device. Without calendar access every operation behaves as if there were no calendar. */
 interface CalendarGateway {
     /** The visible, synced calendars the app can write to, ordered by account then name. */
@@ -49,26 +52,26 @@ interface CalendarGateway {
     /** Whether calendar access is granted, so that the event operations can work. */
     suspend fun canWrite(): Boolean
 
-    /** Creates the all-day event for [event] in [calendar]; null when it could not be written. */
+    /** Creates the all-day event for [event] in [calendar]; null when the provider did not create it; throws [CalendarUnavailableException] without access. */
     suspend fun create(
         calendar: CalendarId,
         event: AlertEvent,
     ): EventId?
 
-    /** Whether the event [id] still exists, not deleted, in [calendar]. */
+    /** Whether the event [id] still exists, not deleted, in [calendar]; throws [CalendarUnavailableException] when it cannot tell. */
     suspend fun exists(
         calendar: CalendarId,
         id: EventId,
     ): Boolean
 
-    /** Rewrites the event [id] to [event]; false, touching nothing, when it is gone. */
+    /** Rewrites the event [id] to [event]; false, touching nothing, when it is gone; throws [CalendarUnavailableException] when it cannot tell. */
     suspend fun update(
         calendar: CalendarId,
         id: EventId,
         event: AlertEvent,
     ): Boolean
 
-    /** Deletes the event [id] from [calendar]; does nothing when it is gone. */
+    /** Deletes the event [id] from [calendar]; does nothing when it is gone; throws [CalendarUnavailableException] when it cannot tell. */
     suspend fun delete(
         calendar: CalendarId,
         id: EventId,

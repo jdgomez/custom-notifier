@@ -7,6 +7,7 @@ import android.provider.CalendarContract.Events
 import dev.jdgomez.customnotifier.domain.AlertEvent
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.CalendarId
+import dev.jdgomez.customnotifier.domain.CalendarUnavailableException
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
 import dev.jdgomez.customnotifier.domain.EventId
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,7 @@ class ProviderCalendarGateway(
         calendar: CalendarId,
         event: AlertEvent,
     ): EventId? =
-        io(null) {
+        io {
             val values = context.eventValues(event).apply { put(Events.CALENDAR_ID, calendar.value) }
             resolver.insert(Events.CONTENT_URI, values)?.let { EventId(ContentUris.parseId(it)) }
         }
@@ -38,19 +39,19 @@ class ProviderCalendarGateway(
     override suspend fun exists(
         calendar: CalendarId,
         id: EventId,
-    ): Boolean = io(false) { present(calendar, id) }
+    ): Boolean = io { present(calendar, id) }
 
     // An event that is not found is never touched: it may have been deleted by the user.
     override suspend fun update(
         calendar: CalendarId,
         id: EventId,
         event: AlertEvent,
-    ): Boolean = io(false) { present(calendar, id) && resolver.update(eventUri(id), context.eventValues(event), null, null) > 0 }
+    ): Boolean = io { present(calendar, id) && resolver.update(eventUri(id), context.eventValues(event), null, null) > 0 }
 
     override suspend fun delete(
         calendar: CalendarId,
         id: EventId,
-    ) = io(Unit) {
+    ) = io {
         if (present(calendar, id)) resolver.delete(eventUri(id), null, null)
     }
 
@@ -65,18 +66,15 @@ class ProviderCalendarGateway(
                 "${Events._ID} = ? AND ${Events.CALENDAR_ID} = ? AND ${Events.DELETED} = 0",
                 arrayOf(id.value.toString(), calendar.value.toString()),
                 null,
-            )?.use { it.moveToFirst() } ?: false
+            )?.use { it.moveToFirst() } ?: throw CalendarUnavailableException()
 
-    // A revoked permission surfaces as a SecurityException: it means "no access", so nothing is written.
-    private suspend fun <T> io(
-        fallback: T,
-        block: () -> T,
-    ): T =
+    // A revoked permission surfaces as a SecurityException. It is not "the event is gone": the sync must not touch its records.
+    private suspend fun <T> io(block: () -> T): T =
         withContext(Dispatchers.IO) {
             try {
                 block()
             } catch (_: SecurityException) {
-                fallback
+                throw CalendarUnavailableException()
             }
         }
 

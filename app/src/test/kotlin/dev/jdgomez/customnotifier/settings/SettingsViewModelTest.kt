@@ -172,14 +172,28 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `access granted from the app synchronizes the calendar once, a denial does not`() {
+    fun `access back while the channel is on synchronizes the calendar once, however it was granted`() {
+        access.state = CalendarAccessState.Missing
+        settings.channel.value = CalendarChannel.On(HOME.id)
+        val viewModel = viewModel()
+        assertTrue(viewModel.state.value.accessRemoved)
+        assertEquals(0, syncs)
+
+        // The user grants in the system settings and comes back: the screen only checks again.
+        access.state = CalendarAccessState.Granted
+        viewModel.refresh()
+        assertEquals(1, syncs)
+        viewModel.refresh()
+        assertEquals(1, syncs)
+    }
+
+    @Test
+    fun `access granted while the channel is off needs no synchronization`() {
         val viewModel = viewModel()
         viewModel.ask(false)
-        viewModel.onPermissionResult(explanationDue = true)
-        assertEquals(0, syncs)
         access.state = CalendarAccessState.Granted
         viewModel.onPermissionResult(explanationDue = false)
-        assertEquals(1, syncs)
+        assertEquals(0, syncs)
     }
 
     @Test
