@@ -1,6 +1,7 @@
 package dev.jdgomez.customnotifier.productlist
 
 import androidx.compose.runtime.Immutable
+import dev.jdgomez.customnotifier.calendar.CalendarProblem
 import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.domain.NextAlert
 import dev.jdgomez.customnotifier.domain.Product
@@ -22,6 +23,8 @@ sealed interface ProductListState {
         val rows: List<ProductRow>,
         /** Alerts cannot be shown (permission, app notifications or the channel is off): the banner is shown. */
         val alertsOff: Boolean = false,
+        /** The calendar channel is on but cannot work: the calendar banner is shown. */
+        val calendarProblem: CalendarProblem? = null,
     ) : ProductListState
 }
 

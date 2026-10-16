@@ -3,9 +3,19 @@ package dev.jdgomez.customnotifier.productlist
 import android.content.Intent
 import dev.jdgomez.customnotifier.alerts.NotificationAccess
 import dev.jdgomez.customnotifier.alerts.NotificationAccessState
+import dev.jdgomez.customnotifier.calendar.CalendarAccess
+import dev.jdgomez.customnotifier.calendar.CalendarAccessState
+import dev.jdgomez.customnotifier.calendar.CalendarProblem
+import dev.jdgomez.customnotifier.domain.CalendarChannel
+import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
+import dev.jdgomez.customnotifier.domain.CalendarGateway
+import dev.jdgomez.customnotifier.domain.CalendarId
+import dev.jdgomez.customnotifier.domain.DeviceCalendar
 import dev.jdgomez.customnotifier.domain.ProductName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -22,6 +32,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProductListViewModelTest {
@@ -30,6 +41,9 @@ class ProductListViewModelTest {
     private val clock = MutableClock(start)
     private var zone: ZoneId = ZoneOffset.UTC
     private val access = FakeNotificationAccess()
+    private val calendarSettings = FakeCalendarSettings()
+    private val gateway = FakeCalendarGateway()
+    private val calendarAccess = FakeCalendarAccess()
     private var reconciles = 0
 
     @After
@@ -37,7 +51,9 @@ class ProductListViewModelTest {
 
     private fun TestScope.viewModel(): ProductListViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        return ProductListViewModel(repository, clock, { zone }, access) { reconciles++ }
+        return ProductListViewModel(repository, clock, {
+            zone
+        }, access, CalendarChannelWatch(calendarSettings, gateway, calendarAccess)) { reconciles++ }
     }
 
     private fun TestScope.collect(viewModel: ProductListViewModel): () -> ProductListState {
@@ -116,6 +132,85 @@ class ProductListViewModelTest {
             assertEquals(8.toBigInteger(), rows(state())[0].stock.wholeUnits)
             advanceTimeBy(2_000)
             assertEquals(7.toBigInteger(), rows(state())[0].stock.wholeUnits)
+        }
+
+    private fun problem(state: ProductListState) = assertIs<ProductListState.Products>(state).calendarProblem
+
+    private fun TestScope.withProduct(): () -> ProductListState {
+        repository.products.value = listOf(testProduct("Coffee", start))
+        return collect(viewModel())
+    }
+
+    @Test
+    fun noCalendarProblemWhileTheChannelIsOff() =
+        runTest {
+            calendarAccess.state = CalendarAccessState.Missing
+            assertNull(problem(withProduct()()))
+        }
+
+    @Test
+    fun noCalendarProblemWhileTheChannelWorks() =
+        runTest {
+            calendarSettings.channel.value = CalendarChannel.On(HOME.id)
+            assertNull(problem(withProduct()()))
+        }
+
+    @Test
+    fun accessRemovedWhenTheChannelIsOnWithoutAccess() =
+        runTest {
+            calendarSettings.channel.value = CalendarChannel.On(HOME.id)
+            calendarAccess.state = CalendarAccessState.Missing
+            assertEquals(CalendarProblem.AccessRemoved, problem(withProduct()()))
+        }
+
+    @Test
+    fun calendarGoneWhenAccessIsThereButTheCalendarIsNot() =
+        runTest {
+            calendarSettings.channel.value = CalendarChannel.On(HOME.id)
+            gateway.calendars = emptyList()
+            assertEquals(CalendarProblem.CalendarGone, problem(withProduct()()))
+        }
+
+    @Test
+    fun noCalendarProblemWithoutProducts() =
+        runTest {
+            calendarSettings.channel.value = CalendarChannel.On(HOME.id)
+            calendarAccess.state = CalendarAccessState.Missing
+            assertEquals(ProductListState.Empty, collect(viewModel())())
+        }
+
+    @Test
+    fun calendarProblemIsCheckedAgainOnRefresh() =
+        runTest {
+            calendarSettings.channel.value = CalendarChannel.On(HOME.id)
+            calendarAccess.state = CalendarAccessState.Missing
+            val viewModel = viewModel()
+            repository.products.value = listOf(testProduct("Coffee", start))
+            val state = collect(viewModel)
+            assertEquals(CalendarProblem.AccessRemoved, problem(state()))
+
+            calendarAccess.state = CalendarAccessState.Granted
+            viewModel.refreshCalendar()
+            runCurrent()
+            assertNull(problem(state()))
+
+            gateway.calendars = emptyList()
+            viewModel.refreshCalendar()
+            runCurrent()
+            assertEquals(CalendarProblem.CalendarGone, problem(state()))
+        }
+
+    @Test
+    fun turningTheChannelOffRemovesTheCalendarProblem() =
+        runTest {
+            calendarSettings.channel.value = CalendarChannel.On(HOME.id)
+            calendarAccess.state = CalendarAccessState.Missing
+            val state = withProduct()
+            assertEquals(CalendarProblem.AccessRemoved, problem(state()))
+
+            calendarSettings.channel.value = CalendarChannel.Off
+            runCurrent()
+            assertNull(problem(state()))
         }
 
     @Test
@@ -238,6 +333,34 @@ class ProductListViewModelTest {
             access.state = NotificationAccessState.PermissionMissing
             assertEquals(false, viewModel().onPermissionResult(explanationDue = false))
         }
+}
+
+private val HOME = DeviceCalendar(CalendarId(1), "Home", "user@example.com")
+
+private class FakeCalendarSettings : CalendarChannelSettings {
+    val channel = MutableStateFlow<CalendarChannel>(CalendarChannel.Off)
+
+    override fun observe(): Flow<CalendarChannel> = channel
+
+    override suspend fun set(channel: CalendarChannel) {
+        this.channel.value = channel
+    }
+}
+
+private class FakeCalendarGateway : CalendarGateway {
+    var calendars = listOf(HOME)
+
+    override suspend fun writableCalendars() = calendars
+
+    override suspend fun find(id: CalendarId) = calendars.firstOrNull { it.id == id }
+}
+
+private class FakeCalendarAccess : CalendarAccess {
+    var state: CalendarAccessState = CalendarAccessState.Granted
+
+    override fun current() = state
+
+    override fun settingsIntent() = Intent()
 }
 
 private class FakeNotificationAccess : NotificationAccess {

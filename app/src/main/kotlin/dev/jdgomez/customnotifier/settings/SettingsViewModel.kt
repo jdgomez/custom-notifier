@@ -8,6 +8,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.jdgomez.customnotifier.calendar.CalendarAccess
 import dev.jdgomez.customnotifier.calendar.CalendarAccessState
+import dev.jdgomez.customnotifier.calendar.CalendarProblem
+import dev.jdgomez.customnotifier.calendar.ChannelCheck
+import dev.jdgomez.customnotifier.calendar.checkChannel
 import dev.jdgomez.customnotifier.customNotifierContainer
 import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
@@ -142,15 +145,20 @@ class SettingsViewModel(
     }
 
     private suspend fun recompute() {
-        val chosen = channel as? CalendarChannel.On
-        val granted = access.current() == CalendarAccessState.Granted
+        val check = checkChannel(channel, access, gateway)
         val row =
-            if (chosen == null || !granted) {
-                null
-            } else {
-                gateway.find(chosen.calendarId)?.let { CalendarRow.Chosen(it) } ?: CalendarRow.Unavailable
+            when (check) {
+                is ChannelCheck.Working -> CalendarRow.Chosen(check.calendar)
+                ChannelCheck.Broken(CalendarProblem.CalendarGone) -> CalendarRow.Unavailable
+                else -> null
             }
-        mutableState.update { it.copy(channelOn = chosen != null, calendarRow = row, accessRemoved = chosen != null && !granted) }
+        mutableState.update {
+            it.copy(
+                channelOn = check != ChannelCheck.Off,
+                calendarRow = row,
+                accessRemoved = check == ChannelCheck.Broken(CalendarProblem.AccessRemoved),
+            )
+        }
     }
 
     private suspend fun showChooser(onlyIfUnusable: Boolean) {

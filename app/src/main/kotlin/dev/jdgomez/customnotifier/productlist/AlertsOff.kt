@@ -16,9 +16,12 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import dev.jdgomez.customnotifier.R
 
+/** A warning above the products: [text] with the button [actionLabel] beside it, or below it when the text needs more than two lines. */
 @Composable
-internal fun AlertsOffBanner(
-    onTurnOn: () -> Unit,
+internal fun Banner(
+    text: String,
+    actionLabel: String,
+    onAction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val textStyle = MaterialTheme.typography.bodyMedium
@@ -30,12 +33,12 @@ internal fun AlertsOffBanner(
             modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             content = {
                 Text(
-                    text = stringResource(R.string.alerts_off_text),
+                    text = text,
                     style = textStyle,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
-                TextButton(onClick = onTurnOn) {
-                    Text(stringResource(R.string.alerts_off_turn_on), color = MaterialTheme.colorScheme.onErrorContainer)
+                TextButton(onClick = onAction) {
+                    Text(actionLabel, color = MaterialTheme.colorScheme.onErrorContainer)
                 }
             },
         ) { (textMeasurable, buttonMeasurable), constraints ->

@@ -2,6 +2,7 @@ package dev.jdgomez.customnotifier.productlist
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
 import dev.jdgomez.customnotifier.alerts.NotificationAccess
 import dev.jdgomez.customnotifier.alerts.NotificationAccessState
+import dev.jdgomez.customnotifier.calendar.CalendarProblem
 import dev.jdgomez.customnotifier.domain.EstimatedStock
 import dev.jdgomez.customnotifier.domain.ProductId
 import dev.jdgomez.customnotifier.ui.AppIcons
@@ -80,7 +82,10 @@ fun ProductListRoute(
             }
         }
     // Returning from settings or from the system dialog: the state may have changed.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshAccess()
+        viewModel.refreshCalendar()
+    }
     val currentConsume by rememberUpdatedState(onConsumeAskForNotifications)
     LaunchedEffect(askForNotifications) {
         if (!askForNotifications) return@LaunchedEffect
@@ -153,7 +158,12 @@ fun ProductListScreen(
             ProductListState.Empty -> EmptyState(Modifier.padding(padding))
             is ProductListState.Products ->
                 Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
-                    if (state.alertsOff) AlertsOffBanner(onTurnOnAlerts)
+                    if (state.alertsOff) {
+                        Banner(stringResource(R.string.alerts_off_text), stringResource(R.string.alerts_off_turn_on), onTurnOnAlerts)
+                    }
+                    state.calendarProblem?.let {
+                        Banner(stringResource(it.bannerText()), stringResource(R.string.calendar_banner_fix), onOpenSettings)
+                    }
                     ProductList(
                         state,
                         onEditProduct,
@@ -164,6 +174,13 @@ fun ProductListScreen(
         }
     }
 }
+
+@StringRes
+private fun CalendarProblem.bannerText() =
+    when (this) {
+        CalendarProblem.AccessRemoved -> R.string.calendar_banner_access_removed
+        CalendarProblem.CalendarGone -> R.string.calendar_banner_gone
+    }
 
 @Composable
 private fun EmptyState(modifier: Modifier = Modifier) {
