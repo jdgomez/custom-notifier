@@ -6,11 +6,13 @@ import dev.jdgomez.customnotifier.alerts.NotificationAccessState
 import dev.jdgomez.customnotifier.calendar.CalendarAccess
 import dev.jdgomez.customnotifier.calendar.CalendarAccessState
 import dev.jdgomez.customnotifier.calendar.CalendarProblem
+import dev.jdgomez.customnotifier.domain.AlertEvent
 import dev.jdgomez.customnotifier.domain.CalendarChannel
 import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
 import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.CalendarId
 import dev.jdgomez.customnotifier.domain.DeviceCalendar
+import dev.jdgomez.customnotifier.domain.EventId
 import dev.jdgomez.customnotifier.domain.ProductName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -353,6 +355,29 @@ private class FakeCalendarGateway : CalendarGateway {
     override suspend fun writableCalendars() = calendars
 
     override suspend fun find(id: CalendarId) = calendars.firstOrNull { it.id == id }
+
+    override suspend fun canWrite() = true
+
+    override suspend fun create(
+        calendar: CalendarId,
+        event: AlertEvent,
+    ): EventId? = null
+
+    override suspend fun exists(
+        calendar: CalendarId,
+        id: EventId,
+    ) = false
+
+    override suspend fun update(
+        calendar: CalendarId,
+        id: EventId,
+        event: AlertEvent,
+    ) = false
+
+    override suspend fun delete(
+        calendar: CalendarId,
+        id: EventId,
+    ) = Unit
 }
 
 private class FakeCalendarAccess : CalendarAccess {

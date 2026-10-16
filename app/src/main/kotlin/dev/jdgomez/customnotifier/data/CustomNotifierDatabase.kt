@@ -6,14 +6,20 @@ import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
-/** Schema version 3, exported to `app/schemas/`. A schema change needs a migration; data is never dropped. */
-@Database(entities = [ProductEntity::class, AlertDeliveryEntity::class, CalendarChannelEntity::class], version = 3, exportSchema = true)
+/** Schema version 4, exported to `app/schemas/`. A schema change needs a migration; data is never dropped. */
+@Database(
+    entities = [ProductEntity::class, AlertDeliveryEntity::class, CalendarChannelEntity::class, CalendarEventEntity::class],
+    version = 4,
+    exportSchema = true,
+)
 abstract class CustomNotifierDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
 
     abstract fun alertDeliveryDao(): AlertDeliveryDao
 
     abstract fun calendarChannelDao(): CalendarChannelDao
+
+    abstract fun calendarEventDao(): CalendarEventDao
 }
 
 /** Version 1 -> 2: adds the alert delivery records; no alert is recorded as delivered. */
@@ -33,6 +39,18 @@ val MIGRATION_2_3: Migration =
         override suspend fun migrate(connection: SQLiteConnection) {
             connection.execSQL(
                 "CREATE TABLE IF NOT EXISTS `calendar_channel` (`id` INTEGER NOT NULL, `calendar_id` INTEGER, PRIMARY KEY(`id`))",
+            )
+        }
+    }
+
+/** Version 3 -> 4: adds the records of the alert events the app created; no event is known yet. */
+val MIGRATION_3_4: Migration =
+    object : Migration(3, 4) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            connection.execSQL(
+                "CREATE TABLE IF NOT EXISTS `calendar_event` (`product_id` TEXT NOT NULL, `calendar_id` INTEGER NOT NULL, " +
+                    "`event_id` INTEGER, `title_name` TEXT NOT NULL, `depletion_date` TEXT NOT NULL, `event_date` TEXT NOT NULL, " +
+                    "PRIMARY KEY(`product_id`))",
             )
         }
     }

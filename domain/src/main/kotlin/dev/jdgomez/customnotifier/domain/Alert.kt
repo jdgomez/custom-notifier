@@ -1,6 +1,7 @@
 package dev.jdgomez.customnotifier.domain
 
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /** The local date, in an explicit time zone, on which a product runs out. */
@@ -22,3 +23,6 @@ sealed interface NextAlert {
     /** The depletion date has passed: nothing to alert. */
     data object None : NextAlert
 }
+
+/** The local date in [zone] on which the product's alert fires: the depletion date minus the lead time. */
+fun Product.alertDateIn(zone: ZoneId): LocalDate = depletionDateIn(zone).date.minusDays(rule.leadTime.days.toLong())

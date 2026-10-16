@@ -36,6 +36,7 @@ class SettingsViewModel(
     private val settings: CalendarChannelSettings,
     private val gateway: CalendarGateway,
     private val access: CalendarAccess,
+    private val onAccessGranted: () -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = mutableState.asStateFlow()
@@ -152,11 +153,17 @@ class SettingsViewModel(
                 ChannelCheck.Broken(CalendarProblem.CalendarGone) -> CalendarRow.Unavailable
                 else -> null
             }
+        // Access that was missing while the channel is on and is back, however the user granted it: the events can be written now.
+        val accessRemoved = check == ChannelCheck.Broken(CalendarProblem.AccessRemoved)
+        val accessBack =
+            mutableState.value.accessRemoved &&
+                (check is ChannelCheck.Working || check == ChannelCheck.Broken(CalendarProblem.CalendarGone))
+        if (accessBack) onAccessGranted()
         mutableState.update {
             it.copy(
                 channelOn = check != ChannelCheck.Off,
                 calendarRow = row,
-                accessRemoved = check == ChannelCheck.Broken(CalendarProblem.AccessRemoved),
+                accessRemoved = accessRemoved,
             )
         }
     }
@@ -177,7 +184,12 @@ class SettingsViewModel(
             viewModelFactory {
                 initializer {
                     val container = customNotifierContainer()
-                    SettingsViewModel(container.calendarChannelSettings, container.calendarGateway, container.calendarAccess)
+                    SettingsViewModel(
+                        container.calendarChannelSettings,
+                        container.calendarGateway,
+                        container.calendarAccess,
+                        container::syncCalendar,
+                    )
                 }
             }
     }
