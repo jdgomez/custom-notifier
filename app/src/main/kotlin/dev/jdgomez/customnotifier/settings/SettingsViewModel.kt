@@ -155,7 +155,9 @@ class SettingsViewModel(
             }
         // Access that was missing while the channel is on and is back, however the user granted it: the events can be written now.
         val accessRemoved = check == ChannelCheck.Broken(CalendarProblem.AccessRemoved)
-        val accessBack = mutableState.value.accessRemoved && (check is ChannelCheck.Working || check == ChannelCheck.Broken(CalendarProblem.CalendarGone))
+        val accessBack =
+            mutableState.value.accessRemoved &&
+                (check is ChannelCheck.Working || check == ChannelCheck.Broken(CalendarProblem.CalendarGone))
         if (accessBack) onAccessGranted()
         mutableState.update {
             it.copy(
