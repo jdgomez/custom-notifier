@@ -76,6 +76,7 @@ When the user opens the app, they see the estimated stock of each product, compa
 | Channel | Delivery method for an alert: local push notification and/or calendar event. The calendar channel is opt-in and requires permission. |
 | Adjustment | Manual correction of stock by the user (+/- N units). Triggers recalculation of the depletion date and the alert. |
 | Restock | Adding one package size worth of units to stock. Can be applied repeatedly (+1, +2, +3 packages). |
+| Device calendar | A calendar on the device that can receive alert events. |
 | Next alert | In-app preview of the date on which a product's next alert will fire. |
 | Goal | A product never runs out at home; the user has enough lead time to plan the purchase themselves. |
 

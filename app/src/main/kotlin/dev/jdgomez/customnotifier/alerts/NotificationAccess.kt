@@ -8,16 +8,13 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 
 /** Whether alerts can be shown and, when not, why. */
 sealed interface NotificationAccessState {
     data object Allowed : NotificationAccessState
 
-    /** The runtime permission (Android 13 and later) is not granted; [canAsk] tells whether Android still shows its dialog. */
-    data class PermissionMissing(
-        val canAsk: Boolean,
-    ) : NotificationAccessState
+    /** The runtime permission (Android 13 and later) is not granted. */
+    data object PermissionMissing : NotificationAccessState
 
     data object AppNotificationsOff : NotificationAccessState
 
@@ -28,12 +25,6 @@ sealed interface NotificationAccessState {
 interface NotificationAccess {
     fun current(): NotificationAccessState
 
-    /** Records a denied request: [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
-    fun recordDenied(
-        explanationBefore: Boolean,
-        explanationAfter: Boolean,
-    )
-
     /** The system settings screen where the user can fix [state]: the channel's when only it is off, else the app's. */
     fun settingsIntent(state: NotificationAccessState): Intent
 
@@ -43,33 +34,19 @@ interface NotificationAccess {
     }
 }
 
-/**
- * Reads the notification state of the app from the platform. Android gives no "permanently denied" signal, so the second
- * denial (an explanation was due before the request and is not after it) is stored in [prefs].
- */
+/** Reads the notification state of the app from the platform. Nothing about denials is stored. */
 class PlatformNotificationAccess(
     private val context: Context,
 ) : NotificationAccess {
-    private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-
     override fun current(): NotificationAccessState {
         val manager = NotificationManagerCompat.from(context)
         return when {
-            needsRuntimePermission() && !hasRuntimePermission() -> {
-                NotificationAccessState.PermissionMissing(canAsk = !prefs.getBoolean(KEY_PERMANENTLY_DENIED, false))
-            }
+            needsRuntimePermission() && !hasRuntimePermission() -> NotificationAccessState.PermissionMissing
             !manager.areNotificationsEnabled() -> NotificationAccessState.AppNotificationsOff
             manager.getNotificationChannel(NotificationAlertNotifier.CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE ->
                 NotificationAccessState.ChannelOff
-            else -> NotificationAccessState.Allowed.also { prefs.edit { remove(KEY_PERMANENTLY_DENIED) } }
+            else -> NotificationAccessState.Allowed
         }
-    }
-
-    override fun recordDenied(
-        explanationBefore: Boolean,
-        explanationAfter: Boolean,
-    ) {
-        if (explanationBefore && !explanationAfter) prefs.edit { putBoolean(KEY_PERMANENTLY_DENIED, true) }
     }
 
     override fun settingsIntent(state: NotificationAccessState): Intent {
@@ -88,9 +65,4 @@ class PlatformNotificationAccess(
 
     private fun hasRuntimePermission() =
         ContextCompat.checkSelfPermission(context, NotificationAccess.PERMISSION) == PackageManager.PERMISSION_GRANTED
-
-    companion object {
-        private const val PREFS = "notification_access"
-        private const val KEY_PERMANENTLY_DENIED = "permanently_denied"
-    }
 }

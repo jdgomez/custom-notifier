@@ -7,11 +7,18 @@ import dev.jdgomez.customnotifier.alerts.AlarmManagerAlertScheduler
 import dev.jdgomez.customnotifier.alerts.NotificationAccess
 import dev.jdgomez.customnotifier.alerts.NotificationAlertNotifier
 import dev.jdgomez.customnotifier.alerts.PlatformNotificationAccess
+import dev.jdgomez.customnotifier.calendar.CalendarAccess
+import dev.jdgomez.customnotifier.calendar.PlatformCalendarAccess
+import dev.jdgomez.customnotifier.calendar.ProviderCalendarGateway
 import dev.jdgomez.customnotifier.data.CustomNotifierDatabase
 import dev.jdgomez.customnotifier.data.MIGRATION_1_2
+import dev.jdgomez.customnotifier.data.MIGRATION_2_3
 import dev.jdgomez.customnotifier.data.RoomAlertDeliveries
+import dev.jdgomez.customnotifier.data.RoomCalendarChannelSettings
 import dev.jdgomez.customnotifier.data.RoomProductRepository
 import dev.jdgomez.customnotifier.domain.AlertReconciler
+import dev.jdgomez.customnotifier.domain.CalendarChannelSettings
+import dev.jdgomez.customnotifier.domain.CalendarGateway
 import dev.jdgomez.customnotifier.domain.ProductRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +44,7 @@ class AppContainer(
         Room
             .databaseBuilder<CustomNotifierDatabase>(context, DATABASE_NAME)
             .setDriver(AndroidSQLiteDriver())
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -48,6 +55,12 @@ class AppContainer(
     private val notifier: NotificationAlertNotifier by lazy { NotificationAlertNotifier(appContext) }
 
     val notificationAccess: NotificationAccess by lazy { PlatformNotificationAccess(appContext) }
+
+    val calendarGateway: CalendarGateway by lazy { ProviderCalendarGateway(appContext.contentResolver) }
+
+    val calendarChannelSettings: CalendarChannelSettings by lazy { RoomCalendarChannelSettings(database.calendarChannelDao()) }
+
+    val calendarAccess: CalendarAccess by lazy { PlatformCalendarAccess(appContext) }
 
     private val alertReconciler: AlertReconciler by lazy {
         AlertReconciler(

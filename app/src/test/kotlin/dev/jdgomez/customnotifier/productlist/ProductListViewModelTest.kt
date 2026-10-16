@@ -140,7 +140,7 @@ class ProductListViewModelTest {
     @Test
     fun bannerOnlyWithProductsAndWhileAlertsAreOff() =
         runTest {
-            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
             val state = collect(viewModel)
             assertEquals(ProductListState.Empty, state())
@@ -169,30 +169,81 @@ class ProductListViewModelTest {
             assertEquals(1, reconciles)
         }
 
+    private fun ProductListViewModel.request(
+        userInitiated: Boolean,
+        explanationDue: Boolean,
+    ): Boolean {
+        assertEquals(true, startRequest(userInitiated))
+        return onPermissionResult(explanationDue)
+    }
+
     @Test
-    fun deniedResultIsRecordedAndGrantedIsNot() =
+    fun denialAfterSavingOpensNothing() =
         runTest {
-            access.state = NotificationAccessState.PermissionMissing(canAsk = true)
+            access.state = NotificationAccessState.PermissionMissing
             val viewModel = viewModel()
-            viewModel.onPermissionResult(granted = false, explanationBefore = true, explanationAfter = false)
-            assertEquals(listOf(true to false), access.denials)
-            viewModel.onPermissionResult(granted = true, explanationBefore = true, explanationAfter = false)
-            assertEquals(1, access.denials.size)
+            assertEquals(false, viewModel.request(userInitiated = false, explanationDue = false))
+            assertEquals(false, viewModel.request(userInitiated = false, explanationDue = true))
+        }
+
+    @Test
+    fun turnOnWithASilentDenialOpensTheNotificationSettings() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            assertEquals(true, viewModel().request(userInitiated = true, explanationDue = false))
+        }
+
+    @Test
+    fun turnOnWithAnExplanationStillDueOpensNothing() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            assertEquals(false, viewModel().request(userInitiated = true, explanationDue = true))
+        }
+
+    @Test
+    fun grantedResultIsReadFromTheAccessAndOpensNothing() =
+        runTest {
+            access.state = NotificationAccessState.Allowed
+            assertEquals(false, viewModel().request(userInitiated = true, explanationDue = false))
+        }
+
+    @Test
+    fun aNewRequestCannotStartWhileOneIsInFlightAndTheOriginIsKept() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            val viewModel = viewModel()
+            assertEquals(true, viewModel.startRequest(userInitiated = true))
+            // A save-triggered request or the explanation's Continue arrives meanwhile: it must not replace the origin.
+            assertEquals(false, viewModel.startRequest(userInitiated = false))
+            assertEquals(true, viewModel.onPermissionResult(explanationDue = false))
+            // The request finished: the next one may start, with its own origin.
+            assertEquals(true, viewModel.startRequest(userInitiated = false))
+            assertEquals(false, viewModel.onPermissionResult(explanationDue = false))
+        }
+
+    @Test
+    fun aRequestThatNeverReportedBackDoesNotBlockTheNextOnceAccessIsThere() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            val viewModel = viewModel()
+            assertEquals(true, viewModel.startRequest(userInitiated = false))
+            access.state = NotificationAccessState.Allowed
+            viewModel.refreshAccess()
+            assertEquals(true, viewModel.startRequest(userInitiated = false))
+        }
+
+    @Test
+    fun aResultWithNoRequestOfTheViewModelOpensNothing() =
+        runTest {
+            access.state = NotificationAccessState.PermissionMissing
+            assertEquals(false, viewModel().onPermissionResult(explanationDue = false))
         }
 }
 
 private class FakeNotificationAccess : NotificationAccess {
     var state: NotificationAccessState = NotificationAccessState.Allowed
-    val denials = mutableListOf<Pair<Boolean, Boolean>>()
 
     override fun current() = state
-
-    override fun recordDenied(
-        explanationBefore: Boolean,
-        explanationAfter: Boolean,
-    ) {
-        denials += explanationBefore to explanationAfter
-    }
 
     override fun settingsIntent(state: NotificationAccessState) = Intent()
 }

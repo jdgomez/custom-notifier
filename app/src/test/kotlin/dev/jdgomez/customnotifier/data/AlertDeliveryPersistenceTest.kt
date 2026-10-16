@@ -37,7 +37,7 @@ class AlertDeliveryPersistenceTest {
             }
         return builder
             .setDriver(AndroidSQLiteDriver())
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
             .also { database = it }
     }

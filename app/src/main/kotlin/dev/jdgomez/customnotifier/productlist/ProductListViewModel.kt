@@ -21,6 +21,8 @@ import java.time.Clock
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
+private enum class RequestOrigin { Save, Banner }
+
 private val REFRESH_PERIOD = 60.seconds
 
 /**
@@ -47,18 +49,34 @@ class ProductListViewModel(
         val before = accessState.value
         val now = access.current()
         accessState.value = now
+        // Nothing is left to ask for, so a request that never reported back cannot keep the next one from starting.
+        if (now != NotificationAccessState.PermissionMissing) inFlight = null
         if (before != NotificationAccessState.Allowed && now == NotificationAccessState.Allowed) reconcileAlerts()
         return now
     }
 
-    /** The system dialog was answered; [explanationBefore] and [explanationAfter] are the rationale flags around the request. */
-    fun onPermissionResult(
-        granted: Boolean,
-        explanationBefore: Boolean,
-        explanationAfter: Boolean,
-    ) {
-        if (!granted) access.recordDenied(explanationBefore, explanationAfter)
-        refreshAccess()
+    // The origin of the request in flight, if any: it travels with the request, so a later one cannot overwrite it.
+    private var inFlight: RequestOrigin? = null
+
+    /**
+     * The screen is about to show the system dialog; [userInitiated] tells the banner's "Turn on" from the request after a save.
+     * Returns false while another request is in flight: the screen must not start a second one.
+     */
+    fun startRequest(userInitiated: Boolean): Boolean {
+        if (inFlight != null) return false
+        inFlight = if (userInitiated) RequestOrigin.Banner else RequestOrigin.Save
+        return true
+    }
+
+    /**
+     * The system dialog was answered or interrupted; [explanationDue] is the rationale flag after the request. The access is read
+     * again, not taken from the result. Returns true when the screen must open the notification settings: the request came from
+     * the banner and Android will not show an explanation, so only the settings can turn alerts on.
+     */
+    fun onPermissionResult(explanationDue: Boolean): Boolean {
+        val origin = inFlight
+        inFlight = null
+        return refreshAccess() == NotificationAccessState.PermissionMissing && origin == RequestOrigin.Banner && !explanationDue
     }
 
     fun settingsIntent(): Intent = access.settingsIntent(accessState.value)
