@@ -62,6 +62,9 @@
     <string name="alert_text_today">Runs out today</string>
     <string name="alerts_off_text">Alerts are off. You will not be told before a product runs out.</string>
     <string name="alerts_off_turn_on">Turn on</string>
+    <string name="calendar_banner_access_removed">Calendar alerts are off. Calendar access was removed.</string>
+    <string name="calendar_banner_gone">Calendar alerts are off. The chosen calendar is no longer available.</string>
+    <string name="calendar_banner_fix">Fix</string>
     <string name="alerts_explanation_title">Allow alerts?</string>
     <string name="alerts_explanation_text">Custom Notifier shows one notification before a product runs out, so you can buy more in time. Without it you get no alerts.</string>
     <string name="alerts_explanation_continue">Continue</string>

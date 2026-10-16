@@ -16,6 +16,7 @@ import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import dev.jdgomez.customnotifier.calendar.CalendarProblem
 import dev.jdgomez.customnotifier.domain.Product
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import org.junit.Rule
@@ -53,11 +54,12 @@ class ProductListScreenshotTest {
         products: List<Product> = emptyList(),
         scrollToEnd: Boolean = false,
         alertsOff: Boolean = false,
+        calendarProblem: CalendarProblem? = null,
     ) {
         composeRule.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-                Screen(products.toListState(NOW, ZoneOffset.UTC).withAlertsOff(alertsOff), darkTheme)
+                Screen(products.toListState(NOW, ZoneOffset.UTC).withBanners(alertsOff, calendarProblem), darkTheme)
             }
         }
         if (scrollToEnd) composeRule.onNode(hasScrollAction()).performScrollToIndex(products.lastIndex)
@@ -81,8 +83,10 @@ class ProductListScreenshotTest {
         )
     }
 
-    private fun ProductListState.withAlertsOff(alertsOff: Boolean) =
-        if (this is ProductListState.Products) copy(alertsOff = alertsOff) else this
+    private fun ProductListState.withBanners(
+        alertsOff: Boolean,
+        calendarProblem: CalendarProblem? = null,
+    ) = if (this is ProductListState.Products) copy(alertsOff = alertsOff, calendarProblem = calendarProblem) else this
 
     @Composable
     private fun Screen(
@@ -124,12 +128,57 @@ class ProductListScreenshotTest {
         capture("alerts_off_dark_font_2", darkTheme = true, fontScale = 2f, products = products(LONG_NAME), alertsOff = true)
 
     @Test
+    fun calendarAccessRemovedBanner() =
+        capture("calendar_access_removed", products = products(), calendarProblem = CalendarProblem.AccessRemoved)
+
+    @Test
+    fun calendarGoneBannerDark() =
+        capture("calendar_gone_dark", darkTheme = true, products = products(), calendarProblem = CalendarProblem.CalendarGone)
+
+    @Test
+    fun calendarGoneBannerLargestFont() =
+        capture("calendar_gone_font_2", fontScale = 2f, products = products(LONG_NAME), calendarProblem = CalendarProblem.CalendarGone)
+
+    @Test
+    fun calendarAccessRemovedBannerDarkLargestFont() =
+        capture(
+            "calendar_access_removed_dark_font_2",
+            darkTheme = true,
+            fontScale = 2f,
+            products = products(LONG_NAME),
+            calendarProblem = CalendarProblem.AccessRemoved,
+        )
+
+    @Test
+    fun bothBanners() = capture("both_banners", products = products(), alertsOff = true, calendarProblem = CalendarProblem.AccessRemoved)
+
+    @Test
+    fun bothBannersDark() =
+        capture(
+            "both_banners_dark",
+            darkTheme = true,
+            products = products(),
+            alertsOff = true,
+            calendarProblem = CalendarProblem.CalendarGone,
+        )
+
+    @Test
+    fun bothBannersLargestFont() =
+        capture(
+            "both_banners_font_2",
+            fontScale = 2f,
+            products = products(LONG_NAME),
+            alertsOff = true,
+            calendarProblem = CalendarProblem.AccessRemoved,
+        )
+
+    @Test
     @OptIn(ExperimentalRoborazziApi::class)
     fun explanationDialog() {
         composeRule.setContent {
             CustomNotifierTheme {
                 ProductListScreen(
-                    products().toListState(NOW, ZoneOffset.UTC).withAlertsOff(true),
+                    products().toListState(NOW, ZoneOffset.UTC).withBanners(true),
                     onAddProduct = {},
                     onEditProduct = {},
                 )
