@@ -166,7 +166,8 @@ sleep 8
 need pss_list_kb "$(pss list)"
 
 # Product form open. The add button exposes no text, description or id to the accessibility tree, so it
-# is the lowest button of the app window (the Settings button is at the top). Tapping a wrong node
+# is the lowest button of the app window that does not start at the screen edge (list rows are
+# full-width buttons, the Settings button is at the top). Tapping a wrong node
 # cannot pass: the form must then show its title, read from the app's own string resources.
 lang=$(adb shell getprop persist.sys.locale | tr -d '\r' | cut -c1-2)
 [ -n "$lang" ] || lang=$(adb shell getprop ro.product.locale | tr -d '\r' | cut -c1-2)
@@ -185,7 +186,7 @@ for node in re.findall(r"<node [^>]*>", sys.stdin.read()):
     if f"package=\"{pkg}\"" not in node:
         continue
     l, t, r, b = map(int, re.findall(r"\d+", re.search(r"bounds=\"([^\"]*)\"", node).group(1)))
-    hit = (mode == "button" and "class=\"android.widget.Button\"" in node) or \
+    hit = (mode == "button" and l > 0 and "class=\"android.widget.Button\"" in node) or \
           (mode == "text" and re.search(r" text=\"([^\"]*)\"", node).group(1) in labels)
     if hit and (best is None or t > best[0]):
         best = (t, (l + r) // 2, (t + b) // 2)
@@ -193,7 +194,11 @@ if best:
     print(best[1], best[2])
 ' "$1" "$2" "$pkg"
 }
-fab=$(find_node button)
+for _ in 1 2 3; do
+  fab=$(find_node button)
+  [ -n "$fab" ] && break
+  sleep 2
+done
 [ -n "$fab" ] || die "Could not find the add-product button on the product list."
 adb shell input tap $fab
 waited=0
