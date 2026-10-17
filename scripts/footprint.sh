@@ -206,7 +206,7 @@ need wakelocks "$(grep -c ',l,wl,' "$raw/batterystats-checkin.txt")"
 need jobs "$(grep -c ',l,jb,' "$raw/batterystats-checkin.txt")"
 need wakeups "$(awk -F, '$4 == "wua" {n += $NF} END {print n + 0}' "$raw/batterystats-checkin.txt")"
 need wakeups_not_alert_alarm "$(awk -F, '$4 == "wua" && $5 !~ /AlertAlarmReceiver/ {n += $NF} END {print n + 0}' "$raw/batterystats-checkin.txt")"
-need alarms_pending "$(grep -c "Alarm{.* type .* when .* $pkg}" "$raw/alarm.txt")"
+need alarms_pending "$(grep -cE "Alarm\{[0-9a-f]+ type [0-9]+ .* $pkg\}" "$raw/alarm.txt")"
 
 # The background work must be only the alert alarms: at most one per seeded product, nothing else.
 violations=$(awk -F'\t' '
