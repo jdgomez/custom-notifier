@@ -36,6 +36,14 @@ adb wait-for-device
 [ "$(adb shell id -u | tr -d '\r')" = 0 ] || die "adb root is not available on this emulator. $setup_help"
 adb shell 'command -v sqlite3' >/dev/null 2>&1 || die "sqlite3 is not available on this emulator. $setup_help"
 
+# The SDK tools the measurement needs, checked before building anything.
+build_tools=$(ls -d "${ANDROID_HOME:?ANDROID_HOME is not set}"/build-tools/* 2>/dev/null | sort -V | tail -1)
+for tool in zipalign apksigner; do
+  [ -x "$build_tools/$tool" ] || die "Missing SDK tool '$tool' (build-tools): see docs/development-setup.md."
+done
+command -v apkanalyzer >/dev/null || die "Missing SDK tool 'apkanalyzer' (command-line tools, on PATH): see docs/development-setup.md."
+[ -f "$HOME/.android/debug.keystore" ] || die "Missing the debug keystore ~/.android/debug.keystore (created by any debug build)."
+
 api=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
 commit=$(git rev-parse --short HEAD)$(git diff --quiet HEAD && echo "" || echo "-dirty")
 date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -55,7 +63,7 @@ need() {
   record "$name" "$value"
 }
 
-# Runs on every exit path: restores the device and writes whatever was measured.
+# Runs on every exit path after the checks: restores the device and writes whatever was measured.
 finish() {
   local status=$?
   adb shell dumpsys battery reset >/dev/null 2>&1
@@ -76,7 +84,6 @@ trap finish EXIT
 
 # --- Build, sign locally with the debug key (outside the build configuration) and install ---
 ./gradlew assembleRelease || die "assembleRelease failed."
-build_tools=$(ls -d "${ANDROID_HOME:?ANDROID_HOME is not set}"/build-tools/* | sort -V | tail -1)
 unsigned=app/build/outputs/apk/release/app-release-unsigned.apk
 apk=$out/app-release-debugsigned.apk
 "$build_tools/zipalign" -f -p 4 "$unsigned" "$out/aligned.apk" || die "zipalign failed."
@@ -87,7 +94,9 @@ rm -f "$out/aligned.apk" "$apk.idsig"
 adb uninstall "$pkg" >/dev/null 2>&1
 adb install "$apk" >/dev/null || die "Installing the release APK failed."
 # The alert path posts notifications; grant the permission where it is a runtime one.
-[ "$api" -ge 33 ] && adb shell pm grant "$pkg" android.permission.POST_NOTIFICATIONS
+if [ "$api" -ge 33 ]; then
+  adb shell pm grant "$pkg" android.permission.POST_NOTIFICATIONS || die "Granting POST_NOTIFICATIONS failed."
+fi
 
 # --- Size ---
 need apk_file_size_bytes "$(apkanalyzer apk file-size "$apk" 2>"$raw/apk-file-size.err")"
@@ -156,22 +165,44 @@ adb shell am start -W -n "$pkg/.MainActivity" >/dev/null
 sleep 8
 need pss_list_kb "$(pss list)"
 
-# Product form open: the floating action button is the lowest clickable node of the app window.
-adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null
-fab=$(adb shell cat /data/local/tmp/ui.xml | python3 -I -c '
+# Product form open. The add button exposes no text, description or id to the accessibility tree, so it
+# is the lowest button of the app window (the Settings button is at the top). Tapping a wrong node
+# cannot pass: the form must then show its title, read from the app's own string resources.
+lang=$(adb shell getprop persist.sys.locale | tr -d '\r' | cut -c1-2)
+[ -n "$lang" ] || lang=$(adb shell getprop ro.product.locale | tr -d '\r' | cut -c1-2)
+form_label=$(for config in default "$lang"; do
+  apkanalyzer resources value --type string --config "$config" --name product_form_title "$apk" 2>/dev/null
+done)
+[ -n "$form_label" ] || die "Could not read the form title from the APK resources."
+# Prints the center of the app node chosen by mode: "button" (the lowest button) or "text" (a node with one of the given labels).
+find_node() {
+  adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1
+  adb shell cat /data/local/tmp/ui.xml | python3 -I -c '
 import re, sys
+mode, labels, pkg = sys.argv[1], set(sys.argv[2].splitlines()), sys.argv[3]
 best = None
 for node in re.findall(r"<node [^>]*>", sys.stdin.read()):
-    if f"package=\"{sys.argv[1]}\"" in node and "clickable=\"true\"" in node:
-        l, t, r, b = map(int, re.findall(r"\d+", re.search(r"bounds=\"([^\"]*)\"", node).group(1)))
-        if best is None or t > best[0]:
-            best = (t, (l + r) // 2, (t + b) // 2)
+    if f"package=\"{pkg}\"" not in node:
+        continue
+    l, t, r, b = map(int, re.findall(r"\d+", re.search(r"bounds=\"([^\"]*)\"", node).group(1)))
+    hit = (mode == "button" and "class=\"android.widget.Button\"" in node) or \
+          (mode == "text" and re.search(r" text=\"([^\"]*)\"", node).group(1) in labels)
+    if hit and (best is None or t > best[0]):
+        best = (t, (l + r) // 2, (t + b) // 2)
 if best:
     print(best[1], best[2])
-' "$pkg")
-[ -n "$fab" ] || die "Could not find the add-product button to open the product form."
+' "$1" "$2" "$pkg"
+}
+fab=$(find_node button)
+[ -n "$fab" ] || die "Could not find the add-product button on the product list."
 adb shell input tap $fab
-sleep 5
+waited=0
+until [ -n "$(find_node text "$form_label")" ]; do
+  [ "$waited" -ge 15 ] && die "The product form did not open; pss_form_kb would be wrong."
+  sleep 1
+  waited=$((waited + 1))
+done
+sleep 3
 need pss_form_kb "$(pss form)"
 
 # --- Storage in KB, with the seeded products ---
@@ -186,10 +217,12 @@ adb shell "kill \$(pidof $pkg)"
 sleep 2
 adb shell pidof "$pkg" >/dev/null && die "The app process did not stop before the background measurement."
 timeout 60 adb shell am broadcast --receiver-foreground -n "$pkg/.alerts.AlertAlarmReceiver" >"$raw/alert-broadcast.txt" 2>&1
+grep -q "Broadcast completed" "$raw/alert-broadcast.txt" || die "The alert broadcast did not complete; see $raw/alert-broadcast.txt."
 sleep 5
 adb shell pidof "$pkg" >/dev/null || die "Could not measure pss_background_kb: the alert path did not start the app process."
-adb shell dumpsys activity activities | grep -E 'ResumedActivity' | tee "$raw/resumed-activity.txt" | grep -q "$pkg" &&
-  die "The alert path opened the app UI; pss_background_kb would be wrong."
+adb shell dumpsys activity activities | grep -E 'ResumedActivity' >"$raw/resumed-activity.txt"
+[ -s "$raw/resumed-activity.txt" ] || die "Could not read the resumed activity (dumpsys format changed?); cannot confirm the app UI stayed closed."
+grep -q "$pkg" "$raw/resumed-activity.txt" && die "The alert path opened the app UI; pss_background_kb would be wrong."
 need pss_background_kb "$(pss background)"
 
 # --- Idle period with the screen off: the app's alarms, wakeups, wakelocks and jobs ---
@@ -198,7 +231,12 @@ adb shell dumpsys batterystats --reset >/dev/null
 adb shell input keyevent KEYCODE_SLEEP
 echo "Idle for ${idle_seconds}s with the screen off..."
 sleep "$idle_seconds"
-adb shell dumpsys batterystats --checkin | grep -E "^9,$uid,l," >"$raw/batterystats-checkin.txt"
+adb shell dumpsys batterystats --checkin >"$raw/batterystats-checkin-all.txt"
+# Positive controls: the dump has the expected format, and the app's own entry was read
+# (otherwise zero wakelocks, jobs and wakeups would mean nothing).
+grep -q '^9,0,i,vers,' "$raw/batterystats-checkin-all.txt" || die "Unexpected batterystats format (no version record); see $raw."
+grep -E "^9,$uid,l," "$raw/batterystats-checkin-all.txt" >"$raw/batterystats-checkin.txt"
+grep -q ',l,pr,' "$raw/batterystats-checkin.txt" || die "No batterystats entry for the app (uid $uid); cannot tell idle work from missing data; see $raw."
 adb shell dumpsys alarm >"$raw/alarm.txt"
 record idle_seconds "$idle_seconds"
 # Checkin records of the app's uid: wl = wakelock, jb = job, wua = wakeup alarm (name, count).
@@ -207,6 +245,8 @@ need jobs "$(grep -c ',l,jb,' "$raw/batterystats-checkin.txt")"
 need wakeups "$(awk -F, '$4 == "wua" {n += $NF} END {print n + 0}' "$raw/batterystats-checkin.txt")"
 need wakeups_not_alert_alarm "$(awk -F, '$4 == "wua" && $5 !~ /AlertAlarmReceiver/ {n += $NF} END {print n + 0}' "$raw/batterystats-checkin.txt")"
 need alarms_pending "$(grep -cE "Alarm\{[0-9a-f]+ type [0-9]+ .* $pkg\}" "$raw/alarm.txt")"
+# Positive control: the seeded products have next alerts, so no alarm at all means the dump was not understood.
+[ "$(awk -F'\t' '$1 == "alarms_pending" {print $2}' "$values")" -gt 0 ] || die "No pending alarm found for the seeded products (dumpsys alarm format changed?); see $raw."
 
 # The background work must be only the alert alarms: at most one per seeded product, nothing else.
 violations=$(awk -F'\t' '
