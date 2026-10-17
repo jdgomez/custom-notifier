@@ -192,7 +192,7 @@ for node in re.findall(r"<node [^>]*>", sys.stdin.read()):
         best = (t, (l + r) // 2, (t + b) // 2)
 if best:
     print(best[1], best[2])
-' "$1" "$2" "$pkg"
+' "$1" "${2:-}" "$pkg"
 }
 for _ in 1 2 3; do
   fab=$(find_node button)
