@@ -34,6 +34,10 @@ done
 adb root >/dev/null 2>&1
 adb wait-for-device
 [ "$(adb shell id -u | tr -d '\r')" = 0 ] || die "adb root is not available on this emulator. $setup_help"
+for _ in $(seq 20); do
+  adb shell 'command -v sqlite3' >/dev/null 2>&1 && break
+  sleep 1
+done
 adb shell 'command -v sqlite3' >/dev/null 2>&1 || die "sqlite3 is not available on this emulator. $setup_help"
 
 # The SDK tools the measurement needs, checked before building anything.
@@ -223,7 +227,11 @@ sleep 2
 adb shell pidof "$pkg" >/dev/null && die "The app process did not stop before the background measurement."
 timeout 60 adb shell am broadcast --receiver-foreground -n "$pkg/.alerts.AlertAlarmReceiver" >"$raw/alert-broadcast.txt" 2>&1
 grep -q "Broadcast completed" "$raw/alert-broadcast.txt" || die "The alert broadcast did not complete; see $raw/alert-broadcast.txt."
-sleep 5
+# A cold process start can take several seconds on the oldest emulator.
+for _ in $(seq 30); do
+  adb shell pidof "$pkg" >/dev/null && break
+  sleep 1
+done
 adb shell pidof "$pkg" >/dev/null || die "Could not measure pss_background_kb: the alert path did not start the app process."
 adb shell dumpsys activity activities | grep -E 'ResumedActivity' >"$raw/resumed-activity.txt"
 [ -s "$raw/resumed-activity.txt" ] || die "Could not read the resumed activity (dumpsys format changed?); cannot confirm the app UI stayed closed."
