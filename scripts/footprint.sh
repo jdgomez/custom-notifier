@@ -241,7 +241,7 @@ adb shell dumpsys batterystats --checkin >"$raw/batterystats-checkin-all.txt"
 # (otherwise zero wakelocks, jobs and wakeups would mean nothing).
 grep -q '^9,0,i,vers,' "$raw/batterystats-checkin-all.txt" || die "Unexpected batterystats format (no version record); see $raw."
 grep -E "^9,$uid,l," "$raw/batterystats-checkin-all.txt" >"$raw/batterystats-checkin.txt"
-grep -q ',l,pr,' "$raw/batterystats-checkin.txt" || die "No batterystats entry for the app (uid $uid); cannot tell idle work from missing data; see $raw."
+[ -s "$raw/batterystats-checkin.txt" ] || die "No batterystats entry for the app (uid $uid); cannot tell idle work from missing data; see $raw."
 adb shell dumpsys alarm >"$raw/alarm.txt"
 record idle_seconds "$idle_seconds"
 # Checkin records of the app's uid: wl = wakelock, jb = job, wua = wakeup alarm (name, count).
