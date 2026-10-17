@@ -24,7 +24,7 @@ Boot one emulator (`docs/development-setup.md`; `cn-api37` or `cn-api26`), no ot
 scripts/footprint.sh
 ```
 
-The idle period is 10 minutes; `FOOTPRINT_IDLE_SECONDS=60 scripts/footprint.sh` shortens it for a quick try, but record baselines with the default. Results go to `build/footprint/`: `footprint-api<N>.json` (machine-readable), `footprint-api<N>.md` (summary) and `raw/` (command outputs), also on failure. The script exits non-zero, before building, unless exactly one emulator with `adb root` and `sqlite3` is connected, and exits non-zero, naming the value, when one cannot be measured. Shut the emulator down afterwards.
+The idle period is 10 minutes; `FOOTPRINT_IDLE_SECONDS=60 scripts/footprint.sh` shortens it for a quick try, but record baselines with the default. Results go to `build/footprint/`: `footprint-api<N>.json` (machine-readable), `footprint-api<N>.md` (summary) and `raw/` (command outputs), also on failure. The script exits non-zero, before building, unless exactly one emulator with `adb root` and `sqlite3` is connected and `zipalign`, `apksigner`, `apkanalyzer` and the debug keystore are present, and exits non-zero, naming the value, when one cannot be measured. Shut the emulator down afterwards.
 
 ## Baseline
 

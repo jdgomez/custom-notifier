@@ -225,12 +225,14 @@ sleep 2
 adb shell "kill \$(pidof $pkg)"
 sleep 2
 adb shell pidof "$pkg" >/dev/null && die "The app process did not stop before the background measurement."
-timeout 60 adb shell am broadcast --receiver-foreground -n "$pkg/.alerts.AlertAlarmReceiver" >"$raw/alert-broadcast.txt" 2>&1
-grep -q "Broadcast completed" "$raw/alert-broadcast.txt" || die "The alert broadcast did not complete; see $raw/alert-broadcast.txt."
-# A cold process start can take several seconds on the oldest emulator.
-for _ in $(seq 30); do
-  adb shell pidof "$pkg" >/dev/null && break
-  sleep 1
+# Right after boot (seen on API 26) the system can discard the broadcast without delivering it, so retry.
+for _ in 1 2 3; do
+  timeout 90 adb shell am broadcast --receiver-foreground -n "$pkg/.alerts.AlertAlarmReceiver" >"$raw/alert-broadcast.txt" 2>&1
+  grep -q "Broadcast completed" "$raw/alert-broadcast.txt" || die "The alert broadcast did not complete; see $raw/alert-broadcast.txt."
+  for _ in $(seq 20); do
+    adb shell pidof "$pkg" >/dev/null && break 2
+    sleep 1
+  done
 done
 adb shell pidof "$pkg" >/dev/null || die "Could not measure pss_background_kb: the alert path did not start the app process."
 adb shell dumpsys activity activities | grep -E 'ResumedActivity' >"$raw/resumed-activity.txt"
