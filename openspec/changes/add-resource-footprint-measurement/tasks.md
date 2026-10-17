@@ -1,8 +1,8 @@
 ## 1. Shrunk release build
 
-- [ ] 1.1 Add the release build type with R8 and resource shrinking, no signing config (design decision 1); `./gradlew assembleDebug assembleRelease lintAll test` passes with zero warnings
-- [ ] 1.2 Add `assembleRelease` to the `verify` job command in `.github/workflows/ci.yml` (design decision 7)
-- [ ] 1.3 Hand check of the release APK signed with the debug key (design decision 2) on `cn-api37`, then on `cn-api26` (one emulator at a time): every step of the "Shrunk build behaves like debug" scenario; add a narrow, commented keep rule only for a concrete failure; shut each emulator down afterwards
+- [x] 1.1 Add the release build type with R8 and resource shrinking, no signing config (design decision 1); `./gradlew assembleDebug assembleRelease lintAll test` passes with zero warnings
+- [x] 1.2 Add `assembleRelease` to the `verify` job command in `.github/workflows/ci.yml` (design decision 7)
+- [x] 1.3 Hand check of the release APK signed with the debug key (design decision 2) on `cn-api37`, then on `cn-api26` (one emulator at a time): every step of the "Shrunk build behaves like debug" scenario; add a narrow, commented keep rule only for a concrete failure; shut each emulator down afterwards
 
 ## 2. Footprint script
 
