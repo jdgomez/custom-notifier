@@ -6,15 +6,15 @@
 
 ## 2. Footprint script
 
-- [ ] 2.1 Write `scripts/footprint.sh`: device checks, build, local signing, install, seeding (design decisions 2, 3, 5)
-- [ ] 2.2 Add the measurements: size, RAM (list, form, background alert path), storage, idle background work (design decision 4); check the failure scenarios of the spec (no emulator; a missing value)
-- [ ] 2.3 Run the script on `cn-api37` and on `cn-api26` (one at a time) and keep the results; if the idle check shows any wakelock, job or unexpected wakeup, stop and report instead of working around it
+- [x] 2.1 Write `scripts/footprint.sh`: device checks, build, local signing, install, seeding (design decisions 2, 3, 5)
+- [x] 2.2 Add the measurements: size, RAM (list, form, background alert path), storage, idle background work (design decision 4); check the failure scenarios of the spec (no emulator; a missing value)
+- [x] 2.3 Run the script on `cn-api37` and on `cn-api26` (one at a time) and keep the results; if the idle check shows any wakelock, job or unexpected wakeup, stop and report instead of working around it
 
 ## 3. Documentation
 
-- [ ] 3.1 Write `docs/footprint.md` with the method, how to run it, and both baselines (design decision 6)
-- [ ] 3.2 Update `AGENTS.md` (Build and run: the release build and the footprint script; CI: the `verify` command) and `docs/development-setup.md` only if a used SDK tool is not covered there
-- [ ] 3.3 Check the production line count (about 400 at most, tests excluded; the script counts as production); if clearly over, stop and report
+- [x] 3.1 Write `docs/footprint.md` with the method, how to run it, and both baselines (design decision 6)
+- [x] 3.2 Update `AGENTS.md` (Build and run: the release build and the footprint script; CI: the `verify` command) and `docs/development-setup.md` only if a used SDK tool is not covered there
+- [x] 3.3 Check the production line count (about 400 at most, tests excluded; the script counts as production); if clearly over, stop and report
 
 ## 4. Archive
 
