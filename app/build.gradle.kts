@@ -32,6 +32,15 @@ android {
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
+    buildTypes {
+        // Shrunk like the build the user installs. No signing config: signing for Play is owner-only (ADR 0014).
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
