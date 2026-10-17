@@ -18,4 +18,4 @@
 
 ## 4. Archive
 
-- [ ] 4.1 Run `openspec archive add-resource-footprint-measurement`, sync the delta specs into `openspec/specs/` (`resource-footprint` new, `continuous-integration` modified), and update the Project state in `AGENTS.md` (#49 done; next #47, which needs the owner's Play Developer account)
+- [x] 4.1 Run `openspec archive add-resource-footprint-measurement`, sync the delta specs into `openspec/specs/` (`resource-footprint` new, `continuous-integration` modified), and update the Project state in `AGENTS.md` (#49 done; next #47, which needs the owner's Play Developer account)
