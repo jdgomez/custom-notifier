@@ -5,26 +5,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,16 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,7 +48,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jdgomez.customnotifier.R
 import dev.jdgomez.customnotifier.productlist.RowStatus
 import dev.jdgomez.customnotifier.productlist.ticker
-import dev.jdgomez.customnotifier.ui.AppIcons
 import kotlinx.coroutines.flow.Flow
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -123,24 +113,14 @@ fun ProductFormScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(
-                            if (state.mode is ProductFormMode.New) R.string.product_form_title else R.string.product_form_title_edit,
-                        ),
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = back) {
-                        Icon(AppIcons.ArrowBack, stringResource(R.string.product_form_navigate_up))
-                    }
-                },
-                actions = {
-                    TextButton(onClick = onSave, enabled = state.mode !is ProductFormMode.Loading) {
-                        Text(stringResource(R.string.product_form_save))
-                    }
-                },
+            FormTopBar(
+                title =
+                    stringResource(
+                        if (state.mode is ProductFormMode.New) R.string.product_form_title else R.string.product_form_title_edit,
+                    ),
+                saveEnabled = state.mode !is ProductFormMode.Loading,
+                onBack = back,
+                onSave = onSave,
             )
         },
     ) { padding ->
@@ -169,7 +149,7 @@ private fun LoadingIndicator(modifier: Modifier = Modifier) {
 
 /** One focus requester per field, so a refused save can focus the first invalid one. */
 @Immutable
-private class FieldFocus {
+internal class FieldFocus {
     private val requesters = ProductFormField.entries.associateWith { FocusRequester() }
 
     operator fun get(field: ProductFormField): FocusRequester = requesters.getValue(field)
@@ -199,24 +179,8 @@ private fun FormFields(
         TextInput(ProductFormField.Name, state, onTextChange, requesters, R.string.product_form_name, text)
         TextInput(ProductFormField.Unit, state, onTextChange, requesters, R.string.product_form_unit, text, R.string.product_form_unit_help)
         TextInput(ProductFormField.PackageSize, state, onTextChange, requesters, R.string.product_form_package_size, number)
-        val unit = state[ProductFormField.Unit].trim().ifEmpty { stringResource(R.string.product_form_consumption_unit_fallback) }
-        InlineLine(state, ProductFormField.ConsumptionUnits, ProductFormField.ConsumptionDays) {
-            NumberBox(
-                ProductFormField.ConsumptionUnits,
-                state,
-                onTextChange,
-                requesters,
-                R.string.product_form_consumption_units_description,
-            )
-            Text(stringResource(R.string.product_form_consumption_unit_every, unit))
-            NumberBox(ProductFormField.ConsumptionDays, state, onTextChange, requesters, R.string.product_form_consumption_days_description)
-            Text(stringResource(R.string.product_form_consumption_days))
-        }
-        InlineLine(state, ProductFormField.LeadTime, help = R.string.product_form_lead_time_help) {
-            Text(stringResource(R.string.product_form_lead_time_before))
-            NumberBox(ProductFormField.LeadTime, state, onTextChange, requesters, R.string.product_form_lead_time_description)
-            Text(stringResource(R.string.product_form_lead_time_after))
-        }
+        RuleRow(state, onTextChange, requesters)
+        LeadTimeRow(state, onTextChange, requesters)
         if (ProductFormField.UnitsNow in state.fields) {
             TextInput(
                 ProductFormField.UnitsNow,
@@ -261,69 +225,8 @@ private fun TextInput(
     )
 }
 
-/** A number field without a label, as wide as six digits at the current font size. */
 @Composable
-private fun NumberBox(
-    field: ProductFormField,
-    state: ProductFormState,
-    onTextChange: (ProductFormField, String) -> Unit,
-    requesters: FieldFocus,
-    description: Int,
-) {
-    val description = stringResource(description)
-    val digitsWidth = with(LocalDensity.current) { 56.sp.toDp() }
-    OutlinedTextField(
-        value = state[field],
-        onValueChange = { onTextChange(field, it) },
-        modifier =
-            Modifier
-                .width(digitsWidth + 32.dp)
-                .focusRequester(requesters[field])
-                .testTag(field.name)
-                .semantics { contentDescription = description },
-        isError = field in state.errors,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-        singleLine = true,
-    )
-}
-
-/** Fields written inline with words; they wrap at large font sizes. Errors and help go below the line. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun InlineLine(
-    state: ProductFormState,
-    first: ProductFormField,
-    second: ProductFormField? = null,
-    help: Int? = null,
-    content: @Composable () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
-        ) { content() }
-        val errors = listOfNotNull(first, second).filter { it in state.errors }
-        errors.forEach { SupportingText(errorText(it), error = true) }
-        if (errors.isEmpty() && help != null) SupportingText(stringResource(help), error = false)
-    }
-}
-
-@Composable
-private fun SupportingText(
-    text: String,
-    error: Boolean,
-) {
-    Text(
-        text = text,
-        modifier = Modifier.padding(horizontal = 16.dp),
-        style = MaterialTheme.typography.bodySmall,
-        color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
-private fun errorText(field: ProductFormField): String {
+internal fun errorText(field: ProductFormField): String {
     val range = field.range
     return when {
         field == ProductFormField.Name -> stringResource(R.string.product_form_error_name)
