@@ -41,7 +41,7 @@ class SettingsViewModel(
     private val mutableState = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = mutableState.asStateFlow()
 
-    private var channel: CalendarChannel = CalendarChannel.Off
+    private var channel: CalendarChannel? = null
     private var rowJob: Job? = null
     private var dialogJob: Job? = null
 
@@ -146,7 +146,8 @@ class SettingsViewModel(
     }
 
     private suspend fun recompute() {
-        val check = checkChannel(channel, access, gateway)
+        val stored = channel ?: return
+        val check = checkChannel(stored, access, gateway)
         val row =
             when (check) {
                 is ChannelCheck.Working -> CalendarRow.Chosen(check.calendar)

@@ -163,6 +163,25 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `a refresh before the stored setting has been read keeps the switch loading`() {
+        val stored = MutableSharedFlow<CalendarChannel>()
+        val viewModel =
+            SettingsViewModel(
+                object : CalendarChannelSettings {
+                    override fun observe(): Flow<CalendarChannel> = stored
+
+                    override suspend fun set(channel: CalendarChannel) = Unit
+                },
+                gateway,
+                access,
+            ) { syncs++ }
+        viewModel.refresh()
+        assertEquals(ChannelSwitch.Loading, viewModel.state.value.channel)
+        runBlocking { stored.emit(CalendarChannel.On(CalendarId(1))) }
+        assertEquals(ChannelSwitch.On, viewModel.state.value.channel)
+    }
+
+    @Test
     fun `the channel is off on a fresh install`() {
         val state = viewModel().state.value
         assertEquals(ChannelSwitch.Off, state.channel)
