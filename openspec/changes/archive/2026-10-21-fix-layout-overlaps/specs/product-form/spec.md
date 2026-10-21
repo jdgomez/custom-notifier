@@ -11,17 +11,22 @@ The product form's top bar SHALL show its whole title at every system font size 
 #### Scenario: Default font size
 - **GIVEN** the default system font size, in English or Spanish
 - **WHEN** the "New product" or "Edit product" form is shown
-- **THEN** the title fits on one line and the bar looks exactly as before this change (unchanged screenshot references)
+- **THEN** the title fits on one line and the top bar is the usual one-line bar, unchanged
 
 ### Requirement: Inline rows wrap by pairs
-Every inline row of the product form that mixes number fields and words SHALL keep each number field together with the word that follows it; when the row does not fit on one line, it SHALL wrap only between these pairs, so no word is left alone on a line.
+Every inline row of the product form that mixes number fields and words SHALL keep each number field together with its adjacent word; when the row does not fit on one line, at any font size (for example Spanish on a narrow 360dp screen), it SHALL wrap only between these pairs, so no word is left alone on a line. In the alert row the number field stays with its leading word ("Alert" / "Avisar") and the trailing phrase ("days before it runs out") wraps as a whole.
 
 #### Scenario: Rule row at the largest font size
 - **GIVEN** the system font size set to its largest value, in English or Spanish
 - **WHEN** the product form is shown with a rule of 2 units every 1 day
 - **THEN** the rule row shows "[2] cans every" and "[1] days" (or the Spanish equivalent) as two whole pairs, and no word stands alone on a line
 
-#### Scenario: Rule row at the default font size
-- **GIVEN** the default system font size
+#### Scenario: Rows that do not fit at the default font size
+- **GIVEN** the default system font size and a screen on which an inline row does not fit on one line (for example the Spanish rule row on a 360dp screen)
 - **WHEN** the product form is shown
-- **THEN** the rule row and the alert row each fit on one line, as before this change
+- **THEN** that row wraps by pairs exactly as at large sizes, and a row that fits stays on one line
+
+#### Scenario: Alert row wrapping
+- **GIVEN** the alert row does not fit on one line
+- **WHEN** the product form is shown
+- **THEN** the number field stays next to "Alert" / "Avisar" and "days before it runs out" moves to the next line as a whole
