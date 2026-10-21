@@ -4,7 +4,7 @@ ADR [0010](adr/0010-minimal-resource-footprint.md) requires a minimal footprint 
 
 ## What is measured
 
-The release build is shrunk with R8 (code and resources) and stays unsigned in Gradle (signing for Play is owner-only, ADR 0014). `scripts/footprint.sh` builds it, signs a local copy with the debug key outside the build configuration, installs it on the one running `google_apis` emulator and measures:
+The release build is shrunk with R8 (code and resources) and is unsigned in Gradle unless the `CN_UPLOAD_*` environment variables are set (signing for Play is owner-only, ADR 0014 and 0018). `scripts/footprint.sh` builds it, signs a local copy with the debug key outside the build configuration, installs it on the one running `google_apis` emulator and measures:
 
 | Value | How |
 |---|---|
