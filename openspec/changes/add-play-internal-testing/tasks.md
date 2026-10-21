@@ -20,7 +20,7 @@
 - [x] 4.2 Produce the 512 px icon and the 1024 x 500 feature graphic from the launcher icon design
 - [x] 4.3 Take the phone screenshots on `cn-api37` in English and Spanish (sample products created through the UI, demo-mode status bar), at least two per language; shut the emulator down afterwards
 - [ ] 4.4 (owner) Approve the texts and images as UX; stop and report with the files' paths before going on
-- [ ] 4.5 Add the test that checks text limits and image sizes ("Listing check" scenario)
+- [x] 4.5 Add the test that checks text limits and image sizes ("Listing check" scenario)
 
 ## 5. Documentation and ADR
 

@@ -109,6 +109,11 @@ tasks.withType<Test>().configureEach {
         .dir("src/test/screenshots")
         .withPropertyName("screenshotReferences")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // The store listing check reads the listing files at run time.
+    inputs
+        .dir(rootProject.file("fastlane/metadata/android"))
+        .withPropertyName("storeListing")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
     // Robolectric's FileDescriptor shadow reaches into a JDK-internal package that JDK 17+ encapsulates.
     jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
 }
