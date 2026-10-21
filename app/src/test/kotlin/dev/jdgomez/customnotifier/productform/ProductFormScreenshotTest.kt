@@ -121,6 +121,7 @@ open class ProductFormScreenshotTest {
         state: ProductFormState,
         darkTheme: Boolean = false,
         fontScale: Float = 1f,
+        scrollToTag: String? = null,
     ) {
         composeRule.setContent {
             val density = LocalDensity.current
@@ -129,6 +130,10 @@ open class ProductFormScreenshotTest {
             }
         }
         settle()
+        if (scrollToTag != null) {
+            composeRule.onNodeWithTag(scrollToTag).performScrollTo()
+            settle()
+        }
         composeRule.onRoot().captureRoboImage(referencePath("product_form_$name", darkTheme), roborazziOptions = options)
     }
 
@@ -163,6 +168,10 @@ open class ProductFormScreenshotTest {
 
     @Test
     fun editLargestFont() = capture("edit_font_2", EDIT, fontScale = 2f)
+
+    /** The content scrolled under the bar: in Spanish the medium bar is shown and takes its scrolled color. */
+    @Test
+    fun editLargestFontScrolled() = capture("edit_font_2_scrolled", EDIT, fontScale = 2f, scrollToTag = "LeadTime")
 
     private fun showEdit(
         state: ProductFormState,

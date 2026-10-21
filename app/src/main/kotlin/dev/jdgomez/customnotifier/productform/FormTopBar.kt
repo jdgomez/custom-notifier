@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.jdgomez.customnotifier.R
@@ -58,7 +59,29 @@ internal fun FormTopBar(
         if (fits) {
             TopAppBar(title = { Text(title) }, navigationIcon = navigationIcon, actions = actions)
         } else {
-            MediumTopAppBar(title = { Text(title) }, navigationIcon = navigationIcon, actions = actions)
+            // The medium bar's fixed 112dp height leaves no room below a scaled title (its text then touches the bar's bottom edge
+            // and the content clipped there peeks out right under it): the height is the 64dp row, the measured title and the
+            // 24dp the bar leaves below its title at the default size.
+            val titleHeight =
+                measurer
+                    .measure(
+                        title,
+                        typography.headlineSmall,
+                        constraints =
+                            Constraints(
+                                maxWidth =
+                                    (
+                                        constraints.maxWidth -
+                                            with(density) { 32.dp.roundToPx() }
+                                    ).coerceAtLeast(0),
+                            ),
+                    ).size.height
+            MediumTopAppBar(
+                title = { Text(title) },
+                expandedHeight = maxOf(TopAppBarDefaults.MediumAppBarExpandedHeight, 64.dp + with(density) { titleHeight.toDp() } + 24.dp),
+                navigationIcon = navigationIcon,
+                actions = actions,
+            )
         }
     }
 }
