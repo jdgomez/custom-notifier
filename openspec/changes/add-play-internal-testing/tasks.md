@@ -11,8 +11,8 @@
 
 ## 3. Privacy policy and release guide
 
-- [ ] 3.1 Write `docs/privacy-policy.md` and `docs/privacy-policy.es.md` (design decision 7), checked against every permission in `AndroidManifest.xml`
-- [ ] 3.2 Write `docs/release.md`: one-time owner setup and the per-release steps, including the release token renewal, the upload key backup and reset, the Data safety answers (calendar read/write on device only, no data collected or shared; notifications), the mapping file upload, refreshing screenshots, and the physical-device check of the first release
+- [x] 3.1 Write `docs/privacy-policy.md` and `docs/privacy-policy.es.md` (design decision 7), checked against every permission in `AndroidManifest.xml`
+- [x] 3.2 Write `docs/release.md`: one-time owner setup and the per-release steps, including the release token renewal, the upload key backup and reset, the Data safety answers (calendar read/write on device only, no data collected or shared; notifications), the mapping file upload, refreshing screenshots, and the physical-device check of the first release
 
 ## 4. Store listing
 
