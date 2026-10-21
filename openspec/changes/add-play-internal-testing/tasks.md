@@ -6,8 +6,8 @@
 
 ## 2. Release workflow
 
-- [ ] 2.1 Write `.github/workflows/release.yml` with the `release-please` and `bundle` jobs (design decisions 3 and 4): pinned SHAs, commented permissions, missing-secret check, signature and fingerprint check, version check, artifact, keystore cleanup
-- [ ] 2.2 Check the workflow audit scenario of `continuous-integration` and the "Pull request run" scenario of `release-distribution` by inspection; run `actionlint` only if it is already installed (no new tool)
+- [x] 2.1 Write `.github/workflows/release.yml` with the `release-please` and `bundle` jobs (design decisions 3 and 4): pinned SHAs, commented permissions, missing-secret check, signature and fingerprint check, version check, artifact, keystore cleanup
+- [x] 2.2 Check the workflow audit scenario of `continuous-integration` and the "Pull request run" scenario of `release-distribution` by inspection; run `actionlint` only if it is already installed (no new tool)
 
 ## 3. Privacy policy and release guide
 
