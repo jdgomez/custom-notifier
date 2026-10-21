@@ -25,7 +25,7 @@ import org.robolectric.annotation.GraphicsMode
 
 private val HOME = DeviceCalendar(CalendarId(1), "Home", "user@example.com")
 private val FAMILY = DeviceCalendar(CalendarId(2), "Family", "family@example.com")
-private val ON = SettingsState(channelOn = true, calendarRow = CalendarRow.Chosen(HOME))
+private val ON = SettingsState(channel = ChannelSwitch.On, calendarRow = CalendarRow.Chosen(HOME))
 
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -66,13 +66,13 @@ open class SettingsScreenshotTest {
     }
 
     @Test
-    fun off() = capture("off", SettingsState())
+    fun off() = capture("off", SettingsState(channel = ChannelSwitch.Off))
 
     @Test
-    fun offDark() = capture("off_dark", SettingsState(), darkTheme = true)
+    fun offDark() = capture("off_dark", SettingsState(channel = ChannelSwitch.Off), darkTheme = true)
 
     @Test
-    fun offLargestFont() = capture("off_font_2", SettingsState(), fontScale = 2f)
+    fun offLargestFont() = capture("off_font_2", SettingsState(channel = ChannelSwitch.Off), fontScale = 2f)
 
     @Test
     fun on() = capture("on", ON)
@@ -84,49 +84,59 @@ open class SettingsScreenshotTest {
     fun onLargestFont() = capture("on_font_2", ON, fontScale = 2f)
 
     @Test
-    fun accessRemoved() = capture("access_removed", SettingsState(channelOn = true, accessRemoved = true))
+    fun accessRemoved() = capture("access_removed", SettingsState(channel = ChannelSwitch.On, accessRemoved = true))
 
     @Test
-    fun accessRemovedDark() = capture("access_removed_dark", SettingsState(channelOn = true, accessRemoved = true), darkTheme = true)
+    fun accessRemovedDark() =
+        capture("access_removed_dark", SettingsState(channel = ChannelSwitch.On, accessRemoved = true), darkTheme = true)
 
     @Test
-    fun accessRemovedLargestFont() = capture("access_removed_font_2", SettingsState(channelOn = true, accessRemoved = true), fontScale = 2f)
+    fun accessRemovedLargestFont() =
+        capture("access_removed_font_2", SettingsState(channel = ChannelSwitch.On, accessRemoved = true), fontScale = 2f)
 
     @Test
-    fun calendarGone() = capture("calendar_gone", SettingsState(channelOn = true, calendarRow = CalendarRow.Unavailable))
+    fun calendarGone() = capture("calendar_gone", SettingsState(channel = ChannelSwitch.On, calendarRow = CalendarRow.Unavailable))
 
     @Test
     fun calendarGoneDark() =
-        capture("calendar_gone_dark", SettingsState(channelOn = true, calendarRow = CalendarRow.Unavailable), darkTheme = true)
+        capture("calendar_gone_dark", SettingsState(channel = ChannelSwitch.On, calendarRow = CalendarRow.Unavailable), darkTheme = true)
 
     @Test
     fun calendarGoneLargestFont() =
-        capture("calendar_gone_font_2", SettingsState(channelOn = true, calendarRow = CalendarRow.Unavailable), fontScale = 2f)
+        capture("calendar_gone_font_2", SettingsState(channel = ChannelSwitch.On, calendarRow = CalendarRow.Unavailable), fontScale = 2f)
 
     @Test
-    fun chooser() = capture("chooser", SettingsState(dialog = SettingsDialog.Chooser(listOf(HOME, FAMILY), HOME.id)))
+    fun chooser() =
+        capture("chooser", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.Chooser(listOf(HOME, FAMILY), HOME.id)))
 
     @Test
     fun chooserDark() =
-        capture("chooser_dark", SettingsState(dialog = SettingsDialog.Chooser(listOf(HOME, FAMILY), null)), darkTheme = true)
+        capture(
+            "chooser_dark",
+            SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.Chooser(listOf(HOME, FAMILY), null)),
+            darkTheme = true,
+        )
 
     @Test
-    fun noCalendar() = capture("no_calendar", SettingsState(dialog = SettingsDialog.NoCalendar))
+    fun noCalendar() = capture("no_calendar", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.NoCalendar))
 
     @Test
-    fun noCalendarDark() = capture("no_calendar_dark", SettingsState(dialog = SettingsDialog.NoCalendar), darkTheme = true)
+    fun noCalendarDark() =
+        capture("no_calendar_dark", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.NoCalendar), darkTheme = true)
 
     @Test
-    fun explanation() = capture("explanation", SettingsState(dialog = SettingsDialog.Explanation))
+    fun explanation() = capture("explanation", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.Explanation))
 
     @Test
-    fun explanationDark() = capture("explanation_dark", SettingsState(dialog = SettingsDialog.Explanation), darkTheme = true)
+    fun explanationDark() =
+        capture("explanation_dark", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.Explanation), darkTheme = true)
 
     @Test
-    fun deniedForGood() = capture("denied_for_good", SettingsState(dialog = SettingsDialog.DeniedForGood))
+    fun deniedForGood() = capture("denied_for_good", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.DeniedForGood))
 
     @Test
-    fun deniedForGoodDark() = capture("denied_for_good_dark", SettingsState(dialog = SettingsDialog.DeniedForGood), darkTheme = true)
+    fun deniedForGoodDark() =
+        capture("denied_for_good_dark", SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.DeniedForGood), darkTheme = true)
 }
 
 @Config(qualifiers = "es-rES-w360dp-h800dp-xhdpi")

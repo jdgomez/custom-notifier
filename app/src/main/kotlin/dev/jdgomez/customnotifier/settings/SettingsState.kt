@@ -29,11 +29,16 @@ sealed interface SettingsDialog {
     data object NoCalendar : SettingsDialog
 }
 
+/** The calendar channel switch: [Loading] until the stored setting has been read, so a tap never acts on a value that is not real yet. */
+enum class ChannelSwitch { Loading, Off, On }
+
 /** What the Settings screen shows. [requestPermission] is a one-shot: the screen shows the system dialog and consumes it. */
 data class SettingsState(
-    val channelOn: Boolean = false,
+    val channel: ChannelSwitch = ChannelSwitch.Loading,
     val calendarRow: CalendarRow? = null,
     val accessRemoved: Boolean = false,
     val dialog: SettingsDialog? = null,
     val requestPermission: Boolean = false,
-)
+) {
+    val channelOn: Boolean get() = channel == ChannelSwitch.On
+}

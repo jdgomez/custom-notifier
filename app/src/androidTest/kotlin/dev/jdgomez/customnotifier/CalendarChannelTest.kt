@@ -112,7 +112,7 @@ class CalendarChannelTest {
 
     private fun openSettings() {
         composeRule.onNodeWithContentDescription("Settings").performClick()
-        composeRule.onNodeWithText("Add alerts to my calendar").assertIsDisplayed()
+        composeRule.awaitSettingsSwitchEnabled()
     }
 
     private fun turnSwitchOn() = composeRule.onNodeWithText("Add alerts to my calendar").performClick()

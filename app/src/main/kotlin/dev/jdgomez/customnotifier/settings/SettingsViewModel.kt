@@ -161,7 +161,7 @@ class SettingsViewModel(
         if (accessBack) onAccessGranted()
         mutableState.update {
             it.copy(
-                channelOn = check != ChannelCheck.Off,
+                channel = if (check == ChannelCheck.Off) ChannelSwitch.Off else ChannelSwitch.On,
                 calendarRow = row,
                 accessRemoved = accessRemoved,
             )

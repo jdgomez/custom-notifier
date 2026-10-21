@@ -100,6 +100,7 @@ fun SettingsScreen(
     onDismissDialog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val switchEnabled = state.channel != ChannelSwitch.Loading
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -121,10 +122,11 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_calendar_switch)) },
                 supportingContent = { Text(stringResource(R.string.settings_calendar_switch_help)) },
-                trailingContent = { Switch(checked = state.channelOn, onCheckedChange = null) },
+                trailingContent = { Switch(checked = state.channelOn, onCheckedChange = null, enabled = switchEnabled) },
                 modifier =
                     Modifier.toggleable(
                         value = state.channelOn,
+                        enabled = switchEnabled,
                         role = Role.Switch,
                         onValueChange = onSwitchChange,
                     ),

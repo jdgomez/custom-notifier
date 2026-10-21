@@ -14,7 +14,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -143,8 +145,27 @@ class SettingsViewModelTest {
     private fun SettingsViewModel.chooser() = state.value.dialog as SettingsDialog.Chooser
 
     @Test
+    fun `the switch is loading until the stored setting has been read`() {
+        val stored = MutableSharedFlow<CalendarChannel>()
+        val viewModel =
+            SettingsViewModel(
+                object : CalendarChannelSettings {
+                    override fun observe(): Flow<CalendarChannel> = stored
+
+                    override suspend fun set(channel: CalendarChannel) = Unit
+                },
+                gateway,
+                access,
+            ) { syncs++ }
+        assertEquals(ChannelSwitch.Loading, viewModel.state.value.channel)
+        runBlocking { stored.emit(CalendarChannel.Off) }
+        assertEquals(ChannelSwitch.Off, viewModel.state.value.channel)
+    }
+
+    @Test
     fun `the channel is off on a fresh install`() {
         val state = viewModel().state.value
+        assertEquals(ChannelSwitch.Off, state.channel)
         assertFalse(state.channelOn)
         assertNull(state.calendarRow)
         assertNull(state.dialog)
