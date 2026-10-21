@@ -1,8 +1,8 @@
 ## 1. Version and signing in Gradle
 
-- [ ] 1.1 Add `version.txt` (`0.1.0`), `release-please-config.json` and `.release-please-manifest.json` (design decision 1)
-- [ ] 1.2 Read the version name from `version.txt` and derive the version code with a pure function, with a JVM unit test for "Version code grows" and the rejected inputs (design decision 2)
-- [ ] 1.3 Add the release signing config from the four environment variables: none set = unsigned as today, some set = build fails naming the missing ones (design decision 5); check by hand with a throwaway local keystore created in the build directory (never committed) that `bundleRelease` is signed with it and that `assembleRelease` without the variables is unsigned; `./gradlew assembleDebug assembleRelease lintAll test` passes and `scripts/footprint.sh` needs no change
+- [x] 1.1 Add `version.txt` (`0.1.0`), `release-please-config.json` and `.release-please-manifest.json` (design decision 1)
+- [x] 1.2 Read the version name from `version.txt` and derive the version code with a pure function, with a JVM unit test for "Version code grows" and the rejected inputs (design decision 2)
+- [x] 1.3 Add the release signing config from the four environment variables: none set = unsigned as today, some set = build fails naming the missing ones (design decision 5); check by hand with a throwaway local keystore created in the build directory (never committed) that `bundleRelease` is signed with it and that `assembleRelease` without the variables is unsigned; `./gradlew assembleDebug assembleRelease lintAll test` passes and `scripts/footprint.sh` needs no change
 
 ## 2. Release workflow
 
