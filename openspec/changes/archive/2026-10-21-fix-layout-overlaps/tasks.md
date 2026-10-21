@@ -10,9 +10,9 @@
 
 ## 3. Check
 
-- [ ] 3.1 Hand check on `cn-api37` at font scale 1.0 and 2.0, English and Spanish, new and edit form; restore font scale 1.0 and shut the emulator down afterwards (only when Brain says the emulator is free)
+- [x] 3.1 Hand check on `cn-api37` at font scale 1.0 and 2.0, English and Spanish, new and edit form; restore font scale 1.0 and shut the emulator down afterwards (only when Brain says the emulator is free)
 - [x] 3.2 `./gradlew assembleDebug assembleRelease lintAll test` passes with zero warnings
 
 ## 4. Archive
 
-- [ ] 4.1 Run `openspec archive fix-layout-overlaps`, sync the delta spec into `openspec/specs/product-form/`, and update the Project state in `AGENTS.md`
+- [x] 4.1 Run `openspec archive fix-layout-overlaps`, sync the delta spec into `openspec/specs/product-form/`, and update the Project state in `AGENTS.md`
