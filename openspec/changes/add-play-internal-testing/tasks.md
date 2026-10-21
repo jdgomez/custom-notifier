@@ -24,8 +24,8 @@
 
 ## 5. Documentation and ADR
 
-- [ ] 5.1 Write ADR 0018 and update the ADR index (design decision 9)
-- [ ] 5.2 Update `docs/WAYOFWORKING.md` (generated release pull requests, signing moved to Phase 1, versions from release-please) and `AGENTS.md` (Build and run: version file and signing variables; CI: the release workflow and its secrets; Gate: the release pull request rule), and `README.md` only if it describes the release flow
+- [x] 5.1 Write ADR 0018 and update the ADR index (design decision 9)
+- [x] 5.2 Update `docs/WAYOFWORKING.md` (generated release pull requests, signing moved to Phase 1, versions from release-please) and `AGENTS.md` (Build and run: version file and signing variables; CI: the release workflow and its secrets; Gate: the release pull request rule), and `README.md` only if it describes the release flow
 - [ ] 5.3 Check the production line count (about 400 at most, tests excluded; workflow and Gradle code count, docs and listing texts do not); if clearly over, stop and report
 
 ## 6. Archive

@@ -102,7 +102,8 @@ All levels run on every pull request:
 - Conventional Commits for all commits and PR titles.
 - Squash merge only. The squash commit takes the PR title.
 - `main` is protected: no direct pushes, PR required, CI must be green.
-- CHANGELOG and versions are generated automatically from Conventional Commits (never edited by hand).
+- CHANGELOG and versions are generated automatically from Conventional Commits by release-please, never edited by hand ([ADR 0018](adr/0018-release-with-release-please.md)): it keeps a release pull request open on `main` with `version.txt` and `CHANGELOG.md`.
+- The generated release pull request changes only `version.txt`, `CHANGELOG.md` and `.release-please-manifest.json`. It does not go through the no-mistakes gate: Brain checks that its diff touches only those three files, CI must be green, and the owner merges. Any other change goes through a normal change.
 
 ## Prioritization
 Brain orders changes by:
@@ -168,10 +169,10 @@ Success criterion: a trivial change goes through the full lifecycle (proposal, i
 
 ### Phase 1 - MVP (Android)
 Product scope as defined in `SESSION0.md`. Planned order following the prioritization rules:
-spike (exact alarms and Calendar Provider constraints) → domain → persistence → UI → notifications → calendar → Spanish translation → resource footprint measurement → 8-week validation with the real tester.
+spike (exact alarms and Calendar Provider constraints) → domain → persistence → UI → notifications → calendar → Spanish translation → resource footprint measurement → Play internal testing distribution (signing keys, release pipeline, store listing) → 8-week validation with the real tester.
 
 ### Phase 2 - Public release hardening
-As defined in `SESSION0.md`. Owner-only steps: signing keys (Play App Signing, upload key stored as a GitHub Actions secret), registration of rights over the app before publishing to any store, store accounts and payments.
+As defined in `SESSION0.md`. Owner-only steps: registration of rights over the app before publishing to any store, store accounts and payments.
 
 ### Phase 3 - iOS
 As defined in `SESSION0.md`, in a separate repository following this same way of working.
@@ -188,7 +189,7 @@ At the end of each phase, a brief retrospective reviews what worked in the proce
 - no-mistakes is already initialized in this repository.
 - The repository is public on GitHub, so GitHub Actions minutes (including Linux runners with emulator support) are free.
 - Development machine: JDK 21 and Android SDK installed in Phase 0 (see `docs/development-setup.md`); KVM available for hardware-accelerated emulation; 16 cores, 31 GB RAM.
-- Signing: Play App Signing. Google holds the app signing key; the owner holds the upload key, stored only as a GitHub Actions secret. Agents never see keys.
+- Signing: Play App Signing. Google holds the app signing key; the owner holds the upload key, stored only as a GitHub Actions secret. Agents never see keys. The setup is done in Phase 1 for the internal testing track (ADR 0018, `docs/release.md`).
 - No personal references in any project artifact.
 - All project artifacts in English.
 
