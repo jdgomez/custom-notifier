@@ -6,6 +6,7 @@ import android.view.View
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -33,6 +34,7 @@ import dev.jdgomez.customnotifier.productlist.testProduct
 import dev.jdgomez.customnotifier.referencePath
 import dev.jdgomez.customnotifier.ui.CustomNotifierTheme
 import kotlinx.coroutines.flow.emptyFlow
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +73,15 @@ private val EDIT =
             mode = ProductFormMode.Edit("Vitamin D"),
             stock = StockSummary(EstimatedStock(Quantity.of(BigInteger.valueOf(59), BigInteger.TWO)), "pills"),
         )
+    }
+
+/** The rule row "2 cans every 1 days": at the largest font size the last word used to fall alone onto the next line. */
+private val RULE_ROW =
+    EDIT.let { edit ->
+        val texts =
+            edit.texts +
+                mapOf(ProductFormField.Unit to "cans", ProductFormField.ConsumptionUnits to "2", ProductFormField.ConsumptionDays to "1")
+        edit.copy(texts = texts, initialTexts = texts)
     }
 
 private val WITH_ERRORS =
@@ -152,6 +163,62 @@ open class ProductFormScreenshotTest {
 
     @Test
     fun editLargestFont() = capture("edit_font_2", EDIT, fontScale = 2f)
+
+    private fun showEdit(
+        state: ProductFormState,
+        fontScale: Float,
+    ) {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
+                CustomNotifierTheme { ProductFormScreen(state, emptyFlow(), { _, _ -> }, {}, {}, {}) }
+            }
+        }
+        settle()
+    }
+
+    private val spanish get() =
+        ApplicationProvider
+            .getApplicationContext<Context>()
+            .resources.configuration.locales[0]
+            .language == "es"
+
+    private fun assertOneLineBar(fontScale: Float) {
+        showEdit(EDIT, fontScale)
+        val title = composeRule.onNodeWithText(text(R.string.product_form_title_edit)).getBoundsInRoot()
+        val save = composeRule.onNodeWithText(text(R.string.product_form_save)).getBoundsInRoot()
+        assert(title.right <= save.left) { "title $title not on the line of save $save at font scale $fontScale" }
+        assert(kotlin.math.abs((title.top + title.bottom).value - (save.top + save.bottom).value) < 2f) {
+            "title $title and save $save are not centered on one bar at font scale $fontScale"
+        }
+    }
+
+    @Test
+    fun titleThatFitsKeepsTheOneLineBarAtDefaultSize() = assertOneLineBar(1f)
+
+    @Test
+    fun titleThatFitsKeepsTheOneLineBarAtTheLargestSize() {
+        // Only the English title fits at the largest size; the Spanish one is covered by the next test.
+        assumeFalse("The Spanish title does not fit at the largest size", spanish)
+        assertOneLineBar(2f)
+    }
+
+    @Test
+    fun largestFontKeepsTheTopBarWholeAndTheRuleRowInPairs() {
+        showEdit(RULE_ROW, fontScale = 2f)
+        val root = composeRule.onRoot().getBoundsInRoot()
+        val title = composeRule.onNodeWithText(text(R.string.product_form_title_edit)).getBoundsInRoot()
+        val save = composeRule.onNodeWithText(text(R.string.product_form_save)).getBoundsInRoot()
+        val stock = composeRule.onNodeWithText(text(R.string.stock_section_title)).getBoundsInRoot()
+        assert(title.bottom <= stock.top) { "title $title overlaps the content $stock" }
+        assert(save.right <= root.right && save.top >= root.top) { "save $save is outside $root" }
+        // The Spanish title does not fit next to the save action: it is shown whole below it, and save stays on the top row.
+        if (spanish) assert(title.top >= save.bottom) { "title $title is not below save $save" } else assert(title.right <= save.left)
+        // The word after the days field stays on the line of its field.
+        composeRule.onNodeWithTag("ConsumptionDays").performScrollTo()
+        val days = composeRule.onNodeWithTag("ConsumptionDays").getBoundsInRoot()
+        val word = composeRule.onNodeWithText(text(R.string.product_form_consumption_days)).getBoundsInRoot()
+        assert(word.left >= days.right && word.top < days.bottom && word.bottom > days.top) { "days $word is not next to its field $days" }
+    }
 
     @Test
     @OptIn(ExperimentalRoborazziApi::class)
