@@ -16,6 +16,7 @@ output.json
 # --- Signing material (never commit) ---
 *.jks
 *.keystore
+*.base64
 keystore.properties
 signing.properties
 google-services.json

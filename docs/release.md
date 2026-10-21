@@ -9,15 +9,21 @@ Owner-only guide ([ADR 0011](adr/0011-internal-testing-distribution.md), [0014](
 2. Use Play App Signing (the default for new apps): Google holds the app signing key and you hold the upload key. The package name `dev.jdgomez.customnotifier` becomes permanent with the first upload.
 
 ### 2. Generate the upload key
-Do this on your own machine, not in an agent session.
+Do this on your own machine, not in an agent session. Generate and encode the key outside the repository, in a directory only you can read, so key material never lands in a checkout.
 
 ```
+mkdir -m 700 ~/keys && cd ~/keys
 keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 9125
-keytool -list -v -keystore upload.jks -alias upload   # copy the "SHA256" fingerprint
+```
+
+Answer the prompts: the keystore password (at least 6 characters; the key password can be the same) and the certificate details. Then check the key exists, copy the "SHA256" fingerprint and encode it, still in `~/keys`:
+
+```
+keytool -list -v -keystore upload.jks -alias upload
 base64 -w0 upload.jks > upload.jks.base64
 ```
 
-- **Back up** `upload.jks` and both passwords in your password manager plus one offline copy. Never commit them; `.gitignore` already excludes `*.jks` and `*.keystore`.
+- **Back up** `upload.jks` and both passwords in your password manager plus one offline copy. Never commit them; `.gitignore` also excludes `*.jks`, `*.keystore` and `*.base64`, as a safety net only: do not create these files inside the repository.
 - If the key is lost, Play can reset it: Play Console, Setup, App signing, **Request upload key reset**. Then generate a new key, replace the secrets and the fingerprint variable below, and upload with the new key.
 
 ### 3. GitHub secrets and variable
@@ -32,7 +38,7 @@ Repository, Settings, Secrets and variables, Actions:
 | `UPLOAD_CERT_SHA256` | variable | the SHA256 fingerprint from step 2 (public value; the release run fails if the bundle is signed with another key) |
 | `RELEASE_PLEASE_TOKEN` | secret | the token of step 4 |
 
-Delete `upload.jks.base64` afterwards.
+Delete `~/keys/upload.jks.base64` afterwards.
 
 ### 4. The release token
 Pull requests opened with the default workflow token do not trigger CI, and the `main` ruleset requires `verify` and `e2e`, so the release pull request is opened with a token of yours.
