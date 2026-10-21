@@ -1,7 +1,7 @@
 ## 1. Top bar
 
-- [ ] 1.1 Make the product form top bar grow with its title (Material 3 medium top bar, design choice approved by the owner as option A), for both the new and the edit form; keep the default font size look
-- [ ] 1.2 Add Robolectric/Roborazzi coverage for the Spanish edit form at the largest font size (title fully shown, save action visible) and re-record only the references that change; review the PNGs
+- [ ] 1.1 Product form top bar (owner decision 2026-10-21): keep the usual one-line top bar when the title fits next to the back arrow and the save action; switch to the Material 3 medium top bar only when the title does not fit, decided by measuring the title text against the available width (not by a font scale threshold); for both the new and the edit form; default font size references stay unchanged
+- [ ] 1.2 Add Robolectric/Roborazzi coverage for the Spanish edit form at the largest font size (title fully shown, save action visible) and a test that the one-line bar is kept when the title fits and re-record only the references that change; review the PNGs
 
 ## 2. Inline rows
 

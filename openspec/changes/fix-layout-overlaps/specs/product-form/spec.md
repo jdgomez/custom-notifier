@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Top bar readable at large font sizes
-The product form's top bar SHALL show its whole title at every system font size without truncation; when the title needs more than one line, the bar SHALL grow to fit it, and the back arrow and the save action SHALL stay fully visible and in their usual positions.
+The product form's top bar SHALL show its whole title at every system font size and screen width without truncation. When the title fits on one line next to the back arrow and the save action, the bar SHALL be the usual one-line bar; only when it does not fit (measured, not guessed from the font size) SHALL the bar grow to show the title in full below the back arrow and the save action, which stay fully visible in their usual positions.
 
 #### Scenario: Spanish edit title at the largest font size
 - **GIVEN** the app in Spanish and the system font size set to its largest value
@@ -11,7 +11,7 @@ The product form's top bar SHALL show its whole title at every system font size 
 #### Scenario: Default font size
 - **GIVEN** the default system font size, in English or Spanish
 - **WHEN** the "New product" or "Edit product" form is shown
-- **THEN** the title fits on one line and the bar looks as before this change
+- **THEN** the title fits on one line and the bar looks exactly as before this change (unchanged screenshot references)
 
 ### Requirement: Inline rows wrap by pairs
 Every inline row of the product form that mixes number fields and words SHALL keep each number field together with the word that follows it; when the row does not fit on one line, it SHALL wrap only between these pairs, so no word is left alone on a line.
