@@ -1,4 +1,4 @@
-import dev.jdgomez.customnotifier.build.AppVersion
+import dev.jdgomez.customnotifier.versioning.AppVersion
 
 plugins {
     alias(libs.plugins.android.application)
