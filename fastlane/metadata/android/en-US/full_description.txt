@@ -1,0 +1,19 @@
+Custom Notifier tells you before something you use at home runs out, so you can buy more in time. Pills, diapers, coffee, detergent, pet food: anything you consume at a steady pace.
+
+Add a product once and say how fast you use it: how many units, every how many days, and how many units come in a package. Custom Notifier keeps track of the stock for you and works out the day it will run out. You choose how many days before that you want to be alerted.
+
+What you can do
+- See all your products in one list, with the stock left, the day each one runs out and the day of its next alert.
+- Get one notification before a product runs out, on the day you chose.
+- Restock when you buy a new package, or adjust the stock when the count is off.
+- Edit or delete a product at any time.
+- Optionally add each alert to your calendar as an all-day event, in the calendar you choose. This is off until you turn it on in Settings and allow calendar access.
+- Use it in English or Spanish, in light or dark theme.
+
+Private by design
+- Everything stays on your device. There is no account, no sign-in and no server.
+- No ads, no analytics and no tracking.
+- The app has no internet permission.
+- Notifications are created on your device.
+
+Custom Notifier is a small, focused tool: it does not scan barcodes, order products or sync between devices.

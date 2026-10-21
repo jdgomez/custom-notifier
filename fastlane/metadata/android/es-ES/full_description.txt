@@ -1,0 +1,19 @@
+Custom Notifier te avisa antes de que se acabe algo que usas en casa, para que puedas comprar a tiempo. Pastillas, pañales, café, detergente, comida para la mascota: cualquier cosa que consumes a un ritmo constante.
+
+Añade un producto una sola vez y di a qué ritmo lo usas: cuántas unidades, cada cuántos días y cuántas unidades trae un envase. Custom Notifier lleva la cuenta de las existencias por ti y calcula el día en que se acabará. Tú eliges con cuántos días de antelación quieres que te avise.
+
+Qué puedes hacer
+- Ver todos tus productos en una lista, con las existencias que quedan, el día en que se acaba cada uno y el día de su próxima alerta.
+- Recibir una notificación antes de que se acabe un producto, el día que elegiste.
+- Reponer cuando compras un envase nuevo, o ajustar las existencias cuando la cuenta no cuadra.
+- Editar o borrar un producto en cualquier momento.
+- Opcionalmente, añadir cada alerta a tu calendario como un evento de todo el día, en el calendario que elijas. Está desactivado hasta que lo actives en Ajustes y permitas el acceso al calendario.
+- Usarla en español o en inglés, con tema claro u oscuro.
+
+Privada por diseño
+- Todo se queda en tu dispositivo. No hay cuenta, ni inicio de sesión, ni servidor.
+- Sin anuncios, sin analítica y sin rastreo.
+- La aplicación no tiene permiso de internet.
+- Las notificaciones se crean en tu dispositivo.
+
+Custom Notifier es una herramienta pequeña y concreta: no escanea códigos de barras, no hace pedidos de productos ni se sincroniza entre dispositivos.

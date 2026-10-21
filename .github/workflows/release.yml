@@ -1,0 +1,130 @@
+# Release automation (ADR 0018). Runs only on pushes to main, never on pull requests: it is the only
+# workflow that uses secrets (the release token and the upload key). See docs/release.md.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# A release run is never cancelled half way.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# Read-only by default; the release-please job widens it below.
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # contents: write creates the tag and the GitHub release; pull-requests: write labels the release pull request.
+    # The pull request itself is opened with RELEASE_PLEASE_TOKEN so that verify and e2e run on it.
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      # Without the token the action would fall back to the default token and the release pull request would get no CI.
+      - name: Check the release token
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_PLEASE_TOKEN" ]; then
+            echo "::error::Missing secret RELEASE_PLEASE_TOKEN (docs/release.md)."
+            exit 1
+          fi
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # The only job that sees the upload key. It builds the signed bundle for the release that was just created.
+  bundle:
+    name: bundle
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.release-please.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          validate-wrappers: true
+          # The only job with signing secrets neither writes nor trusts the Gradle cache of other runs.
+          cache-disabled: true
+      - name: Check the signing secrets and the version
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+          UPLOAD_CERT_SHA256: ${{ vars.UPLOAD_CERT_SHA256 }}
+        run: |
+          missing=0
+          for name in UPLOAD_KEYSTORE_BASE64 UPLOAD_KEYSTORE_PASSWORD UPLOAD_KEY_ALIAS UPLOAD_KEY_PASSWORD UPLOAD_CERT_SHA256; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret or variable $name (docs/release.md)."
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          [ "$(cat version.txt)" = "$VERSION" ] || { echo "::error::version.txt does not match release $VERSION."; exit 1; }
+      - name: Decode the upload keystore
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          keystore="$RUNNER_TEMP/upload.jks"
+          echo "KEYSTORE_PATH=$keystore" >> "$GITHUB_ENV"
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$keystore"
+      - name: Build the signed release bundle
+        env:
+          CN_UPLOAD_KEYSTORE: ${{ env.KEYSTORE_PATH }}
+          CN_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          CN_UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          CN_UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+      - name: Verify the signature and the version
+        env:
+          UPLOAD_CERT_SHA256: ${{ vars.UPLOAD_CERT_SHA256 }}
+        run: |
+          bundle=app/build/outputs/bundle/release/app-release.aab
+          # Not -strict: the upload key is self-signed, which -strict reports as an error.
+          jarsigner -verify "$bundle" | grep -x 'jar verified.' || { echo "::error::The bundle signature does not verify."; exit 1; }
+          actual=$(keytool -printcert -jarfile "$bundle" | grep -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -d ':' | tr 'a-f' 'A-F')
+          expected=$(echo "$UPLOAD_CERT_SHA256" | tr -d ': ' | tr 'a-f' 'A-F')
+          [ -n "$actual" ] && [ "$actual" = "$expected" ] || { echo "::error::The bundle is not signed with the upload key (certificate fingerprint mismatch)."; exit 1; }
+          manifest=app/build/intermediates/packaged_manifests/release/processReleaseManifestForPackage/AndroidManifest.xml
+          grep -q "android:versionName=\"$VERSION\"" "$manifest" || { echo "::error::The bundle version name is not $VERSION."; exit 1; }
+          grep -o 'android:versionCode="[0-9]*"' "$manifest"
+      - name: Upload the bundle and the mapping file
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ env.VERSION }}
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
+          retention-days: 90
+      - name: Delete the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"

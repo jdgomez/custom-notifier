@@ -36,3 +36,4 @@ The index below is updated in the same change that adds or supersedes an ADR.
 | [0015](0015-manual-dependency-injection.md) | Manual dependency injection | Accepted |
 | [0016](0016-navigation-with-androidx-navigation-3.md) | Navigation with AndroidX Navigation 3 | Accepted |
 | [0017](0017-inexact-alarms-for-alerts.md) | Alerts use inexact alarms with a bounded window, no exact-alarm permission | Accepted |
+| [0018](0018-release-with-release-please.md) | Versioning and release with release-please, signed in CI, uploaded by hand | Accepted |
