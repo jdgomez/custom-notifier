@@ -12,7 +12,7 @@ What you can do
 
 Private by design
 - Everything stays on your device. There is no account, no sign-in and no server.
-- No ads and no analytics.
+- No ads, no analytics and no tracking.
 - The app has no internet permission.
 - Notifications are created on your device.
 

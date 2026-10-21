@@ -12,7 +12,7 @@ Qué puedes hacer
 
 Privada por diseño
 - Todo se queda en tu dispositivo. No hay cuenta, ni inicio de sesión, ni servidor.
-- Sin anuncios y sin analítica.
+- Sin anuncios, sin analítica y sin rastreo.
 - La aplicación no tiene permiso de internet.
 - Las notificaciones se crean en tu dispositivo.
 
