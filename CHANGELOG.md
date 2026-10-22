@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/jdgomez/custom-notifier/compare/v0.2.0...v0.2.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **app:** keep the Settings calendar switch disabled until the stored setting has loaded ([#88](https://github.com/jdgomez/custom-notifier/issues/88)) ([6401bde](https://github.com/jdgomez/custom-notifier/commit/6401bdef31525e88937be4a7fb1ebfd332de5da8))
+
 ## [0.2.0](https://github.com/jdgomez/custom-notifier/compare/v0.1.0...v0.2.0) (2026-10-21)
 
 
