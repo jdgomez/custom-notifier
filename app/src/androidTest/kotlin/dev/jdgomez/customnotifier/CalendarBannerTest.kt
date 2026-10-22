@@ -135,7 +135,7 @@ class CalendarBannerTest {
 
     private fun fix() {
         composeRule.onNodeWithText("Fix").performClick()
-        awaitText("Add alerts to my calendar")
+        composeRule.awaitSettingsSwitchEnabled()
     }
 
     @Test

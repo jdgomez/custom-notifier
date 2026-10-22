@@ -1,6 +1,7 @@
 package dev.jdgomez.customnotifier.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -68,7 +69,7 @@ class SettingsScreenTest {
 
     @Test
     fun `shows the calendar section with the switch off`() {
-        show(SettingsState())
+        show(SettingsState(channel = ChannelSwitch.Off))
         composeRule.onNodeWithText("Settings").assertIsDisplayed()
         composeRule.onNodeWithText("Calendar").assertIsDisplayed()
         composeRule.onNodeWithText("Add alerts to my calendar").assertIsOff()
@@ -78,15 +79,22 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `tapping the switch reports it`() {
+    fun `the switch is disabled and ignores taps while the setting is loading`() {
         show(SettingsState())
+        composeRule.onNodeWithText("Add alerts to my calendar").assertIsNotEnabled().performClick()
+        assertEquals(emptyList(), events)
+    }
+
+    @Test
+    fun `tapping the switch reports it`() {
+        show(SettingsState(channel = ChannelSwitch.Off))
         composeRule.onNodeWithText("Add alerts to my calendar").performClick()
         assertEquals(listOf("switch true"), events)
     }
 
     @Test
     fun `channel on shows the chosen calendar and account and the row opens the chooser`() {
-        show(SettingsState(channelOn = true, calendarRow = CalendarRow.Chosen(HOME)))
+        show(SettingsState(channel = ChannelSwitch.On, calendarRow = CalendarRow.Chosen(HOME)))
         composeRule.onNodeWithText("Add alerts to my calendar").assertIsOn()
         composeRule.onNodeWithText("Home").assertIsDisplayed()
         composeRule.onNodeWithText("user@example.com").assertIsDisplayed()
@@ -96,7 +104,7 @@ class SettingsScreenTest {
 
     @Test
     fun `access removed shows the message and Allow`() {
-        show(SettingsState(channelOn = true, accessRemoved = true))
+        show(SettingsState(channel = ChannelSwitch.On, accessRemoved = true))
         composeRule.onNodeWithText("Calendar access was removed. Alerts are not added to your calendar.").assertIsDisplayed()
         composeRule.onNodeWithText("Allow").performClick()
         assertEquals(listOf("allow"), events)
@@ -104,14 +112,14 @@ class SettingsScreenTest {
 
     @Test
     fun `calendar gone shows the message and the row opens the chooser`() {
-        show(SettingsState(channelOn = true, calendarRow = CalendarRow.Unavailable))
+        show(SettingsState(channel = ChannelSwitch.On, calendarRow = CalendarRow.Unavailable))
         composeRule.onNodeWithText("The chosen calendar is no longer available. Choose another one.").performClick()
         assertEquals(listOf("row"), events)
     }
 
     @Test
     fun `chooser lists calendars with accounts and choosing one reports it`() {
-        show(SettingsState(dialog = SettingsDialog.Chooser(listOf(HOME, FAMILY), selected = HOME.id)))
+        show(SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.Chooser(listOf(HOME, FAMILY), selected = HOME.id)))
         composeRule.onNodeWithText("Choose a calendar").assertIsDisplayed()
         composeRule.onNodeWithText("family@example.com").assertIsDisplayed()
         composeRule.onNodeWithText("Family").performClick()
@@ -121,7 +129,7 @@ class SettingsScreenTest {
 
     @Test
     fun `explanation dialog buttons`() {
-        show(SettingsState(dialog = SettingsDialog.Explanation))
+        show(SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.Explanation))
         composeRule.onNodeWithText("Allow calendar access?").assertIsDisplayed()
         composeRule
             .onNodeWithText(
@@ -134,7 +142,7 @@ class SettingsScreenTest {
 
     @Test
     fun `denied for good dialog buttons`() {
-        show(SettingsState(dialog = SettingsDialog.DeniedForGood))
+        show(SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.DeniedForGood))
         composeRule.onNodeWithText("Calendar access is off").assertIsDisplayed()
         composeRule.onNodeWithText("Open settings").performClick()
         composeRule.onNodeWithText("Cancel").performClick()
@@ -143,7 +151,7 @@ class SettingsScreenTest {
 
     @Test
     fun `no calendar dialog`() {
-        show(SettingsState(dialog = SettingsDialog.NoCalendar))
+        show(SettingsState(channel = ChannelSwitch.Off, dialog = SettingsDialog.NoCalendar))
         composeRule.onNodeWithText("No calendar available").assertIsDisplayed()
         composeRule.onNodeWithText("OK").performClick()
         assertEquals(listOf("dismiss"), events)
