@@ -69,7 +69,7 @@ A privacy policy in English and Spanish SHALL be published in the repository and
 - **THEN** every permission that touches user data (calendar read and write, notifications) is explained, and no data collection is claimed that the app does not do or omitted that it does
 
 ### Requirement: Documented owner steps
-The repository SHALL document every owner-only step needed for the first release and for each later release: Play Console app creation, Play App Signing, upload key generation and backup, the secrets and the release token, Data safety, content rating, target audience, ads declaration, app access, testers, uploading the bundle and the mapping file to the internal testing track, and installing the build from Play. Agents SHALL NOT perform these steps.
+The repository SHALL document every owner-only step needed for the first release and for each later release: Play Console app creation, Play App Signing, upload key generation and backup, the secrets and the release token, Data safety, content rating, target audience, ads declaration, app access, testers, uploading the bundle (which already contains the mapping file) and pasting the release notes from the repository on the internal testing track, and installing the build from Play. Agents SHALL NOT perform these steps.
 
 #### Scenario: Owner follows the guide
 - **GIVEN** a verified Play developer account and no prior setup

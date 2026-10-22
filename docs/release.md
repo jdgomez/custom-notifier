@@ -71,8 +71,21 @@ Testing, Internal testing, Testers: create an email list and add the Google acco
 1. **Merge the release pull request.** Open it (title `chore(main): release X.Y.Z`), check that it changes only `version.txt`, `CHANGELOG.md` and `.release-please-manifest.json`, wait for green `verify` and `e2e`, and merge it (squash). The release pull request does not go through the no-mistakes gate.
 2. **Wait for the `release` run** on `main` (Actions). It creates the tag `vX.Y.Z` and the GitHub release, then the `bundle` job builds and checks the signed bundle. If it fails, the message names the missing secret, the signature, or the version that is wrong.
 3. **Download the artifact** `release-X.Y.Z` from the run: `app-release.aab` and `mapping.txt` (kept 90 days).
-4. **Upload to Play.** Testing, Internal testing, **Create new release**: upload `app-release.aab`; Play assigns no version of its own, the version name and code come from the bundle. Then, on the uploaded bundle, upload `mapping.txt` as the **deobfuscation file** so crash stack traces are readable. Release notes: paste the entry of this version from `CHANGELOG.md` (English, and Spanish if you want). Save, review, **Start rollout to Internal testing**.
+4. **Upload to Play.** Testing, Internal testing, **Create new release**: upload `app-release.aab`; Play assigns no version of its own, the version name and code come from the bundle. Do not upload `mapping.txt`: the R8 mapping file is already inside the bundle (`BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map`), so Play associates it automatically and crash stack traces are readable. Only if Play shows the "no deobfuscation file" warning, upload `mapping.txt` by hand: App bundle explorer, pick the version, Downloads tab, Assets, **ReTrace mapping file**. Keep `mapping.txt` anyway: the GitHub artifact expires after 90 days. Release notes: paste `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` and `fastlane/metadata/android/es-ES/changelogs/<versionCode>.txt` (the version code is `MAJOR * 1000000 + MINOR * 1000 + PATCH`, so 0.2.1 is `2001`) into the release notes box, wrapped in Play's language tags:
+
+   ```
+   <en-US>
+   (content of the en-US file)
+   </en-US>
+   <es-ES>
+   (content of the es-ES file)
+   </es-ES>
+   ```
+
+   Save, review, **Start rollout to Internal testing**.
 5. **Install from Play** on the tester's device through the opt-in link and check it (below for the first release).
+
+Release notes are user-facing text, not commit text. For each version, an agent writes them in plain user language, in a small docs pull request opened when the release-please pull request for that version appears, so they are on `main` before you upload. They live in `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt` (plain text, at most 500 characters, no language tags inside the files).
 
 Store screenshots are refreshed in any change that visibly changes the main screens (a pull request reviewer checks this); upload the new ones in the listing.
 

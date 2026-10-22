@@ -1,0 +1,6 @@
+Primera versión de prueba de Custom Notifier.
+- Añade tus productos de casa con su stock y lo rápido que los gastas.
+- Ve de un vistazo cuándo se va a acabar cada uno.
+- Recibe una notificación antes de que se acabe un producto y, si quieres, un evento en tu calendario.
+- Repón o ajusta el stock en pocos toques.
+- Disponible en inglés y español.
