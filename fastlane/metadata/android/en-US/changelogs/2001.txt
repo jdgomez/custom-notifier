@@ -1,0 +1,6 @@
+First test version of Custom Notifier.
+- Add your household products with their stock and how fast you use them.
+- See at a glance when each one will run out.
+- Get a notification before a product runs out, and optionally an event in your calendar.
+- Restock or adjust the stock in a few taps.
+- Available in English and Spanish.
